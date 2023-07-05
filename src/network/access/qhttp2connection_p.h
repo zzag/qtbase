@@ -244,7 +244,7 @@ public:
         return nullptr;
     }
 
-    void close() { sendGOAWAY(Http2::HTTP2_NO_ERROR); }
+    void close(Http2::Http2Error error = Http2::HTTP2_NO_ERROR) { sendGOAWAY(error); }
 
     bool isGoingAway() const noexcept { return m_goingAway; }
 
