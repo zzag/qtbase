@@ -206,6 +206,12 @@ public:
 
     bool wait(QMutexLocker<QMutex> &locker, QDeadlineTimer deadline);
 
+    QThread::QualityOfService serviceLevel = QThread::QualityOfService::Auto;
+    void setQualityOfServiceLevel(QThread::QualityOfService qosLevel);
+#ifdef Q_OS_DARWIN
+    qos_class_t nativeQualityOfServiceClass() const;
+#endif
+
 #ifdef Q_OS_UNIX
     QWaitCondition thread_done;
 

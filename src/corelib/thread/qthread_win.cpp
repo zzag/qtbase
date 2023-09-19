@@ -28,7 +28,21 @@ SetThreadDescription(
     );
 }
 
+#ifndef THREAD_POWER_THROTTLING_EXECUTION_SPEED
+#define THREAD_POWER_THROTTLING_EXECUTION_SPEED 0x1
+#define THREAD_POWER_THROTTLING_CURRENT_VERSION 1
+
+typedef struct _THREAD_POWER_THROTTLING_STATE {
+    ULONG Version;
+    ULONG ControlMask;
+    ULONG StateMask;
+} THREAD_POWER_THROTTLING_STATE;
+#endif
+
+
 QT_BEGIN_NAMESPACE
+
+Q_STATIC_LOGGING_CATEGORY(lcQThread, "qt.core.thread", QtWarningMsg)
 
 #if QT_CONFIG(thread)
 
@@ -251,6 +265,9 @@ unsigned int __stdcall QT_ENSURE_STACK_ALIGNED_FOR_SSE QThreadPrivate::start(voi
     {
         QMutexLocker locker(&thr->d_func()->mutex);
         data->quitNow = thr->d_func()->exited;
+
+        if (thr->d_func()->serviceLevel != QThread::QualityOfService::Auto)
+            thr->d_func()->setQualityOfServiceLevel(thr->d_func()->serviceLevel);
     }
 
     data->ensureEventDispatcher();
@@ -268,6 +285,39 @@ unsigned int __stdcall QT_ENSURE_STACK_ALIGNED_FOR_SSE QThreadPrivate::start(voi
 
     thr->d_func()->finish();
     return 0;
+}
+
+void QThreadPrivate::setQualityOfServiceLevel(QThread::QualityOfService qosLevel)
+{
+    Q_Q(QThread);
+    serviceLevel = qosLevel;
+
+#if (_WIN32_WINNT >= _WIN32_WINNT_WIN10_RS3)
+    qCDebug(lcQThread) << "Setting thread QoS class to" << qosLevel << "for thread" << q;
+
+    THREAD_POWER_THROTTLING_STATE state;
+    memset(&state, 0, sizeof(state));
+    state.Version = THREAD_POWER_THROTTLING_CURRENT_VERSION;
+
+    switch (qosLevel) {
+    case QThread::QualityOfService::Auto:
+        state.ControlMask = 0; // Unset control of QoS
+        state.StateMask = 0;
+        break;
+    case QThread::QualityOfService::Eco:
+        state.ControlMask = THREAD_POWER_THROTTLING_EXECUTION_SPEED;
+        state.StateMask = THREAD_POWER_THROTTLING_EXECUTION_SPEED;
+        break;
+    case QThread::QualityOfService::High:
+        state.ControlMask = THREAD_POWER_THROTTLING_EXECUTION_SPEED;
+        state.StateMask = 0; // Ask to disable throttling
+        break;
+    }
+    if (!SetThreadInformation(::GetCurrentThread(), THREAD_INFORMATION_CLASS::ThreadPowerThrottling,
+                              &state, sizeof(state))) {
+        qErrnoWarning("Failed to set thread power throttling state");
+    }
+#endif
 }
 
 /*

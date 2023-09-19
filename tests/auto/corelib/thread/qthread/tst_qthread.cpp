@@ -105,6 +105,8 @@ private slots:
     void terminateSelfStressTest();
 
     void bindingListCleanupAfterDelete();
+
+    void qualityOfService();
 };
 
 enum { one_minute = 60 * 1000, five_minutes = 5 * one_minute };
@@ -2102,6 +2104,34 @@ void tst_QThread::bindingListCleanupAfterDelete()
     QVERIFY(list);
     optr.reset();
     QVERIFY(list->empty());
+}
+
+void tst_QThread::qualityOfService()
+{
+    QThread th;
+    QThread::currentThread()->setObjectName("Main thread");
+    th.setObjectName("test thread");
+    auto guard = qScopeGuard([&th](){ th.quit(); th.wait(); });
+    QCOMPARE(th.serviceLevel(), QThread::QualityOfService::Auto);
+    th.setServiceLevel(QThread::QualityOfService::High);
+    QCOMPARE(th.serviceLevel(), QThread::QualityOfService::High);
+    th.setServiceLevel(QThread::QualityOfService::Eco);
+    QCOMPARE(th.serviceLevel(), QThread::QualityOfService::Eco);
+
+    th.start();
+    auto obj = std::make_unique<QObject>();
+    obj->moveToThread(&th);
+
+    QThread::QualityOfService launchedThreadServiceLevel = {};
+    QMetaObject::invokeMethod(obj.get(), [](){
+        return QThread::currentThread()->serviceLevel();
+    }, Qt::BlockingQueuedConnection, qReturnArg(launchedThreadServiceLevel));
+
+    QCOMPARE(launchedThreadServiceLevel, QThread::QualityOfService::Eco);
+
+    QMetaObject::invokeMethod(obj.get(), [](){
+        QThread::currentThread()->setServiceLevel(QThread::QualityOfService::High);
+    }, Qt::BlockingQueuedConnection);
 }
 
 QTEST_MAIN(tst_QThread)

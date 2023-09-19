@@ -62,6 +62,9 @@
 
 QT_BEGIN_NAMESPACE
 
+[[maybe_unused]]
+Q_STATIC_LOGGING_CATEGORY(lcQThread, "qt.core.thread", QtWarningMsg)
+
 using namespace QtMiscUtils;
 
 #if QT_CONFIG(thread)
@@ -315,6 +318,10 @@ void *QThreadPrivate::start(void *arg)
             if (thr->d_func()->priority & ThreadPriorityResetFlag) {
                 thr->d_func()->setPriority(QThread::Priority(thr->d_func()->priority & ~ThreadPriorityResetFlag));
             }
+#ifndef Q_OS_DARWIN // For Darwin we set it as an attribute when starting the thread
+            if (thr->d_func()->serviceLevel != QThread::QualityOfService::Auto)
+                thr->d_func()->setQualityOfServiceLevel(thr->d_func()->serviceLevel);
+#endif
 
             // threadId is set in QThread::start()
             Q_ASSERT(data->threadId.loadRelaxed() == QThread::currentThreadId());
@@ -680,6 +687,10 @@ void QThread::start(Priority priority)
     pthread_attr_t attr;
     pthread_attr_init(&attr);
     pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
+#ifdef Q_OS_DARWIN
+    if (d->serviceLevel != QThread::QualityOfService::Auto)
+        pthread_attr_set_qos_class_np(&attr, d->nativeQualityOfServiceClass(), 0);
+#endif
 
     d->priority = priority;
 
@@ -900,6 +911,39 @@ void QThreadPrivate::setPriority(QThread::Priority threadPriority)
 # endif // SCHED_IDLE
 #endif
 }
+
+void QThreadPrivate::setQualityOfServiceLevel(QThread::QualityOfService qosLevel)
+{
+    [[maybe_unused]]
+    Q_Q(QThread);
+    serviceLevel = qosLevel;
+#ifdef Q_OS_DARWIN
+    qCDebug(lcQThread) << "Setting thread QoS class to" << serviceLevel << "for thread" << q;
+    pthread_set_qos_class_self_np(nativeQualityOfServiceClass(), 0);
+#endif
+}
+
+#ifdef Q_OS_DARWIN
+qos_class_t QThreadPrivate::nativeQualityOfServiceClass() const
+{
+    // @note Consult table[0] to see what the levels mean
+    // [0] https://developer.apple.com/library/archive/documentation/Performance/Conceptual/power_efficiency_guidelines_osx/PrioritizeWorkAtTheTaskLevel.html#//apple_ref/doc/uid/TP40013929-CH35-SW5
+    // There are more levels but they have two other documented ones,
+    // QOS_CLASS_BACKGROUND, which is below UTILITY, but has no guarantees
+    // for scheduling (ie. the OS could choose to never give it CPU time),
+    // and QOS_CLASS_USER_INITIATED, documented as being intended for
+    // user-initiated actions, such as loading a text document.
+    switch (serviceLevel) {
+    case QThread::QualityOfService::Auto:
+        return QOS_CLASS_DEFAULT;
+    case QThread::QualityOfService::High:
+        return QOS_CLASS_USER_INTERACTIVE;
+    case QThread::QualityOfService::Eco:
+        return QOS_CLASS_UTILITY;
+    }
+    Q_UNREACHABLE_RETURN(QOS_CLASS_DEFAULT);
+}
+#endif
 
 #endif // QT_CONFIG(thread)
 

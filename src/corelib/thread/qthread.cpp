@@ -561,6 +561,46 @@ uint QThread::stackSize() const
 }
 
 /*!
+    \since 6.9
+
+    Set the Quality of Service level of the thread object to \a serviceLevel.
+    This can only be called from the thread itself or before the thread is
+    started!
+
+    This is currently only implemented on Apple platforms, and Windows.
+    The function call will complete successfully on other platforms but will
+    not currently have any effect.
+
+    \sa serviceLevel()
+*/
+void QThread::setServiceLevel(QualityOfService serviceLevel)
+{
+    Q_D(QThread);
+    QMutexLocker locker(&d->mutex);
+    if (d->threadState != QThreadPrivate::Running) {
+        d->serviceLevel = serviceLevel;
+    } else {
+        Q_ASSERT_X(isCurrentThread(), "QThread::setServiceLevel",
+                "cannot change quality of service level of a separate, running, thread");
+        d->setQualityOfServiceLevel(serviceLevel);
+    }
+}
+
+/*!
+    \since 6.9
+
+    Return the current Quality of Service level of the thread.
+
+    \sa setServiceLevel()
+*/
+QThread::QualityOfService QThread::serviceLevel() const
+{
+    Q_D(const QThread);
+    QMutexLocker locker(&d->mutex);
+    return d->serviceLevel;
+}
+
+/*!
     \internal
     Transitions BindingStatusOrList to the binding status state. If we had a list of
     pending objects, all objects get their reinitBindingStorageAfterThreadMove method
