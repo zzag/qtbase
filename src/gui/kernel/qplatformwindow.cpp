@@ -376,6 +376,14 @@ void QPlatformWindow::setOpacity(qreal level)
 }
 
 /*!
+  Reimplement to be able to let Qt set the opaque hint of a window
+*/
+void QPlatformWindow::setOpaque(bool opaque)
+{
+    Q_UNUSED(opaque);
+}
+
+/*!
   Reimplement to  be able to let Qt set the mask of a window
 */
 

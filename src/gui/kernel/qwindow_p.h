@@ -137,6 +137,7 @@ public:
     Qt::ScreenOrientation contentOrientation = Qt::PrimaryOrientation;
     qreal opacity= 1;
     QRegion mask;
+    std::optional<bool> opaque = std::nullopt;
 
     QSize minimumSize = {0, 0};
     QSize maximumSize = {QWINDOWSIZE_MAX, QWINDOWSIZE_MAX};

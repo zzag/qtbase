@@ -1247,6 +1247,48 @@ qreal QWindow::opacity() const
 }
 
 /*!
+    Marks the window as fully opaque or translucent.
+
+    This is an optimization hint. It can used to mark a window with an alpha channel
+    as opaque so the compositor can optimize some drawing operations, for example
+    it can skip repainting the area obscured by the window or disable alpha blending
+    when drawing the window. If the window has no alpha channel, this function is not
+    useful.
+
+    If not set explicitly to any value, the opaque hint reflects whether the
+    requestedFormat() has an alpha channel.
+
+    The opaque hint does not influence the alpha buffer size in the QSurfaceFormat. A
+    window can be marked opaque before and after show().
+
+    If a window is wholly or partially translucent and it is marked as opaque, you may
+    observe repaint artifacts.
+
+    \since 6.10
+*/
+void QWindow::setOpaque(bool opaque)
+{
+    Q_D(QWindow);
+    if (d->opaque == opaque)
+        return;
+    d->opaque = opaque;
+    if (d->platformWindow)
+        d->platformWindow->setOpaque(opaque);
+}
+
+/*!
+    Returns \c true if the window is considered to be fully opaque; otherwise returns
+    \c false.
+
+    \since 6.10
+*/
+bool QWindow::isOpaque() const
+{
+    Q_D(const QWindow);
+    return d->opaque.value_or(d->requestedFormat.alphaBufferSize() <= 0);
+}
+
+/*!
     Sets the mask of the window.
 
     The mask is a hint to the windowing system that the application does not

@@ -86,6 +86,7 @@ public:
     virtual void propagateSizeHints();
 
     virtual void setOpacity(qreal level);
+    virtual void setOpaque(bool opaque);
     virtual void setMask(const QRegion &region);
     virtual void requestActivateWindow();
 

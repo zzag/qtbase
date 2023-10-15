@@ -157,6 +157,9 @@ public:
     void setOpacity(qreal level);
     qreal opacity() const;
 
+    void setOpaque(bool opaque);
+    bool isOpaque() const;
+
     void setMask(const QRegion &region);
     QRegion mask() const;
 
