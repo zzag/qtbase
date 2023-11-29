@@ -2885,7 +2885,7 @@ void QComboBox::hidePopup()
     if (d->hidingPopup)
         return;
     d->hidingPopup = true;
-    // can't use QBoolBlocker on a bitfield
+    // can't use QScopedValueRollback on a bitfield
     auto resetHidingPopup = qScopeGuard([d]{
         d->hidingPopup = false;
     });

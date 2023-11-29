@@ -2258,7 +2258,7 @@ static QString msgUnableToSetGeometry(const QWindowsWindow *platformWindow,
 
 void QWindowsWindow::setGeometry(const QRect &rectIn)
 {
-    QBoolBlocker b(m_inSetgeometry);
+    QScopedValueRollback b(m_inSetgeometry, true);
 
     QRect rect = rectIn;
     // This means it is a call from QWindow::setFramePosition() and

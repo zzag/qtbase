@@ -436,20 +436,6 @@ private:
     alignas(void *) char prealloc_[3 * sizeof(void *) + 3 * sizeof(QMetaType)];
 };
 
-class QBoolBlocker
-{
-    Q_DISABLE_COPY_MOVE(QBoolBlocker)
-public:
-    Q_NODISCARD_CTOR explicit QBoolBlocker(bool &b, bool value = true)
-        : block(b), reset(b)
-    { block = value; }
-    inline ~QBoolBlocker() { block = reset; }
-
-private:
-    bool &block;
-    bool reset;
-};
-
 struct QAbstractDynamicMetaObject;
 struct Q_CORE_EXPORT QDynamicMetaObjectData
 {

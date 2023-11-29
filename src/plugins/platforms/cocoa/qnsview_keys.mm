@@ -69,7 +69,7 @@ static bool sendAsShortcut(const KeyEvent &keyEvent, QWindow *window)
     QWindow *window = [self topLevelWindow];
 
     // We will send a key event unless the input method handles it
-    QBoolBlocker sendKeyEventGuard(m_sendKeyEvent, true);
+    QScopedValueRollback sendKeyEventGuard(m_sendKeyEvent, true);
 
     // Assume we should send key events with text, unless told
     // otherwise by doCommandBySelector.

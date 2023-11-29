@@ -215,7 +215,7 @@ void QCocoaWindow::setGeometry(const QRect &rectIn)
 {
     qCDebug(lcQpaWindow) << "QCocoaWindow::setGeometry" << window() << rectIn;
 
-    QBoolBlocker inSetGeometry(m_inSetGeometry, true);
+    QScopedValueRollback inSetGeometry(m_inSetGeometry, true);
 
     QRect rect = rectIn;
     // This means it is a call from QWindow::setFramePosition() and

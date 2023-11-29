@@ -84,7 +84,7 @@ void QCocoaScreen::updateScreens()
         qCInfo(lcQpaScreen) << "Skipping screen update, already updating";
         return;
     }
-    QBoolBlocker recursionGuard(updatingScreens);
+    QScopedValueRollback recursionGuard(updatingScreens, true);
 
     uint32_t displayCount = 0;
     if (CGGetOnlineDisplayList(0, nullptr, &displayCount) != kCGErrorSuccess)

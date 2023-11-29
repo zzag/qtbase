@@ -375,7 +375,7 @@ NSWindow<QNSWindowProtocol> *qnswindow_cast(NSWindow *window)
 
 - (void)miniaturize:(id)sender
 {
-    QBoolBlocker miniaturizeTracker(m_isMinimizing, true);
+    QScopedValueRollback miniaturizeTracker(m_isMinimizing, true);
     [super miniaturize:sender];
 }
 
