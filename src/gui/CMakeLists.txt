@@ -205,6 +205,7 @@ qt_internal_add_module(Gui
         painting/qpaintengine_raster.cpp painting/qpaintengine_raster_p.h
         painting/qpaintengineex.cpp painting/qpaintengineex_p.h
         painting/qpainter.cpp painting/qpainter.h painting/qpainter_p.h
+        painting/qpainterstateguard.cpp painting/qpainterstateguard.h
         painting/qpainterpath.cpp painting/qpainterpath.h painting/qpainterpath_p.h
         painting/qpathclipper.cpp painting/qpathclipper_p.h
         painting/qpathsimplifier.cpp painting/qpathsimplifier_p.h
