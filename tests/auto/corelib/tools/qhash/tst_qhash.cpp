@@ -13,6 +13,7 @@
 #include <vector>
 #include <unordered_set>
 #include <string>
+#include <tuple>
 
 #include <qsemaphore.h>
 
@@ -81,6 +82,7 @@ private slots:
     void multiHashStoresInReverseInsertionOrder();
 
     void emplace();
+    void tryEmplace();
 
     void badHashFunction();
     void hashOfHash();
@@ -2826,6 +2828,104 @@ void tst_QHash::emplace()
         QCOMPARE(hash["ab"].str, "abcd");
         QCOMPARE(MyClass::copies, 0);
         QCOMPARE(MyClass::moves, 1);
+    }
+}
+
+void tst_QHash::tryEmplace()
+{
+    {
+        QHash<int, int> hash;
+        QHash<int, int>::TryEmplaceResult r = hash.tryEmplace(0, 0);
+        QCOMPARE_NE(r.iterator, hash.end());
+        QCOMPARE(hash.size(), 1);
+        QCOMPARE(hash[0], 0);
+        QVERIFY(r.inserted);
+        QCOMPARE(*r.iterator, 0);
+        int cref = 0;
+        r = hash.tryEmplace(cref, 1);
+        QCOMPARE_NE(r.iterator, hash.end());
+        QCOMPARE(hash.size(), 1);
+        QCOMPARE(hash[0], 0);
+        QVERIFY(!r.inserted);
+        QCOMPARE(*r.iterator, 0);
+
+        auto [iterator, inserted] = hash.tryEmplace(1, 1);
+        QCOMPARE_NE(iterator, hash.end());
+        QCOMPARE(hash.size(), 2);
+        QCOMPARE(hash[1], 1);
+        QVERIFY(inserted);
+        QCOMPARE(*iterator, 1);
+
+        auto [it, inserted2] = hash.try_emplace(cref, 1);
+        QCOMPARE_NE(it, hash.keyValueEnd());
+        QCOMPARE(hash.size(), 2);
+        QCOMPARE(hash[0], 0);
+        QVERIFY(!inserted2);
+        QCOMPARE(it->second, 0);
+    }
+    {
+        // Make sure any kind of resize is properly handled
+        QHash<int, int> hash;
+        hash.reserve(1);
+        const qsizetype end = hash.capacity() + 2;
+        auto [it, inserted] = hash.try_emplace(0, 0);
+        for (int i = 1; i < end; ++i) {
+            QHash<int, int> copy = hash;
+
+            // Test pure detach, no insert, works on any capacity:
+            std::tie(it, inserted) = hash.try_emplace(i - 1, i);
+            QCOMPARE_NE(it, hash.keyValueEnd());
+            QVERIFY(!inserted);
+            QCOMPARE(it->second, i - 1);
+            QVERIFY(!hash.isSharedWith(copy));
+
+            copy = hash;
+            // And when an insertion _does_ happen:
+            std::tie(it, inserted) = hash.try_emplace(i, i);
+            QVERIFY(inserted);
+            QCOMPARE(it->second, i);
+        }
+        QCOMPARE(hash.size(), end);
+        QCOMPARE_GT(hash.capacity(), end);
+    }
+    {
+        // Heterogeneous key
+        QHash<QString, int> hash;
+        auto [it, inserted] = hash.try_emplace(HeterogeneousHashingType{u"Hello World"_s}, 242);
+        QCOMPARE_NE(it, hash.keyValueEnd());
+        QVERIFY(inserted);
+        QCOMPARE(it->second, 242);
+        QCOMPARE(hash.size(), 1);
+        QCOMPARE(it->first, u"Hello World"_s);
+
+        auto r = hash.tryEmplace(HeterogeneousHashingType{u"Uniquely"_s}, 1);
+        QCOMPARE_NE(r.iterator, hash.end());
+        QVERIFY(r.inserted);
+        QCOMPARE(*r.iterator, 1);
+        QCOMPARE(hash.size(), 2);
+        QCOMPARE(r.iterator.key(), u"Uniquely"_s);
+    }
+    // Overloads taking hint:
+    {
+        QHash<QString, int> hash;
+        auto it = hash.try_emplace(hash.end(), HeterogeneousHashingType{u"Hello World"_s}, 242);
+        QCOMPARE_NE(it, hash.keyValueEnd());
+        QCOMPARE(it->second, 242);
+        QCOMPARE(hash.size(), 1);
+        QCOMPARE(it->first, u"Hello World"_s);
+
+        it = hash.try_emplace(hash.begin(), u"Uniquely"_s, 1);
+        QCOMPARE_NE(it, hash.keyValueEnd());
+        QCOMPARE(it->second, 1);
+        QCOMPARE(hash.size(), 2);
+        QCOMPARE(it->first, u"Uniquely"_s);
+
+        QString cref = u"Uniquely"_s;
+        it = hash.try_emplace(hash.end(), cref, 16);
+        QCOMPARE_NE(it, hash.keyValueEnd());
+        QCOMPARE(it->second, 1);
+        QCOMPARE(hash.size(), 2);
+        QCOMPARE(it->first, u"Uniquely"_s);
     }
 }
 

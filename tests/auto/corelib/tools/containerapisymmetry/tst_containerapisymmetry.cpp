@@ -447,6 +447,14 @@ private Q_SLOTS:
     void opEqNaN_QSet_Float() { opEqNaN_impl<QSet<float>>(); }
     void opEqNaN_QSet_Float16() { opEqNaN_impl<QSet<qfloat16>>(); }
     void opEqNaN_QSet_Double() { opEqNaN_impl<QSet<double>>(); }
+
+private:
+    template <typename Container>
+    void try_emplace_impl() const;
+
+private Q_SLOTS:
+    void try_emplace_QHash() { try_emplace_impl<QHash<int, int>>(); }
+    void try_emplace_unordered_map() { try_emplace_impl<std::unordered_map<int, int>>(); }
 };
 
 void tst_ContainerApiSymmetry::init()
@@ -1304,6 +1312,33 @@ void tst_ContainerApiSymmetry::opEqNaN_impl() const
     const Container rhs {std::numeric_limits<V>::quiet_NaN()};
 
     QCOMPARE_NE(lhs, rhs);
+}
+
+template <typename Container>
+void tst_ContainerApiSymmetry::try_emplace_impl() const
+{
+    using K = typename Container::key_type;
+    using V = typename Container::mapped_type;
+    Container c;
+    auto p = c.try_emplace(K(), V());
+    QVERIFY(p.second);
+    QCOMPARE(p.first->first, K());
+    QCOMPARE(p.first->second, V());
+
+    auto it = c.try_emplace(c.begin(), K(), V());
+    QCOMPARE(it->first, K());
+    QCOMPARE(it->second, V());
+
+    K k{};
+    V v{};
+    p = c.try_emplace(k, v);
+    QVERIFY(!p.second);
+    QCOMPARE(p.first->first, K());
+    QCOMPARE(p.first->second, V());
+
+    it = c.try_emplace(c.begin(), k, v);
+    QCOMPARE(it->first, K());
+    QCOMPARE(it->second, V());
 }
 
 QTEST_APPLESS_MAIN(tst_ContainerApiSymmetry)

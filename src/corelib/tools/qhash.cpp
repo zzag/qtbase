@@ -2297,6 +2297,114 @@ size_t qHash(long double key, size_t seed) noexcept
     \include qhash.cpp qhash-iterator-invalidation-func-desc
 */
 
+/*!
+    \class QHash::TryEmplaceResult
+    \inmodule QtCore
+    \since 6.9
+    \ingroup tools
+    \brief The TryEmplaceResult class is used to represent the result of a tryEmplace operation.
+
+    The \c{TryEmplaceResult} class is used in QHash to represent the result
+    of a tryEmplace operation. It holds an \l{iterator} to the newly
+    created item, or to the pre-existing item that prevented the insertion, and
+    a boolean, \l{inserted}, denoting whether the insertion took place.
+
+    \sa QHash, QHash::tryEmplace()
+*/
+
+/*!
+    \variable QHash::TryEmplaceResult::iterator
+
+    Holds the iterator to the newly inserted element, or the element that
+    prevented the insertion.
+*/
+
+/*!
+    \variable QHash::TryEmplaceResult::inserted
+
+    This value is \c{false} if there was already an entry with the same key.
+*/
+
+/*!
+    \fn template <class Key, class T> template <typename... Args> QHash<Key, T>::TryEmplaceResult QHash<Key, T>::tryEmplace(const Key &key, Args &&...args)
+    \fn template <class Key, class T> template <typename... Args> QHash<Key, T>::TryEmplaceResult QHash<Key, T>::tryEmplace(Key &&key, Args &&...args)
+    \fn template <class Key, class T> template <typename K, typename... Args, if_heterogeneously_searchable<K> = true, if_key_constructible_from<K> = true> QHash<Key, T>::TryEmplaceResult QHash<Key, T>::tryEmplace(K &&key, Args &&...args)
+    \since 6.9
+
+    Inserts a new item with the \a key and a value constructed from \a args.
+    If an item with \a key already exists, no insertion takes place.
+
+    Returns an instance of \l{TryEmplaceResult}, a structure that holds an
+    \l{QHash::TryEmplaceResult::}{iterator} to the newly created item, or
+    to the pre-existing item that prevented the insertion, and a boolean,
+    \l{QHash::TryEmplaceResult::}{inserted}, denoting whether the insertion
+    took place.
+
+    For example, this can be used to avoid the pattern of comparing old and
+    new size or double-lookups. Where you might previously have written code like:
+
+    \code
+    QHash<int, MyType> hash;
+    // [...]
+    int myKey = getKey();
+    qsizetype oldSize = hash.size();
+    MyType &elem = hash[myKey];
+    if (oldSize != hash.size()) // Size changed: new element!
+        initialize(elem);
+    // [use elem...]
+    \endcode
+
+    You can instead write:
+
+    \code
+    QHash<int, MyType> hash;
+    // [...]
+    int myKey = getKey();
+    auto result = hash.tryEmplace(myKey);
+    if (result.inserted) // New element!
+        initialize(*result.iterator);
+    // [use result.iterator...]
+    \endcode
+
+    \sa emplace()
+*/
+
+/*!
+    \fn template <class Key, class T> template <typename K, typename... Args, if_heterogeneously_searchable<K> = true, if_key_constructible_from<K> = true> QHash<Key, T>::try_emplace(const_iterator hint, K &&key, Args &&...args)
+    \fn template <class Key, class T> template <typename... Args> iterator QHash<Key, T>::try_emplace(const_iterator hint, const Key &key, Args &&...args)
+    \fn template <class Key, class T> template <typename... Args> iterator QHash<Key, T>::try_emplace(const_iterator hint, Key &&key, Args &&...args)
+    \since 6.9
+
+    Inserts a new item with the \a key and a value constructed from \a args.
+    If an item with \a key already exists, no insertion takes place.
+
+    Returns the iterator of the inserted item, or to the item that prevented the
+    insertion.
+
+    \a hint is ignored.
+
+    These functions are provided for compatibility with the standard library.
+
+    \sa emplace(), tryEmplace()
+*/
+
+/*!
+    \fn template <class Key, class T> template <typename... Args> std::pair<iterator, bool> QHash<Key, T>::try_emplace(const Key &key, Args &&...args)
+    \fn template <class Key, class T> template <typename... Args> std::pair<iterator, bool> QHash<Key, T>::try_emplace(Key &&key, Args &&...args)
+    \fn template <class Key, class T> template <typename K, typename... Args, if_heterogeneously_searchable<K> = true, if_key_constructible_from<K> = true> QHash<Key, T>::try_emplace(K &&key, Args &&...args)
+    \since 6.9
+
+    Inserts a new item with the \a key and a value constructed from \a args.
+    If an item with \a key already exists, no insertion takes place.
+
+    Returns a pair consisting of an iterator to the inserted item (or to the
+    item that prevented the insertion), and a bool denoting whether the
+    insertion took place.
+
+    These functions are provided for compatibility with the standard library.
+
+    \sa emplace(), tryEmplace()
+*/
 
 /*! \fn template <class Key, class T> void QHash<Key, T>::insert(const QHash &other)
     \since 5.15
