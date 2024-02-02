@@ -699,6 +699,12 @@ qt_feature("direct2d1_1" PRIVATE
     LABEL "Direct 2D 1.1"
     CONDITION QT_FEATURE_direct2d AND TEST_d2d1_1
 )
+qt_feature("emojisegmenter" PUBLIC PRIVATE
+    SECTION "Fonts"
+    LABEL "Emoji Segmenter"
+    PURPOSE "Supports parsing complex emoji sequences for better font resolution."
+)
+qt_feature_definition("emojisegmenter" "QT_NO_EMOJISEGMENTER" NEGATE VALUE "1")
 qt_feature("evdev" PRIVATE
     LABEL "evdev"
     CONDITION QT_FEATURE_thread AND TEST_evdev
@@ -1299,6 +1305,7 @@ qt_feature("wayland" PUBLIC
 
 qt_configure_add_summary_section(NAME "Qt Gui")
 qt_configure_add_summary_entry(ARGS "accessibility")
+qt_configure_add_summary_entry(ARGS "emojisegmenter")
 qt_configure_add_summary_entry(ARGS "freetype")
 qt_configure_add_summary_entry(ARGS "system-freetype")
 qt_configure_add_summary_entry(ARGS "harfbuzz")
