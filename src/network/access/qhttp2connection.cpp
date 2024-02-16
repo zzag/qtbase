@@ -908,10 +908,10 @@ QHttp2Stream *QHttp2Connection::createStreamInternal_impl(quint32 streamID)
         return nullptr;
     }
 
-    qsizetype numStreams = m_streams.size();
-    QPointer<QHttp2Stream> &stream = m_streams[streamID];
-    if (numStreams == m_streams.size()) // stream already existed
+    auto result = m_streams.tryEmplace(streamID, nullptr);
+    if (!result.inserted)
         return nullptr;
+    QPointer<QHttp2Stream> &stream = result.iterator.value();
     stream = new QHttp2Stream(this, streamID);
     stream->m_recvWindow = streamInitialReceiveWindowSize;
     stream->m_sendWindow = streamInitialSendWindowSize;
@@ -919,7 +919,8 @@ QHttp2Stream *QHttp2Connection::createStreamInternal_impl(quint32 streamID)
     connect(stream, &QHttp2Stream::uploadBlocked, this, [this, stream] {
         m_blockedStreams.insert(stream->streamID());
     });
-    return stream;
+    *result.iterator = stream;
+    return *result.iterator;
 }
 
 qsizetype QHttp2Connection::numActiveStreamsImpl(quint32 mask) const noexcept
