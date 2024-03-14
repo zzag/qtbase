@@ -1852,12 +1852,10 @@ bool QFileSystemEngine::moveFileToTrash(const QFileSystemEntry &source,
 
 //static
 bool QFileSystemEngine::setPermissions(const QFileSystemEntry &entry,
-                                       QFile::Permissions permissions, QSystemError &error,
-                                       QFileSystemMetaData *data)
+                                       QFile::Permissions permissions, QSystemError &error)
 {
     Q_CHECK_FILE_NAME(entry, false);
 
-    Q_UNUSED(data);
     int mode = 0;
 
     if (permissions & (QFile::ReadOwner | QFile::ReadUser | QFile::ReadGroup | QFile::ReadOther))
