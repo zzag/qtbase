@@ -383,13 +383,13 @@ void QFontPrivate::unsetFeature(QFont::Tag tag)
 QFontEngineData::QFontEngineData()
     : ref(0), fontCacheId(QFontCache::instance()->id())
 {
-    memset(engines, 0, QChar::ScriptCount * sizeof(QFontEngine *));
+    memset(engines, 0, QFontDatabasePrivate::ScriptCount * sizeof(QFontEngine *));
 }
 
 QFontEngineData::~QFontEngineData()
 {
     Q_ASSERT(ref.loadRelaxed() == 0);
-    for (int i = 0; i < QChar::ScriptCount; ++i) {
+    for (int i = 0; i < QFontDatabasePrivate::ScriptCount; ++i) {
         if (engines[i]) {
             if (!engines[i]->ref.deref())
                 delete engines[i];
@@ -2681,8 +2681,10 @@ void QFont::clearFeatures()
     d->features.clear();
 }
 
-extern QStringList qt_fallbacksForFamily(const QString &family, QFont::Style style,
-                                         QFont::StyleHint styleHint, QChar::Script script);
+extern QStringList qt_fallbacksForFamily(const QString &family,
+                                         QFont::Style style,
+                                         QFont::StyleHint styleHint,
+                                         QFontDatabasePrivate::ExtendedScript script);
 
 /*!
     \fn QString QFont::defaultFamily() const
@@ -2694,8 +2696,10 @@ extern QStringList qt_fallbacksForFamily(const QString &family, QFont::Style sty
 */
 QString QFont::defaultFamily() const
 {
-    const QStringList fallbacks = qt_fallbacksForFamily(QString(), QFont::StyleNormal
-                                      , QFont::StyleHint(d->request.styleHint), QChar::Script_Common);
+    const QStringList fallbacks = qt_fallbacksForFamily(QString(),
+                                                        QFont::StyleNormal,
+                                                        QFont::StyleHint(d->request.styleHint),
+                                                        QFontDatabasePrivate::Script_Common);
     if (!fallbacks.isEmpty())
         return fallbacks.first();
     return QString();
@@ -3402,7 +3406,7 @@ void QFontCache::clear()
                                  end = engineDataCache.end();
         while (it != end) {
             QFontEngineData *data = it.value();
-            for (int i = 0; i < QChar::ScriptCount; ++i) {
+            for (int i = 0; i < QFontDatabasePrivate::ScriptCount; ++i) {
                 if (data->engines[i]) {
                     if (!data->engines[i]->ref.deref()) {
                         Q_ASSERT(engineCacheCount.value(data->engines[i]) == 0);

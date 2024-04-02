@@ -1747,7 +1747,7 @@ QFontEngineMulti::~QFontEngineMulti()
     }
 }
 
-QStringList qt_fallbacksForFamily(const QString &family, QFont::Style style, QFont::StyleHint styleHint, QChar::Script script);
+QStringList qt_fallbacksForFamily(const QString &family, QFont::Style style, QFont::StyleHint styleHint, QFontDatabasePrivate::ExtendedScript script);
 
 void QFontEngineMulti::ensureFallbackFamiliesQueried()
 {
@@ -1757,7 +1757,7 @@ void QFontEngineMulti::ensureFallbackFamiliesQueried()
 
     setFallbackFamiliesList(qt_fallbacksForFamily(fontDef.families.constFirst(),
                                                   QFont::Style(fontDef.style), styleHint,
-                                                  QChar::Script(m_script)));
+                                                  QFontDatabasePrivate::ExtendedScript(m_script)));
 }
 
 void QFontEngineMulti::setFallbackFamiliesList(const QStringList &fallbackFamilies)
@@ -1805,7 +1805,7 @@ QFontEngine *QFontEngineMulti::loadEngine(int at)
     // info about the actual script of the characters may have been discarded,
     // so we do not check for writing system support, but instead just load
     // the family indiscriminately.
-    if (QFontEngine *engine = QFontDatabasePrivate::findFont(request, QChar::Script_Common)) {
+    if (QFontEngine *engine = QFontDatabasePrivate::findFont(request, QFontDatabasePrivate::Script_Common)) {
         engine->fontDef.weight = request.weight;
         if (request.style > QFont::StyleNormal)
             engine->fontDef.style = request.style;
@@ -2381,7 +2381,7 @@ QFontEngine *QFontEngineMulti::createMultiFontEngine(QFontEngine *fe, int script
         ++it;
     }
     if (!engine) {
-        engine = QGuiApplicationPrivate::instance()->platformIntegration()->fontDatabase()->fontEngineMulti(fe, QChar::Script(script));
+        engine = QGuiApplicationPrivate::instance()->platformIntegration()->fontDatabase()->fontEngineMulti(fe, QFontDatabasePrivate::ExtendedScript(script));
         fc->insertEngine(key, engine, /* insertMulti */ !faceIsLocal);
     }
     Q_ASSERT(engine);

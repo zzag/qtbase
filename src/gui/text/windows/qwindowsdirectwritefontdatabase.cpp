@@ -138,9 +138,9 @@ void QWindowsDirectWriteFontDatabase::populateFamily(const QString &familyName)
         for (uint j = 0; j < matchingFonts->GetFontCount(); ++j) {
             DirectWriteScope<IDWriteFont> font;
             if (SUCCEEDED(matchingFonts->GetFont(j, &font))) {
-                DirectWriteScope<IDWriteFont1> font1;
-                if (!SUCCEEDED(font->QueryInterface(__uuidof(IDWriteFont1),
-                                                   reinterpret_cast<void **>(&font1)))) {
+                DirectWriteScope<IDWriteFont2> font2;
+                if (!SUCCEEDED(font->QueryInterface(__uuidof(IDWriteFont2),
+                                                   reinterpret_cast<void **>(&font2)))) {
                     qCWarning(lcQpaFonts) << "COM object does not support IDWriteFont1";
                     continue;
                 }
@@ -149,7 +149,7 @@ void QWindowsDirectWriteFontDatabase::populateFamily(const QString &familyName)
                 QString englishLocaleFamilyName;
 
                 DirectWriteScope<IDWriteFontFamily> fontFamily2;
-                if (SUCCEEDED(font1->GetFontFamily(&fontFamily2))) {
+                if (SUCCEEDED(font2->GetFontFamily(&fontFamily2))) {
                     DirectWriteScope<IDWriteLocalizedStrings> names;
                     if (SUCCEEDED(fontFamily2->GetFamilyNames(&names))) {
                         defaultLocaleFamilyName = hasDefaultLocale ? localeString(*names, defaultLocale) : QString();
@@ -162,14 +162,15 @@ void QWindowsDirectWriteFontDatabase::populateFamily(const QString &familyName)
 
                 {
                     DirectWriteScope<IDWriteLocalizedStrings> names;
-                    if (SUCCEEDED(font1->GetFaceNames(&names))) {
+                    if (SUCCEEDED(font2->GetFaceNames(&names))) {
                         QString defaultLocaleStyleName = hasDefaultLocale ? localeString(*names, defaultLocale) : QString();
                         QString englishLocaleStyleName = localeString(*names, englishLocale);
 
-                        QFont::Stretch stretch = fromDirectWriteStretch(font1->GetStretch());
-                        QFont::Style style = fromDirectWriteStyle(font1->GetStyle());
-                        QFont::Weight weight = fromDirectWriteWeight(font1->GetWeight());
-                        bool fixed = font1->IsMonospacedFont();
+                        QFont::Stretch stretch = fromDirectWriteStretch(font2->GetStretch());
+                        QFont::Style style = fromDirectWriteStyle(font2->GetStyle());
+                        QFont::Weight weight = fromDirectWriteWeight(font2->GetWeight());
+                        bool fixed = font2->IsMonospacedFont();
+                        bool color = font2->IsColorFont();
 
                         qCDebug(lcQpaFonts) << "Family" << familyName << "has english variant" << englishLocaleStyleName << ", in default locale:" << defaultLocaleStyleName << stretch << style << weight << fixed;
 
@@ -190,6 +191,7 @@ void QWindowsDirectWriteFontDatabase::populateFamily(const QString &familyName)
                                                                     scalable,
                                                                     size,
                                                                     fixed,
+                                                                    color,
                                                                     writingSystems,
                                                                     new FontHandle(*face, englishLocaleFamilyName));
                             }
@@ -205,6 +207,7 @@ void QWindowsDirectWriteFontDatabase::populateFamily(const QString &familyName)
                                                                     scalable,
                                                                     size,
                                                                     fixed,
+                                                                    color,
                                                                     writingSystems,
                                                                     new FontHandle(*face, defaultLocaleFamilyName));
                             }
@@ -290,18 +293,20 @@ bool QWindowsDirectWriteFontDatabase::populateFamilyAliases(const QString &missi
                     DirectWriteScope<IDWriteFont> font;
                     if (SUCCEEDED(fontCollection->GetFontFromFontFace(*directWriteFontFace, &font))) {
 
-                        DirectWriteScope<IDWriteFont1> font1;
-                        if (SUCCEEDED(font->QueryInterface(__uuidof(IDWriteFont1),
-                                                           reinterpret_cast<void **>(&font1)))) {
+                        DirectWriteScope<IDWriteFont2> font2;
+                        if (SUCCEEDED(font->QueryInterface(__uuidof(IDWriteFont2),
+                                                           reinterpret_cast<void **>(&font2)))) {
                             DirectWriteScope<IDWriteLocalizedStrings> names;
-                            if (SUCCEEDED(font1->GetFaceNames(&names))) {
+                            if (SUCCEEDED(font2->GetFaceNames(&names))) {
                                 wchar_t englishLocale[] = L"en-us";
                                 QString englishLocaleStyleName = localeString(*names, englishLocale);
 
-                                QFont::Stretch stretch = fromDirectWriteStretch(font1->GetStretch());
-                                QFont::Style style = fromDirectWriteStyle(font1->GetStyle());
-                                QFont::Weight weight = fromDirectWriteWeight(font1->GetWeight());
-                                bool fixed = font1->IsMonospacedFont();
+                                QFont::Stretch stretch = fromDirectWriteStretch(font2->GetStretch());
+                                QFont::Style style = fromDirectWriteStyle(font2->GetStyle());
+                                QFont::Weight weight = fromDirectWriteWeight(font2->GetWeight());
+                                bool fixed = font2->IsMonospacedFont();
+                                bool isColorFont = font2->IsColorFont();
+
 
                                 QSupportedWritingSystems writingSystems = supportedWritingSystems(*directWriteFontFace);
 
@@ -316,6 +321,7 @@ bool QWindowsDirectWriteFontDatabase::populateFamilyAliases(const QString &missi
                                                                     true,
                                                                     0xffff,
                                                                     fixed,
+                                                                    isColorFont,
                                                                     writingSystems,
                                                                     new FontHandle(*directWriteFontFace, missingFamily));
 
@@ -407,9 +413,13 @@ QFontEngine *QWindowsDirectWriteFontDatabase::fontEngine(const QFontDef &fontDef
     return fontEngine;
 }
 
-QStringList QWindowsDirectWriteFontDatabase::fallbacksForFamily(const QString &family, QFont::Style style, QFont::StyleHint styleHint, QChar::Script script) const
+QStringList QWindowsDirectWriteFontDatabase::fallbacksForFamily(const QString &family,
+                                                                QFont::Style style,
+                                                                QFont::StyleHint styleHint,
+                                                                QFontDatabasePrivate::ExtendedScript script) const
 {
     QStringList result;
+    result.append(QWindowsFontDatabaseBase::familiesForScript(script));
     result.append(familyForStyleHint(styleHint));
     result.append(extraTryFontsForFamily(family));
     result.append(QPlatformFontDatabase::fallbacksForFamily(family, style, styleHint, script));
@@ -516,6 +526,7 @@ QStringList QWindowsDirectWriteFontDatabase::addApplicationFont(const QByteArray
             QFont::Style style = fromDirectWriteStyle(face3->GetStyle());
             QFont::Weight weight = fromDirectWriteWeight(face3->GetWeight());
             bool fixed = face3->IsMonospacedFont();
+            bool color = face3->IsColorFont();
 
             qCDebug(lcQpaFonts) << "\tFont names:" << englishLocaleFamilyName << ", " << defaultLocaleFamilyName
                                 << ", style names:" << englishLocaleStyleName << ", " << defaultLocaleStyleName
@@ -545,6 +556,7 @@ QStringList QWindowsDirectWriteFontDatabase::addApplicationFont(const QByteArray
                                                     scalable,
                                                     size,
                                                     fixed,
+                                                    color,
                                                     writingSystems,
                                                     new FontHandle(face, englishLocaleFamilyName));
             }
@@ -570,6 +582,7 @@ QStringList QWindowsDirectWriteFontDatabase::addApplicationFont(const QByteArray
                                                     scalable,
                                                     size,
                                                     fixed,
+                                                    color,
                                                     writingSystems,
                                                     new FontHandle(face, defaultLocaleFamilyName));
             }
@@ -595,6 +608,7 @@ QStringList QWindowsDirectWriteFontDatabase::addApplicationFont(const QByteArray
                                                     scalable,
                                                     size,
                                                     fixed,
+                                                    color,
                                                     writingSystems,
                                                     new FontHandle(face, englishLocaleGdiCompatibleFamilyName));
             }
@@ -620,6 +634,7 @@ QStringList QWindowsDirectWriteFontDatabase::addApplicationFont(const QByteArray
                                                     scalable,
                                                     size,
                                                     fixed,
+                                                    color,
                                                     writingSystems,
                                                     new FontHandle(face, defaultLocaleGdiCompatibleFamilyName));
             }
@@ -645,6 +660,7 @@ QStringList QWindowsDirectWriteFontDatabase::addApplicationFont(const QByteArray
                                                     scalable,
                                                     size,
                                                     fixed,
+                                                    color,
                                                     writingSystems,
                                                     new FontHandle(face, englishLocaleTypographicFamilyName));
             }
@@ -670,6 +686,7 @@ QStringList QWindowsDirectWriteFontDatabase::addApplicationFont(const QByteArray
                                                     scalable,
                                                     size,
                                                     fixed,
+                                                    color,
                                                     writingSystems,
                                                     new FontHandle(face, defaultLocaleTypographicFamilyName));
             }
