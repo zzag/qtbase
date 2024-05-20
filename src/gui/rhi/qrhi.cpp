@@ -1069,6 +1069,11 @@ Q_STATIC_LOGGING_CATEGORY(QRHI_LOG_RUB, "qt.rhi.rub")
     specification of the shading rate is supported via regular textures. In
     practice this may be supported with Direct 3D 12 and Vulkan. This enum value
     has been introduced in Qt 6.9.
+
+    \value PerRenderTargetBlending Indicates that per rendertarget blending is
+    supported i.e. different render targets in MRT framebuffer can have different
+    blending modes. Currently always returns false for OpenGL.
+    This enum value has been introduced in Qt 6.9.
  */
 
 /*!

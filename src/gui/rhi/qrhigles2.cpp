@@ -1117,6 +1117,7 @@ bool QRhiGles2::create(QRhi::Flags flags)
     }
 
     caps.unpackRowLength = !caps.gles || caps.ctxMajor >= 3;
+    caps.perRenderTargetBlending = false;
 
     nativeHandlesStruct.context = ctx;
 
@@ -1507,6 +1508,8 @@ bool QRhiGles2::isFeatureSupported(QRhi::Feature feature) const
     case QRhi::VariableRateShadingMap:
     case QRhi::VariableRateShadingMapWithTexture:
         return false;
+    case QRhi::PerRenderTargetBlending:
+        return caps.perRenderTargetBlending;
     default:
         Q_UNREACHABLE_RETURN(false);
     }

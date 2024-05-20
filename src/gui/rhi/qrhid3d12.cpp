@@ -807,6 +807,8 @@ bool QRhiD3D12::isFeatureSupported(QRhi::Feature feature) const
     case QRhi::VariableRateShadingMap:
     case QRhi::VariableRateShadingMapWithTexture:
         return caps.vrsMap;
+    case QRhi::PerRenderTargetBlending:
+        return true;
     }
     return false;
 }

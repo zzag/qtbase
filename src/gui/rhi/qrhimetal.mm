@@ -867,6 +867,8 @@ bool QRhiMetal::isFeatureSupported(QRhi::Feature feature) const
         return caps.shadingRateMap;
     case QRhi::VariableRateShadingMapWithTexture:
         return false;
+    case QRhi::PerRenderTargetBlending:
+        return true;
     default:
         Q_UNREACHABLE();
         return false;

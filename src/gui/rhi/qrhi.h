@@ -1907,7 +1907,8 @@ public:
         ResolveDepthStencil,
         VariableRateShading,
         VariableRateShadingMap,
-        VariableRateShadingMapWithTexture
+        VariableRateShadingMapWithTexture,
+        PerRenderTargetBlending,
     };
 
     enum BeginFrameFlag {

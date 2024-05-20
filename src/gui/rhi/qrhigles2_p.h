@@ -1025,7 +1025,8 @@ public:
               objectLabel(false),
               glesMultisampleRenderToTexture(false),
               glesMultiviewMultisampleRenderToTexture(false),
-              unpackRowLength(false)
+              unpackRowLength(false),
+              perRenderTargetBlending(false)
         { }
         int ctxMajor;
         int ctxMinor;
@@ -1085,6 +1086,7 @@ public:
         uint glesMultisampleRenderToTexture : 1;
         uint glesMultiviewMultisampleRenderToTexture : 1;
         uint unpackRowLength : 1;
+        uint perRenderTargetBlending : 1;
     } caps;
     QGles2SwapChain *currentSwapChain = nullptr;
     QSet<GLint> supportedCompressedFormats;
