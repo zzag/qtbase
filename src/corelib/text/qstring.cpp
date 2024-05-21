@@ -9340,14 +9340,11 @@ static QString argToQStringImpl(StringView pattern, size_t numArgs, const QtPriv
     return result;
 }
 
-QString QtPrivate::argToQString(QStringView pattern, size_t n, const ArgBase **args)
+QString QtPrivate::argToQString(QAnyStringView pattern, size_t n, const ArgBase **args)
 {
-    return argToQStringImpl(pattern, n, args);
-}
-
-QString QtPrivate::argToQString(QLatin1StringView pattern, size_t n, const ArgBase **args)
-{
-    return argToQStringImpl(pattern, n, args);
+    return pattern.visit([n, args](auto pattern) {
+        return argToQStringImpl(pattern, n, args);
+    });
 }
 
 /*! \fn bool QString::isRightToLeft() const

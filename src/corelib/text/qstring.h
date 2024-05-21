@@ -1587,11 +1587,14 @@ struct QLatin1StringArg : ArgBase {
     constexpr explicit QLatin1StringArg(QLatin1StringView v) noexcept : ArgBase{L1}, string{v} {}
 };
 
+#if QT_CORE_REMOVED_SINCE(6, 9)
 [[nodiscard]] Q_CORE_EXPORT QString argToQString(QStringView pattern, size_t n, const ArgBase **args);
 [[nodiscard]] Q_CORE_EXPORT QString argToQString(QLatin1StringView pattern, size_t n, const ArgBase **args);
+#endif
+[[nodiscard]] Q_CORE_EXPORT QString argToQString(QAnyStringView pattern, size_t n, const ArgBase **args);
 
-template <typename StringView, typename...Args>
-[[nodiscard]] Q_ALWAYS_INLINE QString argToQStringDispatch(StringView pattern, const Args &...args)
+template <typename...Args>
+[[nodiscard]] Q_ALWAYS_INLINE QString argToQStringDispatch(QAnyStringView pattern, const Args &...args)
 {
     const ArgBase *argBases[] = {&args..., /* avoid zero-sized array */ nullptr};
     return QtPrivate::argToQString(pattern, sizeof...(Args), argBases);
