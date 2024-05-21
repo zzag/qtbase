@@ -279,6 +279,8 @@ public:
     constexpr void chop(qsizetype n)
     { verify(0, n); setSize(size() - n); }
 
+    template <typename...Args>
+    [[nodiscard]] inline QString arg(Args &&...args) const;
 
     [[nodiscard]] inline QString toString() const; // defined in qstring.h
 

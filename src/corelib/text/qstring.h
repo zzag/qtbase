@@ -1621,6 +1621,19 @@ QString QLatin1StringView::arg(Args &&...args) const
     return QtPrivate::argToQStringDispatch(*this, QtPrivate::qStringLikeToArg(args)...);
 }
 
+template <bool HasChar8T>
+template <typename...Args>
+QString QBasicUtf8StringView<HasChar8T>::arg(Args &&...args) const
+{
+    return QtPrivate::argToQStringDispatch(*this, QtPrivate::qStringLikeToArg(args)...);
+}
+
+template <typename...Args>
+QString QAnyStringView::arg(Args &&...args) const
+{
+    return QtPrivate::argToQStringDispatch(*this, QtPrivate::qStringLikeToArg(args)...);
+}
+
 template <typename T>
 qsizetype erase(QString &s, const T &t)
 {

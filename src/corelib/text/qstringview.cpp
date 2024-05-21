@@ -505,6 +505,7 @@ QT_BEGIN_NAMESPACE
     \fn template <typename...Args> QString QString::arg(Args &&...args) const
     \since 5.14
 
+//![qstring-multi-arg]
     Replaces occurrences of \c{%N} in this string with the corresponding
     argument from \a args. The arguments are not positional: the first of
     the \a args replaces the \c{%N} with the lowest \c{N} (all of them), the
@@ -514,6 +515,7 @@ QT_BEGIN_NAMESPACE
     QStringView or QLatin1StringView.
 
     In addition, the following types are also supported: QChar, QLatin1Char.
+//![qstring-multi-arg]
 
     \sa QString::arg()
 */
