@@ -558,8 +558,18 @@ private Q_SLOTS:
     void arg1_QString_QStringView() { arg1_impl<QString, QStringView>(); }
     void arg1_QString_QLatin1StringView_data() { arg1_data(); }
     void arg1_QString_QLatin1StringView() { arg1_impl<QString, QLatin1StringView>(); }
+    void arg1_QString_QUtf8StringView_data() { arg1_data(); }
+    void arg1_QString_QUtf8StringView() { arg1_impl<QString, QUtf8StringView>(); }
+    void arg1_QString_QAnyStringViewUsingL1_data() { arg1_data(); }
+    void arg1_QString_QAnyStringViewUsingL1() { arg1_impl<QString, QAnyStringViewUsingL1>(); }
+    void arg1_QString_QAnyStringViewUsingU8_data() { arg1_data(); }
+    void arg1_QString_QAnyStringViewUsingU8() { arg1_impl<QString, QAnyStringViewUsingU8>(); }
+    void arg1_QString_QAnyStringViewUsingU16_data() { arg1_data(); }
+    void arg1_QString_QAnyStringViewUsingU16() { arg1_impl<QString, QAnyStringViewUsingU16>(); }
     void arg1_QString_QByteArray_data() { arg1_data(); }
     void arg1_QString_QByteArray() { arg1_impl<QString, QByteArray>(); }
+    void arg1_QString_QByteArrayView_data() { arg1_data(); }
+    void arg1_QString_QByteArrayView() { arg1_impl<QString, QByteArrayView>(); }
     void arg1_QString_const_char_star_data() { arg1_data(); }
     void arg1_QString_const_char_star() { arg1_impl<QString, const char*>(); }
     void arg1_QString_const_char8_t_star_data() { arg1_data(); }
@@ -576,8 +586,6 @@ private Q_SLOTS:
     void arg1_QString_QLatin1Char() { arg1_impl<QString, QLatin1Char>(); }
     void arg1_QString_char16_t_data() { arg1_data(false); }
     void arg1_QString_char16_t() {
-        QEXPECT_FAIL("%1/a", "QTBUG-125588", Continue);
-        QEXPECT_FAIL("%1/ä", "QTBUG-125588", Continue);
         arg1_impl<QString, char16_t>();
     }
 
