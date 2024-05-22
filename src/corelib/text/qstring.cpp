@@ -9113,8 +9113,8 @@ static qsizetype resolveStringRefsAndReturnTotalSize(ParseResult &parts, const A
                 case ArgBase::L1:
                     part.reset(static_cast<const QLatin1StringArg&>(arg).string);
                     break;
-                case ArgBase::U8:
-                    Q_UNREACHABLE(); // waiting for QUtf8String...
+                case ArgBase::Any:
+                    part.reset(static_cast<const QAnyStringArg&>(arg).string);
                     break;
                 case ArgBase::U16:
                     part.reset(static_cast<const QStringViewArg&>(arg).string);

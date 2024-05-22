@@ -337,12 +337,6 @@ private:
     QString arg_impl(double a, int fieldWidth, char format, int precision, QChar fillChar) const;
     QString arg_impl(QAnyStringView a, int fieldWidth, QChar fillChar) const;
 
-    template <typename T>
-    using is_convertible_to_view_or_qstring = std::disjunction<
-            std::is_convertible<T, QString>,
-            std::is_convertible<T, QStringView>,
-            std::is_convertible<T, QLatin1StringView>
-        >;
 public:
     template <typename...Args>
     [[nodiscard]]
@@ -350,10 +344,7 @@ public:
     QString
 #else
     typename std::enable_if<
-        sizeof...(Args) >= 2 && std::is_same<
-            QtPrivate::BoolList<is_convertible_to_view_or_qstring<Args>::value..., true>,
-            QtPrivate::BoolList<true, is_convertible_to_view_or_qstring<Args>::value...>
-        >::value,
+        sizeof...(Args) >= 2 && std::conjunction_v<is_string_like<Args>...>,
         QString
     >::type
 #endif
@@ -1644,7 +1635,7 @@ inline QString &&asString(QString &&s)              { return std::move(s); }
 namespace QtPrivate {
 
 struct ArgBase {
-    enum Tag : uchar { L1, U8, U16 } tag;
+    enum Tag : uchar { L1, Any, U16 } tag;
 };
 
 struct QStringViewArg : ArgBase {
@@ -1657,6 +1648,12 @@ struct QLatin1StringArg : ArgBase {
     QLatin1StringView string;
     QLatin1StringArg() = default;
     constexpr explicit QLatin1StringArg(QLatin1StringView v) noexcept : ArgBase{L1}, string{v} {}
+};
+
+struct QAnyStringArg : ArgBase {
+    QAnyStringView string;
+    QAnyStringArg() = default;
+    constexpr explicit QAnyStringArg(QAnyStringView v) noexcept : ArgBase{Any}, string{v} {}
 };
 
 #if QT_CORE_REMOVED_SINCE(6, 9)
@@ -1672,10 +1669,7 @@ template <typename...Args>
     return QtPrivate::argToQString(pattern, sizeof...(Args), argBases);
 }
 
-          inline QStringViewArg   qStringLikeToArg(const QString &s) noexcept { return QStringViewArg{qToStringViewIgnoringNull(s)}; }
-constexpr inline QStringViewArg   qStringLikeToArg(QStringView s) noexcept { return QStringViewArg{s}; }
-          inline QStringViewArg   qStringLikeToArg(const QChar &c) noexcept { return QStringViewArg{QStringView{&c, 1}}; }
-constexpr inline QLatin1StringArg qStringLikeToArg(QLatin1StringView s) noexcept { return QLatin1StringArg{s}; }
+constexpr inline QAnyStringArg qStringLikeToArg(QAnyStringView s) noexcept { return QAnyStringArg{s}; }
 
 } // namespace QtPrivate
 
