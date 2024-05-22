@@ -20,6 +20,9 @@
 #include <array>
 
 QT_BEGIN_NAMESPACE
+
+using namespace Qt::StringLiterals;
+
 namespace {
 struct ContentEncodingMapping
 {
