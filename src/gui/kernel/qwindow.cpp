@@ -1662,7 +1662,7 @@ void QWindow::setX(int arg)
 {
     Q_D(QWindow);
     if (x() != arg)
-        setGeometry(QRect(arg, y(), width(), height()));
+        setPosition(QPoint(arg, y()));
     else
         d->positionAutomatic = false;
 }
@@ -1675,7 +1675,7 @@ void QWindow::setY(int arg)
 {
     Q_D(QWindow);
     if (y() != arg)
-        setGeometry(QRect(x(), arg, width(), height()));
+        setPosition(QPoint(x(), arg));
     else
         d->positionAutomatic = false;
 }
@@ -1941,7 +1941,7 @@ void QWindow::setFramePosition(const QPoint &point)
     d->positionPolicy = QWindowPrivate::WindowFrameInclusive;
     d->positionAutomatic = false;
     if (d->platformWindow) {
-        d->platformWindow->setGeometry(QHighDpi::toNativeWindowGeometry(QRect(point, size()), this));
+        d->platformWindow->move(QHighDpi::toNativeWindowGeometry(point, this));
     } else {
         d->geometry.moveTopLeft(point);
     }
@@ -1963,7 +1963,27 @@ void QWindow::setFramePosition(const QPoint &point)
 */
 void QWindow::setPosition(const QPoint &pt)
 {
-    setGeometry(QRect(pt, size()));
+    Q_D(QWindow);
+
+    d->positionAutomatic = false;
+    const QPoint oldPosition = position();
+    if (pt == oldPosition)
+        return;
+
+    d->positionPolicy = QWindowPrivate::WindowFrameExclusive;
+    if (d->platformWindow) {
+        QScreen *newScreen = d->screenForGeometry(QRect(pt, size()));
+        if (newScreen && isTopLevel())
+            d->setTopLevelScreen(newScreen, true);
+        d->platformWindow->move(QHighDpi::toNativeWindowGeometry(pt, this));
+    } else {
+        d->geometry.moveTopLeft(pt);
+
+        if (pt.x() != oldPosition.x())
+            emit xChanged(pt.x());
+        if (pt.y() != oldPosition.y())
+            emit yChanged(pt.y());
+    }
 }
 
 /*!
@@ -2024,8 +2044,7 @@ void QWindow::resize(const QSize &newSize)
 
     d->positionPolicy = QWindowPrivate::WindowFrameExclusive;
     if (d->platformWindow) {
-        d->platformWindow->setGeometry(
-            QHighDpi::toNativeWindowGeometry(QRect(position(), newSize), this));
+        d->platformWindow->resize(QHighDpi::toNativeWindowGeometry(newSize, this));
     } else {
         d->geometry.setSize(newSize);
         if (newSize.width() != oldSize.width())

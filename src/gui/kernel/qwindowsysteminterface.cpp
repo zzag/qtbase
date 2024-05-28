@@ -307,6 +307,56 @@ QT_DEFINE_QPA_EVENT_HANDLER(void, handleGeometryChange, QWindow *window, const Q
     handleWindowSystemEvent<QWindowSystemInterfacePrivate::GeometryChangeEvent, Delivery>(window, newRectDi);
 }
 
+QWindowSystemInterfacePrivate::PositionChangeEvent::PositionChangeEvent(QWindow *window, const QPoint &newPosition)
+    : WindowSystemEvent(PositionChange)
+    , window(window)
+    , newPosition(newPosition)
+{
+    if (const QPlatformWindow *pw = window->handle()) {
+        const auto nativePosition = pw->QPlatformWindow::geometry().topLeft();
+        requestedPosition = QHighDpi::fromNativeWindowGeometry(nativePosition, window);
+    }
+}
+
+QT_DEFINE_QPA_EVENT_HANDLER(void, handlePositionChange, QWindow *window, const QPoint &newPosition)
+{
+    Q_ASSERT(window);
+    const auto newPositionDi = QHighDpi::fromNativeWindowGeometry(newPosition, window);
+    if (window->handle()) {
+        // Persist the new geometry so that QWindow::geometry() can be queried in the resize event
+        window->handle()->QPlatformWindow::move(newPosition);
+        // FIXME: This does not work during platform window creation, where the QWindow does not
+        // have its handle set up yet. Platforms that deliver events during window creation need
+        // to handle the persistence manually, e.g. by overriding geometry().
+    }
+    handleWindowSystemEvent<QWindowSystemInterfacePrivate::PositionChangeEvent, Delivery>(window, newPositionDi);
+}
+
+QWindowSystemInterfacePrivate::SizeChangeEvent::SizeChangeEvent(QWindow *window, const QSize &newSize)
+    : WindowSystemEvent(SizeChange)
+    , window(window)
+    , newSize(newSize)
+{
+    if (const QPlatformWindow *pw = window->handle()) {
+        const auto nativeSize = pw->QPlatformWindow::geometry().size();
+        requestedSize = QHighDpi::fromNativeWindowGeometry(nativeSize, window);
+    }
+}
+
+QT_DEFINE_QPA_EVENT_HANDLER(void, handleSizeChange, QWindow *window, const QSize &newSize)
+{
+    Q_ASSERT(window);
+    const auto newSizeDi = QHighDpi::fromNativeWindowGeometry(newSize, window);
+    if (window->handle()) {
+        // Persist the new geometry so that QWindow::geometry() can be queried in the resize event
+        window->handle()->QPlatformWindow::resize(newSize);
+        // FIXME: This does not work during platform window creation, where the QWindow does not
+        // have its handle set up yet. Platforms that deliver events during window creation need
+        // to handle the persistence manually, e.g. by overriding geometry().
+    }
+    handleWindowSystemEvent<QWindowSystemInterfacePrivate::SizeChangeEvent, Delivery>(window, newSizeDi);
+}
+
 QWindowSystemInterfacePrivate::ExposeEvent::ExposeEvent(QWindow *window, const QRegion &region)
     : WindowSystemEvent(Expose)
     , window(window)

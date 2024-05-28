@@ -70,6 +70,16 @@ QDirectFbWindow::~QDirectFbWindow()
     m_dfbWindow->Destroy(m_dfbWindow.data());
 }
 
+void QDirectFbWindow::move(const QPoint &point)
+{
+    setGeometry(QRect(point, geometry().size()));
+}
+
+void QDirectFbWindow::resize(const QSize &size)
+{
+    setGeometry(QRect(geometry().topLeft(), size));
+}
+
 void QDirectFbWindow::setGeometry(const QRect &rect)
 {
     QPlatformWindow::setGeometry(rect);

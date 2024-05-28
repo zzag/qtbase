@@ -571,6 +571,16 @@ void QXcbWindow::destroy()
         m_pendingSyncRequest->invalidate();
 }
 
+void QXcbWindow::move(const QPoint &point)
+{
+    setGeometry(QRect(point, geometry().size()));
+}
+
+void QXcbWindow::resize(const QSize &size)
+{
+    setGeometry(QRect(geometry().topLeft(), size));
+}
+
 void QXcbWindow::setGeometry(const QRect &rect)
 {
     setWindowState(Qt::WindowNoState);

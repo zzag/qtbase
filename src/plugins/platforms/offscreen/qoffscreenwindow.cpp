@@ -38,6 +38,16 @@ QOffscreenWindow::~QOffscreenWindow()
     m_windowForWinIdHash.remove(m_winId);
 }
 
+void QOffscreenWindow::move(const QPoint &point)
+{
+    setGeometry(QRect(point, geometry().size()));
+}
+
+void QOffscreenWindow::resize(const QSize &size)
+{
+    setGeometry(QRect(geometry().topLeft(), size));
+}
+
 void QOffscreenWindow::setGeometry(const QRect &rect)
 {
     if (window()->windowState() != Qt::WindowNoState)

@@ -111,6 +111,8 @@ public:
     static void processCloseEvent(QWindowSystemInterfacePrivate::CloseEvent *e);
 
     static void processGeometryChangeEvent(QWindowSystemInterfacePrivate::GeometryChangeEvent *e);
+    static void processPositionChangeEvent(QWindowSystemInterfacePrivate::PositionChangeEvent *e);
+    static void processSizeChangeEvent(QWindowSystemInterfacePrivate::SizeChangeEvent *e);
 
     static void processEnterEvent(QWindowSystemInterfacePrivate::EnterEvent *e);
     static void processLeaveEvent(QWindowSystemInterfacePrivate::LeaveEvent *e);

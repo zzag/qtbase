@@ -181,6 +181,16 @@ void QIOSWindow::setOpacity(qreal level)
     m_view.alpha = qBound(0.0, level, 1.0);
 }
 
+void QIOSWindow::move(const QPoint &point)
+{
+    setGeometry(QRect(point, geometry().size()));
+}
+
+void QIOSWindow::resize(const QSize &size)
+{
+    setGeometry(QRect(geometry().topLeft(), size));
+}
+
 void QIOSWindow::setGeometry(const QRect &rect)
 {
     m_normalGeometry = rect;

@@ -185,6 +185,16 @@ QSurfaceFormat QCocoaWindow::format() const
     return window()->requestedFormat();
 }
 
+void QCocoaWindow::move(const QPoint &point)
+{
+    setGeometry(QRect(point, geometry().size()));
+}
+
+void QCocoaWindow::resize(const QSize &size)
+{
+    setGeometry(QRect(geometry().topLeft(), size));
+}
+
 void QCocoaWindow::setGeometry(const QRect &rectIn)
 {
     qCDebug(lcQpaWindow) << "QCocoaWindow::setGeometry" << window() << rectIn;

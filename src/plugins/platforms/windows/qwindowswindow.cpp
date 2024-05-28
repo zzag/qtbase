@@ -1310,6 +1310,16 @@ void QWindowsBaseWindow::setWindowTitle_sys(const QString &title)
     SetWindowText(handle(), reinterpret_cast<const wchar_t *>(title.utf16()));
 }
 
+void QWindowsBaseWindow::move(const QPoint &point)
+{
+    setGeometry(QRect(point, geometry().size()));
+}
+
+void QWindowsBaseWindow::resize(const QSize &size)
+{
+    setGeometry(QRect(geometry().topLeft(), size));
+}
+
 QPoint QWindowsBaseWindow::mapToGlobal(const QPoint &pos) const
 {
     return QWindowsGeometryHint::mapToGlobal(handle(), pos);

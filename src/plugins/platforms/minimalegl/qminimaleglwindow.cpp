@@ -23,6 +23,16 @@ QMinimalEglWindow::QMinimalEglWindow(QWindow *w)
     w->setSurfaceType(QSurface::OpenGLSurface);
 }
 
+void QMinimalEglWindow::move(const QPoint &point)
+{
+    setGeometry(QRect(point, geometry().size()));
+}
+
+void QMinimalEglWindow::resize(const QSize &size)
+{
+    setGeometry(QRect(geometry().topLeft(), size));
+}
+
 void QMinimalEglWindow::setGeometry(const QRect &)
 {
     // We only support full-screen windows

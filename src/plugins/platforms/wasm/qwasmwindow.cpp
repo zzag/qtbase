@@ -255,6 +255,16 @@ void QWasmWindow::setWindowCursor(QByteArray cssCursorName)
     m_windowContents["style"].set("cursor", emscripten::val(cssCursorName.constData()));
 }
 
+void QWasmWindow::move(const QPoint &point)
+{
+    setGeometry(QRect(point, geometry().size()));
+}
+
+void QWasmWindow::resize(const QSize &size)
+{
+    setGeometry(QRect(geometry().topLeft(), size));
+}
+
 void QWasmWindow::setGeometry(const QRect &rect)
 {
     const auto margins = frameMargins();

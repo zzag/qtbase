@@ -17,6 +17,8 @@ public:
     QOffscreenWindow(QWindow *window, bool frameMarginsEnabled);
     ~QOffscreenWindow();
 
+    void move(const QPoint &point) override;
+    void resize(const QSize &size) override;
     void setGeometry(const QRect &rect) override;
     void setWindowState(Qt::WindowStates states) override;
 

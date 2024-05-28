@@ -36,6 +36,9 @@ public:
     void lower() override;
     void raise() override;
 
+    void move(const QPoint &point) override;
+    void resize(const QSize &size) override;
+
     void setVisible(bool visible) override;
 
     void setWindowState(Qt::WindowStates state) override;

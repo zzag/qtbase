@@ -15,6 +15,8 @@ class QMinimalEglWindow : public QPlatformWindow
 public:
     QMinimalEglWindow(QWindow *w);
 
+    void move(const QPoint &point) override;
+    void resize(const QSize &size) override;
     void setGeometry(const QRect &) override;
     WId winId() const override;
 

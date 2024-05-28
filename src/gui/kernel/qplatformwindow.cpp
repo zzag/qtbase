@@ -80,7 +80,51 @@ QSurfaceFormat QPlatformWindow::format() const
 }
 
 /*!
-    This function is called by Qt whenever a window is moved or resized using the QWindow API.
+    This function is called by Qt whenever a window is moved using the QWindow API.
+
+    Unless you also override QPlatformWindow::geometry(), you need to call the baseclass
+    implementation of this function in any override of QPlatformWindow::move(), as
+    QWindow::geometry() is expected to report back the set geometry until a confirmation
+    (or rejection) of the new geometry comes back from the window manager and is reported
+    via QWindowSystemInterface::handleGeometryChange().
+
+    Window moves can also be triggered spontaneously by the window manager, or as a
+    response to an earlier requested move via the Qt APIs. There is no need to call
+    this function from the window manager callback, instead call
+    QWindowSystemInterface::handleGeometryChange().
+
+    The position might be inclusive or exclusive of the window frame
+    as returned by frameMargins(). You can detect this in the plugin by checking
+    qt_window_private(window())->positionPolicy.
+*/
+void QPlatformWindow::move(const QPoint &point)
+{
+    Q_D(QPlatformWindow);
+    d->rect.moveTopLeft(point);
+}
+
+/*!
+    This function is called by Qt whenever a window is resized using the QWindow API.
+
+    Unless you also override QPlatformWindow::geometry(), you need to call the baseclass
+    implementation of this function in any override of QPlatformWindow::resize(), as
+    QWindow::geometry() is expected to report back the set geometry until a confirmation
+    (or rejection) of the new geometry comes back from the window manager and is reported
+    via QWindowSystemInterface::handleGeometryChange().
+
+    Window resizes can also be triggered spontaneously by the window manager, or as a
+    response to an earlier requested resize via the Qt APIs. There is no need to call
+    this function from the window manager callback, instead call
+    QWindowSystemInterface::handleGeometryChange().
+*/
+void QPlatformWindow::resize(const QSize &size)
+{
+    Q_D(QPlatformWindow);
+    d->rect.setSize(size);
+}
+
+/*!
+    This function is called by Qt whenever a window is moved and resized using the QWindow API.
 
     Unless you also override QPlatformWindow::geometry(), you need to call the baseclass
     implementation of this function in any override of QPlatformWindow::setGeometry(), as

@@ -230,6 +230,16 @@ void QEglFSWindow::setVisible(bool visible)
         QWindowSystemInterface::flushWindowSystemEvents(QEventLoop::ExcludeUserInputEvents);
 }
 
+void QEglFSWindow::move(const QPoint &point)
+{
+    setGeometry(QRect(point, geometry().size()));
+}
+
+void QEglFSWindow::resize(const QSize &size)
+{
+    setGeometry(QRect(geometry().topLeft(), size));
+}
+
 void QEglFSWindow::setGeometry(const QRect &r)
 {
     QRect rect = r;

@@ -2082,6 +2082,12 @@ void Q_TRACE_INSTRUMENT(qtgui) QGuiApplicationPrivate::processWindowSystemEvent(
     case QWindowSystemInterfacePrivate::GeometryChange:
         QGuiApplicationPrivate::processGeometryChangeEvent(static_cast<QWindowSystemInterfacePrivate::GeometryChangeEvent*>(e));
         break;
+    case QWindowSystemInterfacePrivate::PositionChange:
+        QGuiApplicationPrivate::processPositionChangeEvent(static_cast<QWindowSystemInterfacePrivate::PositionChangeEvent*>(e));
+        break;
+    case QWindowSystemInterfacePrivate::SizeChange:
+        QGuiApplicationPrivate::processSizeChangeEvent(static_cast<QWindowSystemInterfacePrivate::SizeChangeEvent*>(e));
+        break;
     case QWindowSystemInterfacePrivate::Enter:
         QGuiApplicationPrivate::processEnterEvent(static_cast<QWindowSystemInterfacePrivate::EnterEvent *>(e));
         break;
@@ -2717,6 +2723,83 @@ void QGuiApplicationPrivate::processGeometryChangeEvent(QWindowSystemInterfacePr
             emit window->xChanged(actualGeometry.x());
         if (actualGeometry.y() != lastReportedGeometry.y())
             emit window->yChanged(actualGeometry.y());
+    }
+}
+
+void QGuiApplicationPrivate::processPositionChangeEvent(QWindowSystemInterfacePrivate::PositionChangeEvent *e)
+{
+    if (e->window.isNull())
+       return;
+
+    QWindow *window = e->window.data();
+    if (!window)
+        return;
+
+    const QPoint lastReportedPosition = window->d_func()->geometry.topLeft();
+    const QPoint requestedPosition = e->requestedPosition;
+    const QPoint actualPosition = e->newPosition;
+
+    // We send size and move events only if the geometry has changed from
+    // what was last reported, or if the user tried to set a new geometry,
+    // but the window manager responded by keeping the old geometry. In the
+    // latter case we send move/resize events with the same geometry as the
+    // last reported geometry, to indicate that the window wasn't moved or
+    // resized. Note that this logic does not apply to the property changes
+    // of the window, as we don't treat them as part of this request/response
+    // protocol of QWindow/QPA.
+    const bool isMove = actualPosition != lastReportedPosition
+        || requestedPosition != actualPosition;
+
+    window->d_func()->geometry.moveTopLeft(actualPosition);
+
+    if (isMove) {
+        //### frame geometry
+        QMoveEvent e(actualPosition, lastReportedPosition);
+        QGuiApplication::sendSpontaneousEvent(window, &e);
+
+        if (actualPosition.x() != lastReportedPosition.x())
+            emit window->xChanged(actualPosition.x());
+        if (actualPosition.y() != lastReportedPosition.y())
+            emit window->yChanged(actualPosition.y());
+    }
+}
+
+void QGuiApplicationPrivate::processSizeChangeEvent(QWindowSystemInterfacePrivate::SizeChangeEvent *e)
+{
+    if (e->window.isNull())
+       return;
+
+    QWindow *window = e->window.data();
+    if (!window)
+        return;
+
+    const QSize lastReportedSize = window->d_func()->geometry.size();
+    const QSize requestedSize = e->requestedSize;
+    const QSize actualSize = e->newSize;
+
+    // We send size and move events only if the geometry has changed from
+    // what was last reported, or if the user tried to set a new geometry,
+    // but the window manager responded by keeping the old geometry. In the
+    // latter case we send move/resize events with the same geometry as the
+    // last reported geometry, to indicate that the window wasn't moved or
+    // resized. Note that this logic does not apply to the property changes
+    // of the window, as we don't treat them as part of this request/response
+    // protocol of QWindow/QPA.
+    const bool isResize = actualSize != lastReportedSize
+        || requestedSize != actualSize;
+
+    window->d_func()->geometry.setSize(actualSize);
+
+    if (isResize || window->d_func()->resizeEventPending) {
+        QResizeEvent e(actualSize, lastReportedSize);
+        QGuiApplication::sendSpontaneousEvent(window, &e);
+
+        window->d_func()->resizeEventPending = false;
+
+        if (actualSize.width() != lastReportedSize.width())
+            emit window->widthChanged(actualSize.width());
+        if (actualSize.height() != lastReportedSize.height())
+            emit window->heightChanged(actualSize.height());
     }
 }
 

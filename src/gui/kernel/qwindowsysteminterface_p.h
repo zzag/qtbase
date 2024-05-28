@@ -70,6 +70,8 @@ public:
         ApplicationTermination = 0x23,
         Paint = 0x24,
         WindowDevicePixelRatioChanged = 0x25,
+        PositionChange = 0x26,
+        SizeChange = 0x27,
     };
 
     class WindowSystemEvent {
@@ -105,6 +107,22 @@ public:
         QPointer<QWindow> window;
         QRect requestedGeometry;
         QRect newGeometry;
+    };
+
+    class PositionChangeEvent : public WindowSystemEvent {
+    public:
+        PositionChangeEvent(QWindow *window, const QPoint &newPosition);
+        QPointer<QWindow> window;
+        QPoint requestedPosition;
+        QPoint newPosition;
+    };
+
+    class SizeChangeEvent : public WindowSystemEvent {
+    public:
+        SizeChangeEvent(QWindow *window, const QSize &newSize);
+        QPointer<QWindow> window;
+        QSize requestedSize;
+        QSize newSize;
     };
 
     class EnterEvent : public WindowSystemEvent {

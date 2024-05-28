@@ -286,6 +286,16 @@ QQnxWindow::~QQnxWindow()
         screen_destroy_window(m_window);
 }
 
+void QQnxWindow::move(const QPoint &point)
+{
+    setGeometry(QRect(point, geometry().size()));
+}
+
+void QQnxWindow::resize(const QSize &size)
+{
+    setGeometry(QRect(geometry().topLeft(), size));
+}
+
 void QQnxWindow::setGeometry(const QRect &rect)
 {
     QRect newGeometry = rect;

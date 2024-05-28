@@ -118,6 +118,16 @@ QMargins QAndroidPlatformWindow::safeAreaMargins() const
     }
 }
 
+void QAndroidPlatformWindow::move(const QPoint &point)
+{
+    setGeometry(QRect(point, geometry().size()));
+}
+
+void QAndroidPlatformWindow::resize(const QSize &size)
+{
+    setGeometry(QRect(geometry().topLeft(), size));
+}
+
 void QAndroidPlatformWindow::setGeometry(const QRect &rect)
 {
     QPlatformWindow::setGeometry(rect);

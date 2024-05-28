@@ -51,6 +51,8 @@ public:
     QXcbWindow(QWindow *window);
     ~QXcbWindow();
 
+    void move(const QPoint &point) override;
+    void resize(const QSize &size) override;
     void setGeometry(const QRect &rect) override;
 
     QMargins frameMargins() const override;

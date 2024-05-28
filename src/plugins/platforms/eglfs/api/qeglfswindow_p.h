@@ -42,6 +42,8 @@ public:
     void create();
     void destroy();
 
+    void move(const QPoint &point) override;
+    void resize(const QSize &size) override;
     void setGeometry(const QRect &) override;
     QRect geometry() const override;
     void setVisible(bool visible) override;

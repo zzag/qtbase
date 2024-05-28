@@ -75,6 +75,8 @@ public:
 
     void initialize() override;
 
+    void move(const QPoint &point) override;
+    void resize(const QSize &size) override;
     void setGeometry(const QRect &rect) override;
     QRect geometry() const override;
     QRect normalGeometry() const override;

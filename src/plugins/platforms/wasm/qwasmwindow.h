@@ -62,6 +62,8 @@ public:
 
     // QPlatformWindow:
     void initialize() override;
+    void move(const QPoint &point) override;
+    void resize(const QSize &size) override;
     void setGeometry(const QRect &) override;
     void setVisible(bool visible) override;
     QMargins frameMargins() const override;

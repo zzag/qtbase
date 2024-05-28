@@ -35,6 +35,8 @@ public:
     explicit QQnxWindow(QWindow *window, screen_context_t context, screen_window_t screenWindow);
     virtual ~QQnxWindow();
 
+    void move(const QPoint &point) override;
+    void resize(const QSize &size) override;
     void setGeometry(const QRect &rect) override;
     void setVisible(bool visible) override;
     void setOpacity(qreal level) override;

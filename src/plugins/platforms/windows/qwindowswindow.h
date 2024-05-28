@@ -103,6 +103,8 @@ public:
     WId winId() const override { return WId(handle()); }
     QRect geometry() const override { return geometry_sys(); }
     QMargins frameMargins() const override { return fullFrameMargins(); }
+    void move(const QPoint &point) override;
+    void resize(const QSize &size) override;
     QPoint mapToGlobal(const QPoint &pos) const override;
     QPoint mapFromGlobal(const QPoint &pos) const override;
     virtual QMargins fullFrameMargins() const { return frameMargins_sys(); }

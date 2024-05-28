@@ -112,6 +112,16 @@ QHaikuWindow::~QHaikuWindow()
     m_window = nullptr;
 }
 
+void QHaikuWindow::move(const QPoint &point)
+{
+    setGeometry(QRect(point, geometry().size()));
+}
+
+void QHaikuWindow::resize(const QSize &size)
+{
+    setGeometry(QRect(geometry().topLeft(), size));
+}
+
 void QHaikuWindow::setGeometry(const QRect &rect)
 {
     QPlatformWindow::setGeometry(rect);

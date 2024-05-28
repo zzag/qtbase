@@ -17,6 +17,8 @@ public:
     QDirectFbWindow(QWindow *tlw, QDirectFbInput *inputhandler);
     ~QDirectFbWindow() override;
 
+    void move(const QPoint &point) override;
+    void resize(const QSize &size) override;
     void setGeometry(const QRect &rect) override;
     void setOpacity(qreal level) override;
 

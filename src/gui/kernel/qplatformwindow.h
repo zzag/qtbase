@@ -51,6 +51,8 @@ public:
 
     virtual QSurfaceFormat format() const override;
 
+    virtual void move(const QPoint &point);
+    virtual void resize(const QSize &size);
     virtual void setGeometry(const QRect &rect);
     virtual QRect geometry() const;
     virtual QRect normalGeometry() const;

@@ -76,6 +76,8 @@ public:
 
     void *vulkanSurfacePtr();
 
+    void move(const QPoint &point) override;
+    void resize(const QSize &size) override;
     void setGeometry(const QRect &r) override;
 
 private:
@@ -105,6 +107,16 @@ void *QVkKhrDisplayWindow::vulkanSurfacePtr()
     m_surface = vkdinst->createSurface(window());
 
     return &m_surface;
+}
+
+void QVkKhrDisplayWindow::move(const QPoint &point)
+{
+    setGeometry(QRect(point, geometry().size()));
+}
+
+void QVkKhrDisplayWindow::resize(const QSize &size)
+{
+    setGeometry(QRect(geometry().topLeft(), size));
 }
 
 void QVkKhrDisplayWindow::setGeometry(const QRect &)

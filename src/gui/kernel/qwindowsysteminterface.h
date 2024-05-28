@@ -142,6 +142,12 @@ public:
     template<typename Delivery = QWindowSystemInterface::DefaultDelivery>
     static void handleGeometryChange(QWindow *window, const QRect &newRect);
 
+    template<typename Delivery = QWindowSystemInterface::DefaultDelivery>
+    static void handlePositionChange(QWindow *window, const QPoint &newPosition);
+
+    template<typename Delivery = QWindowSystemInterface::DefaultDelivery>
+    static void handleSizeChange(QWindow *window, const QSize &newSize);
+
     // region is in local coordinates, do not confuse with geometry which is parent-relative
     template<typename Delivery = QWindowSystemInterface::DefaultDelivery>
     static bool handleExposeEvent(QWindow *window, const QRegion &region);

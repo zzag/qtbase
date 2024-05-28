@@ -47,6 +47,8 @@ public:
     explicit QHaikuWindow(QWindow *window);
     virtual ~QHaikuWindow();
 
+    void move(const QPoint &point) override;
+    void resize(const QSize &size) override;
     void setGeometry(const QRect &rect) override;
     QMargins frameMargins() const override;
     void setVisible(bool visible) override;
