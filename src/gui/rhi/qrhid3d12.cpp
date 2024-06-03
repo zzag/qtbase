@@ -4034,6 +4034,13 @@ static inline DXGI_FORMAT toD3DTextureFormat(QRhiTexture::Format format, QRhiTex
     case QRhiTexture::RGB10A2:
         return DXGI_FORMAT_R10G10B10A2_UNORM;
 
+    case QRhiTexture::R32UI:
+        return DXGI_FORMAT_R32_UINT;
+    case QRhiTexture::RG32UI:
+        return DXGI_FORMAT_R32G32_UINT;
+    case QRhiTexture::RGBA32UI:
+        return DXGI_FORMAT_R32G32B32A32_UINT;
+
     case QRhiTexture::D16:
         return DXGI_FORMAT_R16_TYPELESS;
     case QRhiTexture::D24:

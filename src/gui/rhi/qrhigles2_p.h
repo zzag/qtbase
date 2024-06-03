@@ -993,6 +993,7 @@ public:
               bgraInternalFormat(false),
               r8Format(false),
               r16Format(false),
+              r32uiFormat(false),
               floatFormats(false),
               rgb10Formats(false),
               depthTexture(false),
@@ -1053,6 +1054,7 @@ public:
         uint bgraInternalFormat : 1;
         uint r8Format : 1;
         uint r16Format : 1;
+        uint r32uiFormat : 1;
         uint floatFormats : 1;
         uint rgb10Formats : 1;
         uint depthTexture : 1;

@@ -1191,6 +1191,12 @@ static inline VkFormat toVkTextureFormat(QRhiTexture::Format format, QRhiTexture
 
     case QRhiTexture::R8UI:
         return VK_FORMAT_R8_UINT;
+    case QRhiTexture::R32UI:
+        return VK_FORMAT_R32_UINT;
+    case QRhiTexture::RG32UI:
+        return VK_FORMAT_R32G32_UINT;
+    case QRhiTexture::RGBA32UI:
+        return VK_FORMAT_R32G32B32A32_UINT;
 
     case QRhiTexture::D16:
         return VK_FORMAT_D16_UNORM;

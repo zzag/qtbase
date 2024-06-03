@@ -166,6 +166,18 @@ QT_BEGIN_NAMESPACE
 #define GL_R8UI                           0x8232
 #endif
 
+#ifndef GL_R32UI
+#define GL_R32UI                          0x8236
+#endif
+
+#ifndef GL_RG32UI
+#define GL_RG32UI                         0x823C
+#endif
+
+#ifndef GL_RGBA32UI
+#define GL_RGBA32UI                       0x8D70
+#endif
+
 #ifndef GL_RG8
 #define GL_RG8                            0x822B
 #endif
@@ -900,6 +912,12 @@ bool QRhiGles2::create(QRhi::Flags flags)
     caps.bgraExternalFormat = f->hasOpenGLExtension(QOpenGLExtensions::BGRATextureFormat);
     caps.bgraInternalFormat = caps.bgraExternalFormat && caps.gles;
     caps.r8Format = f->hasOpenGLFeature(QOpenGLFunctions::TextureRGFormats);
+
+    if (caps.gles)
+        caps.r32uiFormat = (caps.ctxMajor > 3 || (caps.ctxMajor == 3 && caps.ctxMinor >= 1)) && caps.r8Format; // ES 3.1
+    else
+        caps.r32uiFormat = true;
+
     caps.r16Format = f->hasOpenGLExtension(QOpenGLExtensions::Sized16Formats);
     caps.floatFormats = caps.ctxMajor >= 3; // 3.0 or ES 3.0
     caps.rgb10Formats = caps.ctxMajor >= 3; // 3.0 or ES 3.0
@@ -1327,6 +1345,24 @@ static inline void toGlTextureFormat(QRhiTexture::Format format, const QRhiGles2
         *glformat = GL_RGBA;
         *gltype = GL_UNSIGNED_INT_2_10_10_10_REV;
         break;
+    case QRhiTexture::R32UI:
+        *glintformat = GL_R32UI;
+        *glsizedintformat = *glintformat;
+        *glformat = GL_RGBA;
+        *gltype = GL_UNSIGNED_INT;
+        break;
+    case QRhiTexture::RG32UI:
+        *glintformat = GL_RG32UI;
+        *glsizedintformat = *glintformat;
+        *glformat = GL_RGBA;
+        *gltype = GL_UNSIGNED_INT;
+        break;
+    case QRhiTexture::RGBA32UI:
+        *glintformat = GL_RGBA32UI;
+        *glsizedintformat = *glintformat;
+        *glformat = GL_RGBA;
+        *gltype = GL_UNSIGNED_INT;
+        break;
     case QRhiTexture::D16:
         *glintformat = GL_DEPTH_COMPONENT16;
         *glsizedintformat = *glintformat;
@@ -1390,6 +1426,11 @@ bool QRhiGles2::isTextureFormatSupported(QRhiTexture::Format format, QRhiTexture
     case QRhiTexture::R8:
     case QRhiTexture::R8UI:
         return caps.r8Format;
+
+    case QRhiTexture::R32UI:
+    case QRhiTexture::RG32UI:
+    case QRhiTexture::RGBA32UI:
+        return caps.r32uiFormat;
 
     case QRhiTexture::RG8:
         return caps.r8Format;

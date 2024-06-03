@@ -4507,6 +4507,9 @@ bool QRhiRenderBuffer::createFrom(NativeRenderBuffer src)
     \value ASTC_12x12
 
     \value R8UI One component, unsigned 8 bit.
+    \value R32UI One component, unsigned 32 bit.
+    \value RG32UI Two component, unsigned 32 bit.
+    \value RGBA32UI Four component, unsigned 32 bit.
  */
 
 /*!
@@ -8558,6 +8561,15 @@ void QRhiImplementation::textureFormatInfo(QRhiTexture::Format format, const QSi
 
     case QRhiTexture::R8UI:
         bpc = 1;
+        break;
+    case QRhiTexture::R32UI:
+        bpc = 4;
+        break;
+    case QRhiTexture::RG32UI:
+        bpc = 8;
+        break;
+    case QRhiTexture::RGBA32UI:
+        bpc = 16;
         break;
 
     default:
