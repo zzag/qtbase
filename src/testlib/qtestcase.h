@@ -14,7 +14,12 @@
 #include <QtCore/qsharedpointer.h>
 #include <QtCore/qtemporarydir.h>
 #include <QtCore/qthread.h>
+
+#ifdef __cpp_concepts
+#include <concepts>
+#endif
 #include <QtCore/qxpfunctional.h>
+#include <QtCore/qxptype_traits.h>
 #include <QtCore/q20utility.h>
 
 #include <string.h>
@@ -288,6 +293,17 @@ do {\
         QTEST_FAIL_ACTION; \
 } while (false)
 
+#ifdef __cpp_lib_three_way_comparison
+#define QCOMPARE_3WAY(lhs, rhs, order) \
+do { \
+        if (!QTest::qCompare3Way(lhs, rhs, order, #lhs, #rhs, #order, __FILE__, __LINE__)) \
+            QTEST_FAIL_ACTION; \
+} while (false)
+#else
+#define QCOMPARE_3WAY(...) \
+    static_assert(false, "QCOMPARE_3WAY test requires C++20 operator<=>()")
+#endif // __cpp_lib_three_way_comparison
+
 #ifdef QT_TESTCASE_BUILDDIR
 
 #ifndef QT_TESTCASE_SOURCEDIR
@@ -498,6 +514,17 @@ namespace QTest
     Q_TESTLIB_EXPORT bool compare_helper(bool success, const char *failureMsg,
                                          const char *actual, const char *expected,
                                          const char *file, int line);
+
+    Q_TESTLIB_EXPORT bool compare_3way_helper(bool success, const char *failureMsg,
+                                              const void *lhsPtr, const void *rhsPtr,
+                                              const char *(*lhsFormatter)(const void*),
+                                              const char *(*rhsFormatter)(const void*),
+                                              const char *lhsStr, const char *rhsStr,
+                                              const char *(*orderFormatter)(const void *),
+                                              const void *actualOrderPtr,
+                                              const void *expectedOrderPtr,
+                                              const char *expectedExpression,
+                                              const char *file, int line);
 
     Q_TESTLIB_EXPORT void addColumnInternal(int id, const char *name);
 
@@ -754,8 +781,54 @@ namespace QTest
         bool result = Comparator::compare(std::forward<T1>(lhs), std::forward<T2>(rhs));
         return doReport(result, std::forward<T1>(lhs), std::forward<T2>(rhs));
     }
-}
 
+#if defined(__cpp_lib_three_way_comparison)
+    template <typename OrderingType, typename LHS, typename RHS = LHS>
+    inline bool qCompare3Way(LHS &&lhs, RHS &&rhs, OrderingType order,
+                             const char *lhsExpression,
+                             const char *rhsExpression,
+                             const char *resultExpression,
+                             const char *file, int line)
+    {
+#if defined(__cpp_concepts)
+        static_assert(requires { lhs <=> rhs; },
+                      "The three-way comparison operator (<=>) is not implemented");
+#endif // __cpp_concepts
+        static_assert(QtOrderingPrivate::is_ordering_type_v<OrderingType>,
+                      "Please provide, as the order parameter, a value "
+                      "of one of the Qt::{partial,weak,strong}_ordering or "
+                      "std::{partial,weak,strong}_ordering types.");
+
+        const auto comparisonResult = std::forward<LHS>(lhs) <=> std::forward<RHS>(rhs);
+        static_assert(std::is_same_v<decltype(QtOrderingPrivate::to_Qt(comparisonResult)),
+                                     decltype(QtOrderingPrivate::to_Qt(order))>,
+                      "The expected and actual ordering types should be the same "
+                      "strength for proper comparison.");
+
+        const OrderingType actualOrder = comparisonResult;
+        using DLHS = q20::remove_cvref_t<LHS>;
+        using DRHS = q20::remove_cvref_t<RHS>;
+        using Internal::genericToString;
+
+        return compare_3way_helper(actualOrder == order,
+                                   "The result of operator<=>() is not what was expected",
+                                   std::addressof(lhs), std::addressof(rhs),
+                                   genericToString<DLHS>, genericToString<DRHS>,
+                                   lhsExpression, rhsExpression,
+                                   genericToString<OrderingType>,
+                                   std::addressof(actualOrder), std::addressof(order),
+                                   resultExpression, file, line);
+    }
+#else
+    template <typename OrderingType, typename LHS, typename RHS = LHS>
+    void qCompare3Way(LHS &&lhs, RHS &&rhs, OrderingType order,
+                      const char *lhsExpression,
+                      const char *rhsExpression,
+                      const char *resultExpression,
+                      const char *file, int line) = delete;
+#endif // __cpp_lib_three_way_comparison
+
+}
 
 #define QWARN(msg) QTest::qWarn(static_cast<const char *>(msg), __FILE__, __LINE__)
 

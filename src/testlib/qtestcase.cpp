@@ -2836,6 +2836,54 @@ bool QTest::compare_helper(bool success, const char *failureMsg,
                                      file, line, failureMsg);
 }
 
+
+/*! \internal
+    \since 6.9
+    This function reports the result of a three-way comparison, when needed.
+
+    Aside from logging every check if in verbose mode and reporting an
+    unexpected pass when failure was expected, if \a success is \c true
+    this produces no output. Otherwise, a failure is reported. The output
+    on failure reports the expressions compared, their values, the actual
+    result of the comparison and the expected result of comparison, along
+    with the supplied failure message \a failureMsg and the \a file and
+    \a line number at which the error arose.
+
+    The expressions compared are supplied as \a lhsExpression and
+    \a rhsExpression.
+    These are combined, with \c{"<=>"}, to obtain the actual comparison
+    expression. Their actual values are pointed to by \a lhsPtr and
+    \a rhsPtr, which are formatted by \a lhsFormatter and \a rhsFormatter
+    as, respectively, \c lhsFormatter(lhsPtr) and \c rhsFormatter(rhsPtr).
+    The actual comparison expression is contrasted,
+    in the output, with the expected comparison expression
+    \a expectedExpression. Their respective values are supplied by
+    \a actualOrderPtr and \a expectedOrderPtr pointers, which are
+    formatted by \a orderFormatter.
+
+    If \a failureMsg is \nullptr a default is used. If a formatter
+    function returns \a nullptr, the text \c{"<null>"} is used.
+*/
+bool QTest::compare_3way_helper(bool success, const char *failureMsg,
+                                const void *lhsPtr, const void *rhsPtr,
+                                const char *(*lhsFormatter)(const void*),
+                                const char *(*rhsFormatter)(const void*),
+                                const char *lhsExpression, const char *rhsExpression,
+                                const char *(*orderFormatter)(const void*),
+                                const void *actualOrderPtr, const void *expectedOrderPtr,
+                                const char *expectedExpression,
+                                const char *file, int line)
+{
+    return QTestResult::report3WayResult(success, failureMsg,
+                                         lhsPtr, rhsPtr,
+                                         lhsFormatter, rhsFormatter,
+                                         lhsExpression, rhsExpression,
+                                         orderFormatter,
+                                         actualOrderPtr, expectedOrderPtr,
+                                         expectedExpression,
+                                         file, line);
+}
+
 /*! \internal
     \since 6.4
     This function is called by various specializations of QTest::qCompare

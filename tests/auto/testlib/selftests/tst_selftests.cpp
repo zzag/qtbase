@@ -690,6 +690,13 @@ bool TestLogger::shouldIgnoreTest(const QString &test) const
 #endif
     }
 
+#ifndef __cpp_lib_three_way_comparison
+    if (test == "threewaycompare") {
+        WARN("The threewaycompare test requires C++20 support. Skipping.");
+        return true;
+    }
+#endif
+
     if (logger != QTestLog::Plain || outputMode == FileOutput) {
         // The following tests only work with plain text output to stdout,
         // either because they execute multiple test objects or because
