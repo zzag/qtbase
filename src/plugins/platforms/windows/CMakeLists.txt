@@ -52,6 +52,8 @@ qt_internal_add_plugin(QWindowsIntegrationPlugin
         advapi32
         dwmapi
         gdi32
+        gdiplus
+        uxtheme
         imm32
         ole32
         oleaut32
