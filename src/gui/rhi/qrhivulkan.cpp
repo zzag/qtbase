@@ -1302,9 +1302,28 @@ static constexpr inline bool isDepthTextureFormat(QRhiTexture::Format format)
     }
 }
 
+static constexpr inline bool isStencilTextureFormat(QRhiTexture::Format format)
+{
+    switch (format) {
+    case QRhiTexture::Format::D24S8:
+    case QRhiTexture::Format::D32FS8:
+        return true;
+
+    default:
+        return false;
+    }
+}
+
 static constexpr inline VkImageAspectFlags aspectMaskForTextureFormat(QRhiTexture::Format format)
 {
-    return isDepthTextureFormat(format) ? VK_IMAGE_ASPECT_DEPTH_BIT : VK_IMAGE_ASPECT_COLOR_BIT;
+    if (isDepthTextureFormat(format)) {
+        if (isStencilTextureFormat(format))
+            return VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
+        else
+            return VK_IMAGE_ASPECT_DEPTH_BIT;
+    } else {
+        return VK_IMAGE_ASPECT_COLOR_BIT;
+    }
 }
 
 // Transient images ("render buffers") backed by lazily allocated memory are
@@ -6991,6 +7010,9 @@ bool QVkTexture::finishCreate()
     viewInfo.components.b = VK_COMPONENT_SWIZZLE_B;
     viewInfo.components.a = VK_COMPONENT_SWIZZLE_A;
     viewInfo.subresourceRange.aspectMask = aspectMask;
+    // Force-remove the VK_IMAGE_ASPECT_STENCIL_BIT
+    // Another view with this bit is probably needed for stencil
+    viewInfo.subresourceRange.aspectMask &= ~VK_IMAGE_ASPECT_STENCIL_BIT;
     viewInfo.subresourceRange.levelCount = mipLevelCount;
     if (isArray && m_arrayRangeStart >= 0 && m_arrayRangeLength >= 0) {
         viewInfo.subresourceRange.baseArrayLayer = uint32_t(m_arrayRangeStart);
@@ -7695,7 +7717,7 @@ bool QVkTextureRenderTarget::create()
             viewInfo.components.g = VK_COMPONENT_SWIZZLE_G;
             viewInfo.components.b = VK_COMPONENT_SWIZZLE_B;
             viewInfo.components.a = VK_COMPONENT_SWIZZLE_A;
-            viewInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
+            viewInfo.subresourceRange.aspectMask = aspectMaskForTextureFormat(depthTexD->format());
             viewInfo.subresourceRange.levelCount = 1;
             viewInfo.subresourceRange.layerCount = qMax<uint32_t>(1, d.multiViewCount);
             VkResult err = rhiD->df->vkCreateImageView(rhiD->dev, &viewInfo, nullptr, &dsv);
@@ -7768,7 +7790,7 @@ bool QVkTextureRenderTarget::create()
         viewInfo.components.g = VK_COMPONENT_SWIZZLE_G;
         viewInfo.components.b = VK_COMPONENT_SWIZZLE_B;
         viewInfo.components.a = VK_COMPONENT_SWIZZLE_A;
-        viewInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
+        viewInfo.subresourceRange.aspectMask = aspectMaskForTextureFormat(resTexD->format());
         viewInfo.subresourceRange.baseMipLevel = 0;
         viewInfo.subresourceRange.levelCount = 1;
         viewInfo.subresourceRange.baseArrayLayer = 0;
