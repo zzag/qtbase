@@ -486,7 +486,7 @@ QByteArray QLocalePrivate::bcp47Name(char separator) const
     if (m_data->m_language_id == QLocale::AnyLanguage)
         return QByteArray();
     if (m_data->m_language_id == QLocale::C)
-        return QByteArrayLiteral("en");
+        return QByteArrayView("en") % separator % QByteArrayView("POSIX");
 
     return m_data->id().withLikelySubtagsRemoved().name(separator);
 }
@@ -692,6 +692,10 @@ QLocaleId QLocaleId::fromName(QStringView name) noexcept
     QStringView script;
     QStringView land;
     if (!qt_splitLocaleName(name, &lang, &script, &land))
+        return { QLocale::C, 0, 0 };
+
+    // POSIX is a variant, but looks like a territory.
+    if (land.compare("POSIX", Qt::CaseInsensitive) == 0)
         return { QLocale::C, 0, 0 };
 
     QLocale::Language langId = QLocalePrivate::codeToLanguage(lang);

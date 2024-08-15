@@ -262,6 +262,7 @@ void tst_QLocale::ctor_data()
     ECHO("zh_Hans_CN", Chinese, SimplifiedHanScript, China);
     ECHO("zh_Hant_TW", Chinese, TraditionalHanScript, Taiwan);
     ECHO("zh_Hant_HK", Chinese, TraditionalHanScript, HongKong);
+    ECHO("en_POSIX", C, AnyScript, AnyTerritory);
 #undef ECHO
 
     // Determine territory from language and script:
@@ -328,6 +329,7 @@ void tst_QLocale::ctor_data()
     LANDFILL("und_CA", English, LatinScript, Canada);
     LANDFILL("und_US", English, LatinScript, UnitedStates);
     LANDFILL("und_GB", English, LatinScript, UnitedKingdom);
+    LANDFILL("und_POSIX", C, AnyScript, AnyTerritory);
 #undef LANDFILL
 }
 
@@ -337,14 +339,14 @@ void tst_QLocale::ctor()
     QFETCH(const QLocale::Script, reqText);
     QFETCH(const QLocale::Territory, reqLand);
 
-    {
+    const QLatin1String request(QTest::currentDataTag());
+    if (request != "und_POSIX"_L1) {
         const QLocale l(reqLang, reqText, reqLand);
         QTEST(l.language(), "expLang");
         QTEST(l.script(), "expText");
         QTEST(l.territory(), "expLand");
     }
-    const QLatin1String request(QTest::currentDataTag());
-    if (!request.startsWith(u"und_")) {
+    if (!request.startsWith("und_"_L1) || request.endsWith("_POSIX"_L1)) {
         const QLocale l(request);
         QTEST(l.language(), "expLang");
         QTEST(l.script(), "expText");
@@ -4027,7 +4029,7 @@ void tst_QLocale::bcp47Name_data()
 {
     QTest::addColumn<QString>("expect");
 
-    QTest::newRow("C") << QStringLiteral("en");
+    QTest::newRow("C") << QStringLiteral("en-POSIX");
     QTest::newRow("en") << QStringLiteral("en");
     QTest::newRow("en_US") << QStringLiteral("en");
     QTest::newRow("en_GB") << QStringLiteral("en-GB");
