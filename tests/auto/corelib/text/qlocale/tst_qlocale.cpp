@@ -145,6 +145,8 @@ private slots:
 #  ifdef QT_BUILD_INTERNAL
     void mySystemLocale_data();
     void mySystemLocale();
+    void systemGrouping_data();
+    void systemGrouping();
 #  endif
 
     void systemLocaleDayAndMonthNames_data();
@@ -4103,7 +4105,18 @@ public:
             return m_id.territory_id;
         case ScriptId:
             return m_id.script_id;
-
+        case Grouping:
+            if (m_name == u"en-ES") // CLDR: 1,3,3
+                return QVariant::fromValue(QLocaleData::GroupSizes{2,3,3});
+            if (m_name == u"en-BD") // CLDR: 1,3,3
+                return QVariant::fromValue(QLocaleData::GroupSizes{1,2,3});
+            if (m_name == u"ccp") // CLDR: 1,3,3
+                return QVariant::fromValue(QLocaleData::GroupSizes{2,2,3});
+            if (m_name == u"en-BT") // CLDR: 1,3,3
+                return QVariant::fromValue(QLocaleData::GroupSizes{0,2,3});
+            if (m_name == u"en-NP") // CLDR: 1,3,3
+                return QVariant::fromValue(QLocaleData::GroupSizes{0,2,0});
+            break;
         default:
             break;
         }
@@ -4255,6 +4268,75 @@ void tst_QLocale::mySystemLocale()
     QT_TEST_EQUALITY_OPS(QLocale(), originalLocale, true);
     QT_TEST_EQUALITY_OPS(QLocale::system(), originalSystemLocale, true);
 }
+
+void tst_QLocale::systemGrouping_data()
+{
+    QTest::addColumn<QString>("name");
+    QTest::addColumn<QString>("separator");
+    QTest::addColumn<QString>("zeroDigit");
+    QTest::addColumn<int>("number");
+    QTest::addColumn<QString>("formattedString");
+
+    // Testing locales with non {1, 3, 3} groupe sizes, plus some locales
+    // that return invalid group sizes to test that we fallbakc to CLDR data.
+    QTest::newRow("en-ES") // {2,3,3}
+            << u"en-ES"_s << u","_s << u"0"_s << 1234 << u"1234"_s;
+    QTest::newRow("en-ES-grouped") // {2,3,3}
+            << u"en-ES"_s << u","_s << u"0"_s << 12345 << u"12,345"_s;
+    QTest::newRow("en-BD") // {1,2,3}
+            << u"en-BD"_s << u","_s << u"0"_s << 123456789 << u"12,34,56,789"_s;
+    QTest::newRow("en-BT") // {1,2,3}
+            << u"en-BT"_s << u","_s << u"0"_s << 123456789 << u"12,34,56,789"_s;
+    QTest::newRow("en-NP") // {1,2,3}
+            << u"en-NP"_s << u","_s << u"0"_s << 123456789 << u"12,34,56,789"_s;
+
+    // Testing with Chakma locale
+    const char32_t zeroVal = 0x11136; // Chakma zero
+    const QChar data[] = {
+        QChar::highSurrogate(zeroVal), QChar::lowSurrogate(zeroVal),
+        QChar::highSurrogate(zeroVal + 1), QChar::lowSurrogate(zeroVal + 1),
+        QChar::highSurrogate(zeroVal + 2), QChar::lowSurrogate(zeroVal + 2),
+        QChar::highSurrogate(zeroVal + 3), QChar::lowSurrogate(zeroVal + 3),
+        QChar::highSurrogate(zeroVal + 4), QChar::lowSurrogate(zeroVal + 4),
+        QChar::highSurrogate(zeroVal + 5), QChar::lowSurrogate(zeroVal + 5),
+    };
+    const QChar separator(QLatin1Char(',')); // Separator for the Chakma locale
+    const QString
+        // Copy zero so it persists through QFETCH(), after data falls off the stack.
+        zero = QString(data, 2),
+        one = QString::fromRawData(data + 2, 2),
+        two = QString::fromRawData(data + 4, 2),
+        three = QString::fromRawData(data + 6, 2),
+        four = QString::fromRawData(data + 8, 2),
+        five = QString::fromRawData(data + 10, 2);
+    QString fourDigit = one + two + three + four;
+    QString fiveDigit = one + two  + separator + three + four + five;
+
+    QTest::newRow("Chakma-short") // {2,2,3}
+            << u"ccp"_s << QString(separator)
+            << zero << 1234 << fourDigit;
+    QTest::newRow("Chakma") // {2,2,3}
+            << u"ccp"_s << QString(separator)
+            << zero << 12345 << fiveDigit;
+}
+
+void tst_QLocale::systemGrouping()
+{
+    QFETCH(QString, name);
+    QFETCH(QString, separator);
+    QFETCH(QString, zeroDigit);
+    QFETCH(int, number);
+    QFETCH(QString, formattedString);
+
+    {
+        MySystemLocale sLocale(name);
+        QLocale sys = QLocale::system();
+        QCOMPARE(sys.groupSeparator(), separator);
+        QCOMPARE(sys.zeroDigit(), zeroDigit);
+        QCOMPARE(sys.toString(number), formattedString);
+    }
+}
+
 #  endif // QT_BUILD_INTERNAL
 
 void tst_QLocale::systemLocaleDayAndMonthNames_data()

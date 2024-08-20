@@ -1108,6 +1108,29 @@ QString QLocaleData::exponentSeparator() const
     return exponential().getData(single_character_data);
 }
 
+QLocaleData::GroupSizes QLocaleData::groupSizes() const
+{
+#ifndef QT_NO_SYSTEMLOCALE
+    if (this == &systemLocaleData) {
+        QVariant queryResult = systemLocale()->query(QSystemLocale::Grouping);
+        if (!queryResult.isNull()) {
+            QLocaleData::GroupSizes sysGroupSizes =
+                    queryResult.value<QLocaleData::GroupSizes>();
+            if (sysGroupSizes.first <= 0)
+                sysGroupSizes.first = m_grouping_first;
+            if (sysGroupSizes.higher <= 0)
+                sysGroupSizes.higher = m_grouping_higher;
+            if (sysGroupSizes.least <= 0)
+                sysGroupSizes.least = m_grouping_least;
+            return sysGroupSizes;
+        }
+    }
+#endif
+    return { m_grouping_first,
+             m_grouping_higher,
+             m_grouping_least };
+}
+
 /*!
  \internal
 */
@@ -3992,11 +4015,12 @@ QString QLocaleData::doubleToString(double d, int precision, DoubleForm form,
                 // Set bias to everything added to exponent form but not
                 // decimal, minus the converse.
 
+                const QLocaleData::GroupSizes grouping = groupSizes();
                 // Exponent adds separator, sign and digits:
                 int bias = 2 + minExponentDigits;
                 // Decimal form may get grouping separators inserted:
-                if (groupDigits && decpt >= m_grouping_top + m_grouping_least)
-                    bias -= (decpt - m_grouping_least) / m_grouping_higher + 1;
+                if (groupDigits && decpt >= grouping.first + grouping.least)
+                    bias -= (decpt - grouping.least) / grouping.higher + 1;
                 // X = decpt - 1 needs two digits if decpt > 10:
                 if (decpt > 10 && minExponentDigits == 1)
                     ++bias;
@@ -4081,11 +4105,12 @@ QString QLocaleData::decimalForm(QString &&digits, int decpt, int precision,
         digits.insert(decpt * digitWidth, decimalPoint());
 
     if (groupDigits) {
+        const QLocaleData::GroupSizes grouping = groupSizes();
         const QString group = groupSeparator();
-        qsizetype i = decpt - m_grouping_least;
-        if (i >= m_grouping_top) {
+        qsizetype i = decpt - grouping.least;
+        if (i >= grouping.first) {
             digits.insert(i * digitWidth, group);
-            while ((i -= m_grouping_higher) > 0)
+            while ((i -= grouping.higher) > 0)
                 digits.insert(i * digitWidth, group);
         }
     }
@@ -4188,12 +4213,13 @@ QString QLocaleData::applyIntegerFormatting(QString &&numStr, bool negative, int
     qsizetype usedWidth = digitCount + prefix.size();
 
     if (base == 10 && flags & GroupDigits) {
+        const QLocaleData::GroupSizes grouping = groupSizes();
         const QString group = groupSeparator();
-        qsizetype i = digitCount - m_grouping_least;
-        if (i >= m_grouping_top) {
+        qsizetype i = digitCount - grouping.least;
+        if (i >= grouping.first) {
             numStr.insert(i * digitWidth, group);
             ++usedWidth;
-            while ((i -= m_grouping_higher) > 0) {
+            while ((i -= grouping.higher) > 0) {
                 numStr.insert(i * digitWidth, group);
                 ++usedWidth;
             }
@@ -4462,6 +4488,7 @@ bool QLocaleData::numberToCLocale(QStringView s, QLocale::NumberOptions number_o
     qsizetype digitsInGroup = 0;
     qsizetype last_separator_idx = -1;
     qsizetype start_of_digits_idx = -1;
+    const QLocaleData::GroupSizes grouping = groupSizes();
 
     // Floating-point details (non-integer modes):
     qsizetype decpt_idx = -1;
@@ -4511,13 +4538,13 @@ bool QLocaleData::numberToCLocale(QStringView s, QLocale::NumberOptions number_o
 
                 if (last_separator_idx == -1) {
                     // Check distance from the beginning of the digits:
-                    if (start_of_digits_idx == -1 || m_grouping_top > digitsInGroup
-                        || digitsInGroup >= m_grouping_least + m_grouping_top) {
+                    if (start_of_digits_idx == -1 || grouping.first > digitsInGroup
+                        || digitsInGroup >= grouping.least + grouping.first) {
                         return false;
                     }
                 } else {
                     // Check distance from the last separator:
-                    if (digitsInGroup != m_grouping_higher)
+                    if (digitsInGroup != grouping.higher)
                         return false;
                 }
 
@@ -4526,7 +4553,7 @@ bool QLocaleData::numberToCLocale(QStringView s, QLocale::NumberOptions number_o
             } else if (mode != IntegerMode && (out == '.' || idx == exponent_idx)
                        && last_separator_idx != -1) {
                 // Were there enough digits since the last group separator?
-                if (digitsInGroup != m_grouping_least)
+                if (digitsInGroup != grouping.least)
                     return false;
 
                 // stop processing separators
@@ -4543,7 +4570,7 @@ bool QLocaleData::numberToCLocale(QStringView s, QLocale::NumberOptions number_o
 
     if (!number_options.testFlag(QLocale::RejectGroupSeparator) && last_separator_idx != -1) {
         // Were there enough digits since the last group separator?
-        if (digitsInGroup != m_grouping_least)
+        if (digitsInGroup != grouping.least)
             return false;
     }
 

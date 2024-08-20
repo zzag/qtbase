@@ -125,6 +125,7 @@ public:
         LanguageId, // uint
         TerritoryId, // uint
         DecimalPoint, // QString
+        Grouping, // QLocaleData::GroupSizes
         GroupSeparator, // QString (empty QString means: don't group digits)
         ZeroDigit, // QString
         NegativeSign, // QString
@@ -174,6 +175,12 @@ public:
 
     virtual QLocale fallbackLocale() const;
     inline qsizetype fallbackLocaleIndex() const;
+
+protected:
+    inline const QSharedDataPointer<QLocalePrivate> localeData(const QLocale &locale) const
+    {
+        return locale.d;
+    }
 };
 Q_DECLARE_TYPEINFO(QSystemLocale::QueryType, Q_PRIMITIVE_TYPE);
 Q_DECLARE_TYPEINFO(QSystemLocale::CurrencyToStringArgument, Q_RELOCATABLE_TYPE);
@@ -273,6 +280,14 @@ public:
     };
 
     enum NumberMode { IntegerMode, DoubleStandardMode, DoubleScientificMode };
+
+    struct GroupSizes
+    {
+        int first = 0;
+        int higher = 0;
+        int least = 0;
+        bool isValid() const { return least > 0 && higher > first && first > 0; }
+    };
 
 private:
     enum PrecisionMode {
@@ -397,6 +412,7 @@ public:
     [[nodiscard]] QString positiveSign() const;
     [[nodiscard]] QString negativeSign() const;
     [[nodiscard]] QString exponentSeparator() const;
+    [[nodiscard]] Q_CORE_EXPORT GroupSizes groupSizes() const;
 
     struct DataRange
     {
@@ -498,10 +514,12 @@ public:
     quint8 m_first_day_of_week : 3;
     quint8 m_weekend_start : 3;
     quint8 m_weekend_end : 3;
-    quint8 m_grouping_top : 2; // Don't group until more significant group has this many digits.
+    quint8 m_grouping_first : 2; // Don't group until more significant group has this many digits.
     quint8 m_grouping_higher : 3; // Number of digits between grouping separators
     quint8 m_grouping_least : 3; // Number of digits after last grouping separator (before decimal).
 };
+
+Q_DECLARE_TYPEINFO(QLocaleData::GroupSizes, Q_PRIMITIVE_TYPE);
 
 class QLocalePrivate
 {

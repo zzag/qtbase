@@ -110,6 +110,8 @@ QVariant QAndroidSystemLocale::query(QueryType type, QVariant &&in) const
     switch (type) {
     case DecimalPoint:
         return m_locale.decimalPoint();
+    case Grouping:
+        return QVariant::fromValue(localeData(m_locale)->m_data->groupSizes());
     case GroupSeparator:
         return m_locale.groupSeparator();
     case ZeroDigit:

@@ -432,6 +432,28 @@ static QVariant macToQtFormat(QStringView sys_fmt)
     return !result.isEmpty() ? QVariant::fromValue(result) : QVariant();
 }
 
+static QVariant getGroupingSizes()
+{
+    // It does not seem like you can directly query the group sizes from CFLocale as there
+    // is no key that corresponds to it, see:
+    // https://developer.apple.com/documentation/corefoundation/cflocalekey
+    // We have to create a number formatter for the locale and query the data from there.
+    // see: https://developer.apple.com/documentation/corefoundation/1390801-cfnumberformattercopyproperty
+    QLocaleData::GroupSizes sizes;
+    QCFType<CFLocaleRef> locale = CFLocaleCopyCurrent();
+    QCFType<CFNumberFormatterRef> numberFormatter =
+            CFNumberFormatterCreate(NULL, locale, kCFNumberFormatterDecimalStyle);
+    CFTypeRef numTref =
+            CFNumberFormatterCopyProperty(numberFormatter, kCFNumberFormatterGroupingSize);
+    CFNumberRef num = static_cast<CFNumberRef>(numTref);
+    int value;
+    if (CFNumberGetValue(num, kCFNumberIntType, &value) && value > 0) {
+        sizes.least = value;
+        sizes.higher = value;
+    }
+    return QVariant::fromValue(sizes);
+}
+
 static QVariant getMacDateFormat(CFDateFormatterStyle style)
 {
     QCFType<CFLocaleRef> l = CFLocaleCopyCurrent();
@@ -594,6 +616,8 @@ QVariant QSystemLocale::query(QueryType type, QVariant &&in) const
         return getLocaleValue<QLocalePrivate::codeToScript>(kCFLocaleScriptCode);
     case DecimalPoint:
         return getCFLocaleValue(kCFLocaleDecimalSeparator);
+    case Grouping:
+        return getGroupingSizes();
     case GroupSeparator:
         return getCFLocaleValue(kCFLocaleGroupingSeparator);
     case DateFormatLong:
