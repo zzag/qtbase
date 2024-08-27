@@ -2742,12 +2742,19 @@ static inline int qMetaTypeStaticType(const char *typeName, int length)
 */
 static int qMetaTypeCustomType_unlocked(const char *typeName, int length)
 {
+    auto type = [&] {
+#ifdef __cpp_concepts
+        return QByteArrayView(typeName, length);
+#else
+        return QByteArray::fromRawData(typeName, length);
+#endif
+    };
     if (customTypeRegistry.exists()) {
         auto reg = &*customTypeRegistry;
 #if QT_CONFIG(thread)
         Q_ASSERT(!reg->lock.tryLockForWrite());
 #endif
-        if (auto ti = reg->aliases.value(QByteArray::fromRawData(typeName, length), nullptr)) {
+        if (auto ti = reg->aliases.value(type(), nullptr)) {
             return ti->typeId.loadRelaxed();
         }
     }
