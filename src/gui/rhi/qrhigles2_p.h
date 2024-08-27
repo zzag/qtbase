@@ -575,8 +575,8 @@ struct QGles2CommandBuffer : public QRhiCommandBuffer
         bool cullFace;
         GLenum cullMode;
         GLenum frontFace;
-        bool blendEnabled;
-        struct ColorMask { bool r, g, b, a; } colorMask;
+        bool blendEnabled[16];
+        struct ColorMask { bool r, g, b, a; } colorMask[16];
         struct Blend {
             GLenum srcColor;
             GLenum dstColor;
@@ -584,7 +584,7 @@ struct QGles2CommandBuffer : public QRhiCommandBuffer
             GLenum dstAlpha;
             GLenum opColor;
             GLenum opAlpha;
-        } blend;
+        } blend[16];
         bool depthTest;
         bool depthWrite;
         GLenum depthFunc;

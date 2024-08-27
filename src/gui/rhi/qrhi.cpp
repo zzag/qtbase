@@ -1072,7 +1072,8 @@ Q_STATIC_LOGGING_CATEGORY(QRHI_LOG_RUB, "qt.rhi.rub")
 
     \value PerRenderTargetBlending Indicates that per rendertarget blending is
     supported i.e. different render targets in MRT framebuffer can have different
-    blending modes. Currently always returns false for OpenGL.
+    blending modes. In practice this can be expected to be supported everywhere
+    except OpenGL ES, where it is only available with GLES 3.2 implementations.
     This enum value has been introduced in Qt 6.9.
  */
 

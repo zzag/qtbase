@@ -1117,7 +1117,11 @@ bool QRhiGles2::create(QRhi::Flags flags)
     }
 
     caps.unpackRowLength = !caps.gles || caps.ctxMajor >= 3;
-    caps.perRenderTargetBlending = false;
+
+    if (caps.gles)
+        caps.perRenderTargetBlending = caps.ctxMajor > 3 || (caps.ctxMajor == 3 && caps.ctxMinor >= 2);
+    else
+        caps.perRenderTargetBlending = caps.ctxMajor >= 4;
 
     nativeHandlesStruct.context = ctx;
 
@@ -3884,54 +3888,63 @@ void QRhiGles2::executeBindGraphicsPipeline(QGles2CommandBuffer *cbD, QGles2Grap
     }
 
     if (!psD->m_targetBlends.isEmpty()) {
-        // We do not have MRT support here, meaning all targets use the blend
-        // params from the first one. This is technically incorrect, even if
-        // nothing in Qt relies on it. However, considering that
-        // glBlendFuncSeparatei is only available in GL 4.0+ and GLES 3.2+, we
-        // may just live with this for now because no point in bothering if it
-        // won't be usable on many GLES (3.1 or 3.0) systems.
-        const QRhiGraphicsPipeline::TargetBlend &targetBlend(psD->m_targetBlends.first());
-
-        const QGles2CommandBuffer::GraphicsPassState::ColorMask colorMask = {
-            targetBlend.colorWrite.testFlag(QRhiGraphicsPipeline::R),
-            targetBlend.colorWrite.testFlag(QRhiGraphicsPipeline::G),
-            targetBlend.colorWrite.testFlag(QRhiGraphicsPipeline::B),
-            targetBlend.colorWrite.testFlag(QRhiGraphicsPipeline::A)
-        };
-        if (forceUpdate || colorMask != state.colorMask) {
-            state.colorMask = colorMask;
-            f->glColorMask(colorMask.r, colorMask.g, colorMask.b, colorMask.a);
-        }
-
-        const bool blendEnabled = targetBlend.enable;
-        const QGles2CommandBuffer::GraphicsPassState::Blend blend = {
-            toGlBlendFactor(targetBlend.srcColor),
-            toGlBlendFactor(targetBlend.dstColor),
-            toGlBlendFactor(targetBlend.srcAlpha),
-            toGlBlendFactor(targetBlend.dstAlpha),
-            toGlBlendOp(targetBlend.opColor),
-            toGlBlendOp(targetBlend.opAlpha)
-        };
-        if (forceUpdate || blendEnabled != state.blendEnabled || (blendEnabled && blend != state.blend)) {
-            state.blendEnabled = blendEnabled;
-            if (blendEnabled) {
-                state.blend = blend;
-                f->glEnable(GL_BLEND);
-                f->glBlendFuncSeparate(blend.srcColor, blend.dstColor, blend.srcAlpha, blend.dstAlpha);
-                f->glBlendEquationSeparate(blend.opColor, blend.opAlpha);
-            } else {
-                f->glDisable(GL_BLEND);
+        GLint buffer = 0;
+        bool anyBlendEnabled = false;
+        for (const auto targetBlend : psD->m_targetBlends) {
+            const QGles2CommandBuffer::GraphicsPassState::ColorMask colorMask = {
+                targetBlend.colorWrite.testFlag(QRhiGraphicsPipeline::R),
+                targetBlend.colorWrite.testFlag(QRhiGraphicsPipeline::G),
+                targetBlend.colorWrite.testFlag(QRhiGraphicsPipeline::B),
+                targetBlend.colorWrite.testFlag(QRhiGraphicsPipeline::A)
+            };
+            if (forceUpdate || colorMask != state.colorMask[buffer]) {
+                state.colorMask[buffer] = colorMask;
+                if (caps.perRenderTargetBlending)
+                    f->glColorMaski(buffer, colorMask.r, colorMask.g, colorMask.b, colorMask.a);
+                else
+                    f->glColorMask(colorMask.r, colorMask.g, colorMask.b, colorMask.a);
             }
+
+            const bool blendEnabled = targetBlend.enable;
+            const QGles2CommandBuffer::GraphicsPassState::Blend blend = {
+                toGlBlendFactor(targetBlend.srcColor),
+                toGlBlendFactor(targetBlend.dstColor),
+                toGlBlendFactor(targetBlend.srcAlpha),
+                toGlBlendFactor(targetBlend.dstAlpha),
+                toGlBlendOp(targetBlend.opColor),
+                toGlBlendOp(targetBlend.opAlpha)
+            };
+            anyBlendEnabled |= blendEnabled;
+            if (forceUpdate || blendEnabled != state.blendEnabled[buffer] || (blendEnabled && blend != state.blend[buffer])) {
+                state.blendEnabled[buffer] = blendEnabled;
+                if (blendEnabled) {
+                    state.blend[buffer] = blend;
+                    if (caps.perRenderTargetBlending) {
+                        f->glBlendFuncSeparatei(buffer, blend.srcColor, blend.dstColor, blend.srcAlpha, blend.dstAlpha);
+                        f->glBlendEquationSeparatei(buffer, blend.opColor, blend.opAlpha);
+                    } else {
+                        f->glBlendFuncSeparate(blend.srcColor, blend.dstColor, blend.srcAlpha, blend.dstAlpha);
+                        f->glBlendEquationSeparate(blend.opColor, blend.opAlpha);
+                    }
+                }
+            }
+            buffer++;
+            if (!caps.perRenderTargetBlending)
+                break;
         }
+        if (anyBlendEnabled)
+            f->glEnable(GL_BLEND);
+        else
+            f->glDisable(GL_BLEND);
     } else {
         const QGles2CommandBuffer::GraphicsPassState::ColorMask colorMask = { true, true, true, true };
-        if (forceUpdate || colorMask != state.colorMask) {
-            state.colorMask = colorMask;
+        if (forceUpdate || colorMask != state.colorMask[0]) {
+            state.colorMask[0] = colorMask;
             f->glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
         }
         const bool blendEnabled = false;
-        if (forceUpdate || blendEnabled != state.blendEnabled) {
-            state.blendEnabled = blendEnabled;
+        if (forceUpdate || blendEnabled != state.blendEnabled[0]) {
+            state.blendEnabled[0] = blendEnabled;
             f->glDisable(GL_BLEND);
         }
     }
