@@ -249,11 +249,15 @@ void Generator::generateCode()
     registerPropertyStrings();
     registerEnumStrings();
 
+    const bool requireCompleteness = requireCompleteTypes || cdef->requireCompleteMethodTypes;
     const bool hasStaticMetaCall =
             (cdef->hasQObject || !cdef->methodList.isEmpty()
              || !cdef->propertyList.isEmpty() || !cdef->constructorList.isEmpty());
 
     const QByteArray qualifiedClassNameIdentifier = generateQualifiedClassNameIdentifier(cdef->qualified);
+
+    // type name for the Q_OJBECT/GADGET itself, void for namespaces
+    const char *ownType = !cdef->hasQNamespace ? cdef->classname.data() : "void";
 
     // ensure the qt_meta_tag_XXXX_t type is local
     fprintf(out, "namespace {\n"
@@ -286,8 +290,6 @@ void Generator::generateCode()
 // build the data array
 //
 
-    int initialMetaTypeOffset = 0;
-
     // We define a method inside the context of the class or namespace we're
     // creating the meta object for, so we get access to everything it has
     // access to and with the same contexts (for example, member enums and
@@ -296,23 +298,19 @@ void Generator::generateCode()
                  "template <> constexpr inline auto %s::qt_create_metaobjectdata<qt_meta_tag_%s_t>()\n"
                  "{\n"
                  "    namespace QMC = QtMocConstants;\n"
-                 "    QtMocHelpers::UintData qt_properties {\n",
+                 "    QtMocHelpers::UintData qt_methods {\n",
             cdef->qualified.constData(), qualifiedClassNameIdentifier.constData());
 
-    addProperties(initialMetaTypeOffset);
+    // Build signals array first, otherwise the signal indices would be wrong
+    addFunctions(cdef->signalList, "Signal");
+    addFunctions(cdef->slotList, "Slot");
+    addFunctions(cdef->methodList, "Method");
+    fprintf(out, "    };\n"
+                 "    QtMocHelpers::UintData qt_properties {\n");
+    addProperties();
     fprintf(out, "    };\n"
                  "    QtMocHelpers::UintData qt_enums {\n");
-    addEnums(initialMetaTypeOffset);
-    fprintf(out, "    };\n"
-                 "    QtMocHelpers::UintData qt_methods {\n");
-
-    // we insert the metatype for the class itself here
-    ++initialMetaTypeOffset;
-
-    // Build signals array first, otherwise the signal indices would be wrong
-    addFunctions(cdef->signalList, "Signal", initialMetaTypeOffset);
-    addFunctions(cdef->slotList, "Slot", initialMetaTypeOffset);
-    addFunctions(cdef->methodList, "Method", initialMetaTypeOffset);
+    addEnums();
     fprintf(out, "    };\n");
 
     const char *uintDataParams = "";
@@ -320,7 +318,7 @@ void Generator::generateCode()
         if (isConstructible) {
             fprintf(out, "    using Constructor = QtMocHelpers::NoType;\n"
                          "    QtMocHelpers::UintData qt_constructors {\n");
-            addFunctions(cdef->constructorList, "Constructor", initialMetaTypeOffset);
+            addFunctions(cdef->constructorList, "Constructor");
             fprintf(out, "    };\n");
         } else {
             fputs("    QtMocHelpers::UintData qt_constructors {};\n", out);
@@ -342,13 +340,20 @@ void Generator::generateCode()
         // that we call qt_metacall for properties.
         metaObjectFlags = "QMC::PropertyAccessInStaticMetaCall";
     }
-    fprintf(out, "    return QtMocHelpers::metaObjectData(%s, qt_methods, qt_properties, qt_enums%s);\n"
-                 "}\n", metaObjectFlags, uintDataParams);
+    {
+        QByteArray tagType = "qt_meta_tag_" + qualifiedClassNameIdentifier +  "_t";
+        if (requireCompleteness)
+            tagType = "QtMocHelpers::ForceCompleteMetaTypes<" + tagType + '>';
+        fprintf(out, "    return QtMocHelpers::metaObjectData<%s, %s>(%s,\n"
+                     "            qt_methods, qt_properties, qt_enums%s);\n"
+                 "}\n",
+                ownType, tagType.constData(), metaObjectFlags, uintDataParams);
+    }
 
     if (cdef->hasQNamespace) {
         // We can always access the function above if it's at namespace scope.
-        fprintf(out, "static constexpr auto qt_meta_data_%s_array =\n"
-                     "    %s::qt_create_metaobjectdata<qt_meta_tag_%s_t>().data;\n",
+        fprintf(out, "static constexpr auto qt_meta_data_types_%s =\n"
+                     "    %s::qt_create_metaobjectdata<qt_meta_tag_%s_t>();\n",
                 qualifiedClassNameIdentifier.constData(), cdef->qualified.constData(),
                 qualifiedClassNameIdentifier.constData());
     } else {
@@ -358,16 +363,26 @@ void Generator::generateCode()
                      "{\n"
                      "    return %s::qt_create_metaobjectdata<qt_meta_tag_%s_t>();\n"
                      "}\n"
-                     "static constexpr auto qt_meta_data_%s_array =\n"
-                     "    qt_call_create_metaobjectdata<qt_meta_tag_%s_t>().data;\n",
+                     "static constexpr auto qt_meta_data_types_%s =\n"
+                     "    qt_call_create_metaobjectdata<qt_meta_tag_%s_t>();\n",
                 qualifiedClassNameIdentifier.constData(), cdef->qualified.constData(),
                 qualifiedClassNameIdentifier.constData(), qualifiedClassNameIdentifier.constData(),
                 qualifiedClassNameIdentifier.constData());
     }
-    fprintf(out, "static constexpr const uint *qt_meta_data_%s =\n"
-                 "    qt_meta_data_%s_array.data();\n"
-                 "#else  // !QT_MOC_HAS_UINTDATA\n",
+
+    // create a copy of qt_meta_data_types' members so the uint array ends up
+    // in the pure .rodata section while the meta types is in .data.rel.ro
+    fprintf(out, "static constexpr auto qt_meta_data_%s_array =\n"
+                 "    qt_meta_data_types_%s.data;\n",
             qualifiedClassNameIdentifier.constData(), qualifiedClassNameIdentifier.constData());
+    fprintf(out, "static constexpr const uint *qt_meta_data_%s =\n"
+                 "    qt_meta_data_%s_array.data();\n",
+            qualifiedClassNameIdentifier.constData(), qualifiedClassNameIdentifier.constData());
+    fprintf(out, "static constexpr auto qt_meta_types_%s =\n"
+                 "    qt_meta_data_types_%s.metaTypes;\n",
+            qualifiedClassNameIdentifier.constData(), qualifiedClassNameIdentifier.constData());
+
+    fprintf(out, "#else  // !QT_MOC_HAS_UINTDATA\n");
 
     int index = MetaObjectPrivateFieldCount;
     fprintf(out, "Q_CONSTINIT static const uint qt_meta_data_%s[] = {\n", qualifiedClassNameIdentifier.constData());
@@ -430,7 +445,7 @@ void Generator::generateCode()
         || propEnumCount >= std::numeric_limits<int>::max()) {
         parser->error("internal limit exceeded: number of property and enum metatypes is too big.");
     }
-    initialMetaTypeOffset = int(propEnumCount);
+    int initialMetaTypeOffset = int(propEnumCount);
 
 //
 // Build signals array first, otherwise the signal indices would be wrong
@@ -587,8 +602,12 @@ void Generator::generateCode()
     else
         fprintf(out, "    qt_meta_extradata_%s,\n", qualifiedClassNameIdentifier.constData());
 
+    fprintf(out, "#ifdef QT_MOC_HAS_UINTDATA\n"
+                 "    qt_meta_types_%s.data(),\n"
+                 "#else\n",
+            qualifiedClassNameIdentifier.constData());
+
     const char *comma = "";
-    const bool requireCompleteness = requireCompleteTypes || cdef->requireCompleteMethodTypes;
     auto stringForType = [requireCompleteness](const QByteArray &type, bool forceComplete) -> QByteArray {
         const char *forceCompleteType = forceComplete ? ", std::true_type>" : ", std::false_type>";
         if (requireCompleteness)
@@ -615,8 +634,6 @@ void Generator::generateCode()
         comma = ",";
     }
 
-    // type name for the Q_OJBECT/GADGET itself, void for namespaces
-    auto ownType = !cdef->hasQNamespace ? cdef->classname.data() : "void";
     fprintf(out, "%s\n        // Q_OBJECT / Q_GADGET\n        %s",
             comma, stringForType(ownType, true).constData());
     comma = ",";
@@ -647,6 +664,7 @@ void Generator::generateCode()
         }
     }
     fprintf(out, "\n    >,\n");
+    fprintf(out, "#endif // !QT_MOC_HAS_UINTDATA\n");
 
     fprintf(out, "    nullptr\n} };\n\n");
 
@@ -796,8 +814,7 @@ void Generator::registerByteArrayVector(const QList<QByteArray> &list)
         strreg(ba);
 }
 
-void Generator::addFunctions(const QList<FunctionDef> &list, const char *functype,
-                                  int &initialMetatypeOffset)
+void Generator::addFunctions(const QList<FunctionDef> &list, const char *functype)
 {
     for (const FunctionDef &f : list) {
         if (!f.isConstructor)
@@ -816,8 +833,7 @@ void Generator::addFunctions(const QList<FunctionDef> &list, const char *functyp
             comma = ", ";
         }
 
-        fprintf(out, ")%s>(%d, %d, %d, ",  f.isConst ? " const" : "",
-                stridx(f.name), stridx(f.tag), initialMetatypeOffset);
+        fprintf(out, ")%s>(%d, %d, ",  f.isConst ? " const" : "", stridx(f.name), stridx(f.tag));
         // flags
         // access right is always present
         if (f.access == FunctionDef::Private)
@@ -858,11 +874,6 @@ void Generator::addFunctions(const QList<FunctionDef> &list, const char *functyp
 
             fprintf(out, "\n        }}),\n");
         }
-
-        // constructors don't have a return type
-        if (!f.isConstructor)
-            ++initialMetatypeOffset;
-        initialMetatypeOffset += int(f.arguments.size());
     }
 }
 
@@ -986,12 +997,12 @@ void Generator::registerPropertyStrings()
     }
 }
 
-void Generator::addProperties(int &initialMetaTypeOffset)
+void Generator::addProperties()
 {
     for (const PropertyDef &p : std::as_const(cdef->propertyList)) {
         fprintf(out, "        // property '%s'\n"
-                     "        QtMocHelpers::PropertyData(%d, ",
-                p.name.constData(), stridx(p.name));
+                     "        QtMocHelpers::PropertyData<%s>(%d, ",
+                p.name.constData(), p.type.constData(), stridx(p.name));
         generateTypeInfo(p.type);
         fputc(',', out);
 
@@ -1056,7 +1067,6 @@ void Generator::addProperties(int &initialMetaTypeOffset)
 
         fprintf(out, "),\n");
     }
-    initialMetaTypeOffset += int(cdef->propertyList.size());
 }
 
 void Generator::generateProperties()
@@ -1129,7 +1139,7 @@ void Generator::registerEnumStrings()
     }
 }
 
-void Generator::addEnums(int &initialMetaTypeOffset)
+void Generator::addEnums()
 {
     for (const EnumDef &e : std::as_const(cdef->enumList)) {
         const QByteArray &typeName = e.enumName.isNull() ? e.name : e.enumName;
@@ -1167,8 +1177,6 @@ void Generator::addEnums(int &initialMetaTypeOffset)
 
         fprintf(out, "        }),\n");
     }
-
-    initialMetaTypeOffset += int(cdef->enumList.size());
 }
 
 void Generator::generateEnums(int index)

@@ -1924,7 +1924,10 @@ QByteArray QMetaMethodPrivate::signature() const
 QByteArrayView QMetaMethodPrivate::name() const noexcept
 {
     Q_ASSERT(priv(mobj->d.data)->revision >= 7);
-    return stringDataView(mobj, data.name());
+    QByteArrayView name = stringDataView(mobj, data.name());
+    if (qsizetype colon = name.lastIndexOf(':'); colon > 0)
+        return name.sliced(colon + 1);
+    return name;
 }
 
 int QMetaMethodPrivate::typesDataIndex() const
