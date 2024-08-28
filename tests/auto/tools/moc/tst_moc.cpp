@@ -1879,7 +1879,7 @@ void tst_Moc::constructors()
         QCOMPARE(mm.access(), QMetaMethod::Public);
         QCOMPARE(mm.methodType(), QMetaMethod::Constructor);
         QCOMPARE(mm.methodSignature(), QByteArray("CtorTestClass(QObject*)"));
-        QCOMPARE(mm.typeName(), "");
+        QCOMPARE(QByteArrayView(mm.typeName()), QByteArrayView());
         QList<QByteArray> paramNames = mm.parameterNames();
         QCOMPARE(paramNames.size(), 1);
         QCOMPARE(paramNames.at(0), QByteArray("parent"));
@@ -1892,7 +1892,7 @@ void tst_Moc::constructors()
         QCOMPARE(mm.access(), QMetaMethod::Public);
         QCOMPARE(mm.methodType(), QMetaMethod::Constructor);
         QCOMPARE(mm.methodSignature(), QByteArray("CtorTestClass()"));
-        QCOMPARE(mm.typeName(), "");
+        QCOMPARE(QByteArrayView(mm.typeName()), QByteArrayView());
         QCOMPARE(mm.parameterNames().size(), 0);
         QCOMPARE(mm.parameterTypes().size(), 0);
     }
@@ -1901,7 +1901,7 @@ void tst_Moc::constructors()
         QCOMPARE(mm.access(), QMetaMethod::Public);
         QCOMPARE(mm.methodType(), QMetaMethod::Constructor);
         QCOMPARE(mm.methodSignature(), QByteArray("CtorTestClass(QString)"));
-        QCOMPARE(mm.typeName(), "");
+        QCOMPARE(QByteArrayView(mm.typeName()), QByteArrayView());
         QList<QByteArray> paramNames = mm.parameterNames();
         QCOMPARE(paramNames.size(), 1);
         QCOMPARE(paramNames.at(0), QByteArray("str"));

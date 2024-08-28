@@ -512,29 +512,28 @@ void tst_MocHelpers::methodUintGroup()
 
 void tst_MocHelpers::constructorUintData()
 {
-    constexpr uint NoType = 0x80000000 | 1;
     using namespace QtMocHelpers;
     using namespace QtMocConstants;
     {
-        auto result = ConstructorData<QtMocHelpers::NoType()>(1, 2, AccessPublic, NoType, {});
-        QCOMPARE(result.header[0], 1U);
+        auto result = ConstructorData<QtMocHelpers::NoType()>(2, AccessPublic, {});
+        QCOMPARE(result.header[0], 0U);
         QCOMPARE(result.header[1], 0U);
         QCOMPARE(result.header[3], 2U);
         QCOMPARE(result.header[4], AccessPublic | MethodConstructor);
         QCOMPARE(result.header[5], 0U);
-        QCOMPARE(result.payload[0], NoType);
+        QCOMPARE(result.payload[0], uint(QMetaType::UnknownType));
 
         QCOMPARE(result.metaTypes().count(), 0);
     }
     {
-        auto result = ConstructorData<QtMocHelpers::NoType(QObject *)>(0, 1, AccessPublic, NoType,
+        auto result = ConstructorData<QtMocHelpers::NoType(QObject *)>(1, AccessPublic,
                                                                        {{ { QMetaType::QObjectStar, 2 } }});
         QCOMPARE(result.header[0], 0U);
         QCOMPARE(result.header[1], 1U);
         QCOMPARE(result.header[3], 1U);
         QCOMPARE(result.header[4], AccessPublic | MethodConstructor);
         QCOMPARE(result.header[5], 0U);
-        QCOMPARE(result.payload[0], NoType);
+        QCOMPARE(result.payload[0], uint(QMetaType::UnknownType));
         QCOMPARE(result.payload[1], uint(QMetaType::QObjectStar));
         QCOMPARE(result.payload[2], 2U);
 
@@ -561,7 +560,7 @@ checkConstructors(const std::array<uint, N> &data, const QtPrivate::QMetaTypeInt
     QCOMPARE(header[4], AccessPublic | MethodConstructor);
     QCOMPARE_GT(header[5], 0U);
     const uint *payload = data.data() + header[2];
-    QCOMPARE(payload[0], 0x80000000U | 1);
+    QCOMPARE(payload[0], uint(QMetaType::UnknownType));
     QCOMPARE(payload[1], uint(QMetaType::QObjectStar));
     QCOMPARE(QMetaType(metaTypes[header[5]]), QMetaType::fromType<QObject *>());
 
@@ -574,7 +573,7 @@ checkConstructors(const std::array<uint, N> &data, const QtPrivate::QMetaTypeInt
     QCOMPARE(header[4], AccessPublic | MethodConstructor | MethodCloned);
     QCOMPARE_GT(header[5], 0U);
     payload = data.data() + header[2];
-    QCOMPARE(payload[0], 0x80000000U | 1);
+    QCOMPARE(payload[0], uint(QMetaType::UnknownType));
     // no metatype stored for this constructor
 
     // Constructor(const QString &)
@@ -586,7 +585,7 @@ checkConstructors(const std::array<uint, N> &data, const QtPrivate::QMetaTypeInt
     QCOMPARE(header[4], AccessPublic | MethodConstructor);
     QCOMPARE_GT(header[5], 0U);
     payload = data.data() + header[2];
-    QCOMPARE(payload[0], 0x80000000U | 1);
+    QCOMPARE(payload[0], uint(QMetaType::UnknownType));
     QCOMPARE(payload[1], uint(QMetaType::QString));
     QCOMPARE(QMetaType(metaTypes[header[5]]), QMetaType::fromType<QString>());
 }
@@ -596,14 +595,14 @@ void tst_MocHelpers::constructorUintGroup()
     using QtMocHelpers::NoType;
     QTest::setThrowOnFail(true);
     constexpr QtMocHelpers::UintData constructors = {
-        QtMocHelpers::ConstructorData<NoType(QObject *)>(0, 1, QtMocConstants::AccessPublic,
-            0x80000000 | 1, {{ { QMetaType::QObjectStar, 2 } }}
+        QtMocHelpers::ConstructorData<NoType(QObject *)>(1, QtMocConstants::AccessPublic,
+            {{ { QMetaType::QObjectStar, 2 } }}
         ),
-        QtMocHelpers::ConstructorData<NoType()>(0, 1, QtMocConstants::AccessPublic | QtMocConstants::MethodCloned,
-            0x80000000 | 1, {{ }}
+        QtMocHelpers::ConstructorData<NoType()>(1, QtMocConstants::AccessPublic | QtMocConstants::MethodCloned,
+            {{ }}
         ),
-        QtMocHelpers::ConstructorData<NoType(const QString &)>(0, 1, QtMocConstants::AccessPublic,
-            0x80000000 | 1, {{ { QMetaType::QString,  3 }, }}
+        QtMocHelpers::ConstructorData<NoType(const QString &)>(1, QtMocConstants::AccessPublic,
+            {{ { QMetaType::QString,  3 }, }}
         )
     };
     testUintData(constructors);
@@ -715,14 +714,14 @@ void tst_MocHelpers::uintArray()
                 QtMocHelpers::EnumData<QFlags<E1>>(11, 1, EnumIsFlag).add({ { 3, E1::AnEnumValue } }),
             },
             QtMocHelpers::UintData{
-                QtMocHelpers::ConstructorData<NoType(QObject *)>(0, 1, QtMocConstants::AccessPublic,
-                    0x80000000 | 1, {{ { QMetaType::QObjectStar, 2 } }}
+                QtMocHelpers::ConstructorData<NoType(QObject *)>(1, QtMocConstants::AccessPublic,
+                    {{ { QMetaType::QObjectStar, 2 } }}
                 ),
-                QtMocHelpers::ConstructorData<NoType()>(0, 1, QtMocConstants::AccessPublic | QtMocConstants::MethodCloned,
-                    0x80000000 | 1, {{ }}
+                QtMocHelpers::ConstructorData<NoType()>(1, QtMocConstants::AccessPublic | QtMocConstants::MethodCloned,
+                    {{ }}
                 ),
-                QtMocHelpers::ConstructorData<NoType(const QString &)>(0, 1, QtMocConstants::AccessPublic,
-                    0x80000000 | 1, {{ { QMetaType::QString,  3 }, }}
+                QtMocHelpers::ConstructorData<NoType(const QString &)>(1, QtMocConstants::AccessPublic,
+                    {{ { QMetaType::QString,  3 }, }}
                 )
             }, QtMocHelpers::ClassInfos({{1, 2}, {3, 4}}));
 

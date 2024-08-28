@@ -833,7 +833,11 @@ void Generator::addFunctions(const QList<FunctionDef> &list, const char *functyp
             comma = ", ";
         }
 
-        fprintf(out, ")%s>(%d, %d, ",  f.isConst ? " const" : "", stridx(f.name), stridx(f.tag));
+        if (f.isConstructor)
+            fprintf(out, ")>(%d, ", stridx(f.tag));
+        else
+            fprintf(out, ")%s>(%d, %d, ", f.isConst ? " const" : "", stridx(f.name), stridx(f.tag));
+
         // flags
         // access right is always present
         if (f.access == FunctionDef::Private)
@@ -854,9 +858,10 @@ void Generator::addFunctions(const QList<FunctionDef> &list, const char *functyp
             fprintf(out, ", %#x", f.revision);
 
         // return type (if not a constructor)
-        const bool allowEmptyName = f.isConstructor;
-        fprintf(out, ", ");
-        generateTypeInfo(f.normalizedType, allowEmptyName);
+        if (!f.isConstructor) {
+            fprintf(out, ", ");
+            generateTypeInfo(f.normalizedType);
+        }
 
         if (f.arguments.isEmpty()) {
             fprintf(out, "),\n");

@@ -445,7 +445,13 @@ template <typename F> struct SlotData : FunctionData<F, QtMocConstants::MethodSl
 
 template <typename F> struct ConstructorData : FunctionData<F, QtMocConstants::MethodConstructor>
 {
-    using FunctionData<F, QtMocConstants::MethodConstructor>::FunctionData;
+    using Base = FunctionData<F, QtMocConstants::MethodConstructor>;
+
+    // the name for a constructor is always the class name (string index zero)
+    // and it has no return type
+    constexpr ConstructorData(uint tagIndex, uint flags, typename Base::ParametersArray params = {})
+        : Base(0, tagIndex, flags, QMetaType::UnknownType, params)
+    {}
 };
 
 template <typename F> struct RevisionedMethodData :
@@ -469,7 +475,14 @@ template <typename F> struct RevisionedSlotData :
 template <typename F> struct RevisionedConstructorData :
         FunctionData<F, QtMocConstants::MethodRevisioned | QtMocConstants::MethodConstructor>
 {
-    using FunctionData<F, QtMocConstants::MethodRevisioned | QtMocConstants::MethodConstructor>::FunctionData;
+    using Base = FunctionData<F, QtMocConstants::MethodRevisioned | QtMocConstants::MethodConstructor>;
+
+    // the name for a constructor is always the class name (string index zero)
+    // and it has no return type
+    constexpr RevisionedConstructorData(uint tagIndex, uint flags, uint revision,
+                                        typename Base::ParametersArray params = {})
+        : Base(0, tagIndex, flags, revision, QMetaType::UnknownType, params)
+    {}
 };
 
 

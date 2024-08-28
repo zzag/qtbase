@@ -652,7 +652,7 @@ bool QMetaObjectPrivate::methodMatch(const QMetaObject *m, const QMetaMethod &me
     if (priv->parameterCount() != argc)
         return false;
 
-    if (stringData(m, data.name()) != name)
+    if (QMetaMethodPrivate::get(&method)->name() != name)
         return false;
 
     const QtPrivate::QMetaTypeInterface * const *ifaces = priv->parameterMetaTypeInterfaces();
@@ -2277,7 +2277,11 @@ QList<QByteArray> QMetaMethod::parameterNames() const
 
 
 /*!
-    Returns the return type name of this method.
+    Returns the return type name of this method. If this method is a
+    constructor, this function returns an empty string (constructors have no
+    return types).
+
+    \note In Qt 7, this function will return a null pointer for constructors.
 
     \sa returnType(), QMetaType::type()
 */
@@ -2285,6 +2289,10 @@ const char *QMetaMethod::typeName() const
 {
     if (!mobj)
         return nullptr;
+#if QT_VERSION < QT_VERSION_CHECK(7, 0, 0)
+    if (methodType() == QMetaMethod::Constructor)
+        return "";
+#endif
     return QMetaMethodPrivate::get(this)->rawReturnTypeName();
 }
 
