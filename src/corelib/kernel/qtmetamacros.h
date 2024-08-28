@@ -11,7 +11,8 @@
 QT_BEGIN_NAMESPACE
 
 #ifndef Q_MOC_OUTPUT_REVISION
-#define Q_MOC_OUTPUT_REVISION 68
+// This number should be in sync with moc's outputrevision.h
+#define Q_MOC_OUTPUT_REVISION 69
 #endif
 
 // The following macros can be defined by tools that understand Qt

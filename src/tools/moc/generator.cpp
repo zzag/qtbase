@@ -131,17 +131,6 @@ int Generator::stridx(const QByteArray &s)
     return i;
 }
 
-// Returns the sum of all parameters (including return type) for the given
-// \a list of methods. This is needed for calculating the size of the methods'
-// parameter type/name meta-data.
-static int aggregateParameterCount(const QList<FunctionDef> &list)
-{
-    int sum = 0;
-    for (const FunctionDef &def : list)
-        sum += int(def.arguments.size()) + 1; // +1 for return type
-    return sum;
-}
-
 bool Generator::registerableMetaType(const QByteArray &propertyType)
 {
     if (metaTypes.contains(propertyType))
@@ -269,8 +258,7 @@ void Generator::generateCode()
 // Build the strings using QtMocHelpers::stringData
 //
 
-    fprintf(out, "\n#ifdef QT_MOC_HAS_STRINGDATA\n"
-                 "static constexpr auto qt_meta_stringdata_%s = QtMocHelpers::stringData(",
+    fprintf(out, "static constexpr auto qt_meta_stringdata_%s = QtMocHelpers::stringData(",
             qualifiedClassNameIdentifier.constData());
     {
         char comma = 0;
@@ -281,10 +269,7 @@ void Generator::generateCode()
             comma = ',';
         }
     }
-    fprintf(out, "\n);\n"
-            "#else  // !QT_MOC_HAS_STRINGDATA\n");
-    fprintf(out, "#error \"qtmochelpers.h not found or too old.\"\n");
-    fprintf(out, "#endif // !QT_MOC_HAS_STRINGDATA\n\n");
+    fprintf(out, "\n);\n\n");
 
 //
 // build the data array
@@ -294,8 +279,7 @@ void Generator::generateCode()
     // creating the meta object for, so we get access to everything it has
     // access to and with the same contexts (for example, member enums and
     // types).
-    fprintf(out, "#ifdef QT_MOC_HAS_UINTDATA\n"
-                 "template <> constexpr inline auto %s::qt_create_metaobjectdata<qt_meta_tag_%s_t>()\n"
+    fprintf(out, "template <> constexpr inline auto %s::qt_create_metaobjectdata<qt_meta_tag_%s_t>()\n"
                  "{\n"
                  "    namespace QMC = QtMocConstants;\n"
                  "    QtMocHelpers::UintData qt_methods {\n",
@@ -372,136 +356,12 @@ void Generator::generateCode()
 
     // create a copy of qt_meta_data_types' members so the uint array ends up
     // in the pure .rodata section while the meta types is in .data.rel.ro
-    fprintf(out, "static constexpr auto qt_meta_data_%s_array =\n"
+    fprintf(out, "static constexpr auto qt_meta_data_%s =\n"
                  "    qt_meta_data_types_%s.data;\n",
             qualifiedClassNameIdentifier.constData(), qualifiedClassNameIdentifier.constData());
-    fprintf(out, "static constexpr const uint *qt_meta_data_%s =\n"
-                 "    qt_meta_data_%s_array.data();\n",
-            qualifiedClassNameIdentifier.constData(), qualifiedClassNameIdentifier.constData());
     fprintf(out, "static constexpr auto qt_meta_types_%s =\n"
-                 "    qt_meta_data_types_%s.metaTypes;\n",
+                 "    qt_meta_data_types_%s.metaTypes;\n\n",
             qualifiedClassNameIdentifier.constData(), qualifiedClassNameIdentifier.constData());
-
-    fprintf(out, "#else  // !QT_MOC_HAS_UINTDATA\n");
-
-    int index = MetaObjectPrivateFieldCount;
-    fprintf(out, "Q_CONSTINIT static const uint qt_meta_data_%s[] = {\n", qualifiedClassNameIdentifier.constData());
-    fprintf(out, "\n // content:\n");
-    fprintf(out, "    %4d,       // revision\n", 12);       // hardcoded to an earlier version
-    fprintf(out, "    %4d,       // classname\n", stridx(cdef->qualified));
-    fprintf(out, "    %4d, %4d, // classinfo\n", int(cdef->classInfoList.size()), int(cdef->classInfoList.size() ? index : 0));
-    index += cdef->classInfoList.size() * 2;
-
-    qsizetype methodCount = 0;
-    if (qAddOverflow(cdef->signalList.size(), cdef->slotList.size(), &methodCount)
-        || qAddOverflow(cdef->methodList.size(), methodCount, &methodCount)) {
-        parser->error("internal limit exceeded: the total number of member functions"
-                      " (including signals and slots) is too big.");
-    }
-
-    fprintf(out, "    %4" PRIdQSIZETYPE ", %4d, // methods\n", methodCount, methodCount ? index : 0);
-    index += methodCount * QMetaObjectPrivate::IntsPerMethod;
-    if (cdef->revisionedMethods)
-        index += methodCount;
-    int paramsIndex = index;
-    int totalParameterCount = aggregateParameterCount(cdef->signalList)
-            + aggregateParameterCount(cdef->slotList)
-            + aggregateParameterCount(cdef->methodList)
-            + aggregateParameterCount(cdef->constructorList);
-    index += totalParameterCount * 2 // types and parameter names
-            - methodCount // return "parameters" don't have names
-            - int(cdef->constructorList.size()); // "this" parameters don't have names
-
-    fprintf(out, "    %4d, %4d, // properties\n", int(cdef->propertyList.size()), int(cdef->propertyList.size() ? index : 0));
-    index += cdef->propertyList.size() * QMetaObjectPrivate::IntsPerProperty;
-    fprintf(out, "    %4d, %4d, // enums/sets\n", int(cdef->enumList.size()), cdef->enumList.size() ? index : 0);
-
-    int enumsIndex = index;
-    for (const EnumDef &def : std::as_const(cdef->enumList))
-        index += QMetaObjectPrivate::IntsPerEnum + (def.values.size() * 2);
-
-    fprintf(out, "    %4d, %4d, // constructors\n", isConstructible ? int(cdef->constructorList.size()) : 0,
-            isConstructible ? index : 0);
-
-    int flags = 0;
-    if (cdef->hasQGadget || cdef->hasQNamespace) {
-        // Ideally, all the classes could have that flag. But this broke classes generated
-        // by qdbusxml2cpp which generate code that require that we call qt_metacall for properties
-        flags |= PropertyAccessInStaticMetaCall;
-    }
-    fprintf(out, "    %4d,       // flags\n", flags);
-    fprintf(out, "    %4d,       // signalCount\n", int(cdef->signalList.size()));
-
-
-//
-// Build classinfo array
-//
-    generateClassInfos();
-
-    qsizetype propEnumCount = 0;
-    // all property metatypes + all enum metatypes + 1 for the type of the current class itself
-    if (qAddOverflow(cdef->propertyList.size(), cdef->enumList.size(), &propEnumCount)
-        || qAddOverflow(propEnumCount, qsizetype(1), &propEnumCount)
-        || propEnumCount >= std::numeric_limits<int>::max()) {
-        parser->error("internal limit exceeded: number of property and enum metatypes is too big.");
-    }
-    int initialMetaTypeOffset = int(propEnumCount);
-
-//
-// Build signals array first, otherwise the signal indices would be wrong
-//
-    generateFunctions(cdef->signalList, "signal", MethodSignal, paramsIndex, initialMetaTypeOffset);
-
-//
-// Build slots array
-//
-    generateFunctions(cdef->slotList, "slot", MethodSlot, paramsIndex, initialMetaTypeOffset);
-
-//
-// Build method array
-//
-    generateFunctions(cdef->methodList, "method", MethodMethod, paramsIndex, initialMetaTypeOffset);
-
-//
-// Build method version arrays
-//
-    if (cdef->revisionedMethods) {
-        generateFunctionRevisions(cdef->signalList, "signal");
-        generateFunctionRevisions(cdef->slotList, "slot");
-        generateFunctionRevisions(cdef->methodList, "method");
-    }
-
-//
-// Build method parameters array
-//
-    generateFunctionParameters(cdef->signalList, "signal");
-    generateFunctionParameters(cdef->slotList, "slot");
-    generateFunctionParameters(cdef->methodList, "method");
-    if (isConstructible)
-        generateFunctionParameters(cdef->constructorList, "constructor");
-
-//
-// Build property array
-//
-    generateProperties();
-
-//
-// Build enums array
-//
-    generateEnums(enumsIndex);
-
-//
-// Build constructors array
-//
-    if (isConstructible)
-        generateFunctions(cdef->constructorList, "constructor", MethodConstructor, paramsIndex, initialMetaTypeOffset);
-
-//
-// Terminate data array
-//
-    fprintf(out, "\n       0        // eod\n};\n");
-
-    fprintf(out, "#endif // !QT_MOC_HAS_UINTDATA\n\n");
 
 //
 // Build extra array
@@ -590,7 +450,7 @@ void Generator::generateCode()
     else
         fprintf(out, "    nullptr,\n");
     fprintf(out, "    qt_meta_stringdata_%s.offsetsAndSizes,\n"
-            "    qt_meta_data_%s,\n", qualifiedClassNameIdentifier.constData(),
+            "    qt_meta_data_%s.data(),\n", qualifiedClassNameIdentifier.constData(),
             qualifiedClassNameIdentifier.constData());
     if (hasStaticMetaCall)
         fprintf(out, "    qt_static_metacall,\n");
@@ -602,69 +462,8 @@ void Generator::generateCode()
     else
         fprintf(out, "    qt_meta_extradata_%s,\n", qualifiedClassNameIdentifier.constData());
 
-    fprintf(out, "#ifdef QT_MOC_HAS_UINTDATA\n"
-                 "    qt_meta_types_%s.data(),\n"
-                 "#else\n",
+    fprintf(out, "    qt_meta_types_%s.data(),\n",
             qualifiedClassNameIdentifier.constData());
-
-    const char *comma = "";
-    auto stringForType = [requireCompleteness](const QByteArray &type, bool forceComplete) -> QByteArray {
-        const char *forceCompleteType = forceComplete ? ", std::true_type>" : ", std::false_type>";
-        if (requireCompleteness)
-            return type;
-        return "QtPrivate::TypeAndForceComplete<" % type % forceCompleteType;
-    };
-    if (!requireCompleteness) {
-        fprintf(out, "    qt_incomplete_metaTypeArray<qt_meta_tag_%s_t", qualifiedClassNameIdentifier.constData());
-        comma = ",";
-    } else {
-        fprintf(out, "    qt_metaTypeArray<");
-    }
-    // metatypes for properties
-    for (const PropertyDef &p : std::as_const(cdef->propertyList)) {
-        fprintf(out, "%s\n        // property '%s'\n        %s",
-                comma, p.name.constData(), stringForType(p.type, true).constData());
-        comma = ",";
-    }
-
-    // metatypes for enums
-    for (const EnumDef &e : std::as_const(cdef->enumList)) {
-        fprintf(out, "%s\n        // enum '%s'\n        %s",
-                comma, e.name.constData(), stringForType(e.qualifiedType(cdef), true).constData());
-        comma = ",";
-    }
-
-    fprintf(out, "%s\n        // Q_OBJECT / Q_GADGET\n        %s",
-            comma, stringForType(ownType, true).constData());
-    comma = ",";
-
-    // metatypes for all exposed methods
-    // because we definitely printed something above, this section doesn't need comma control
-    const auto allMethods = {&cdef->signalList, &cdef->slotList, &cdef->methodList};
-    for (const QList<FunctionDef> *methodContainer : allMethods) {
-        for (const FunctionDef &fdef : *methodContainer) {
-            fprintf(out, ",\n        // method '%s'\n        %s",
-                    fdef.name.constData(), stringForType(fdef.type.name, false).constData());
-            for (const auto &argument: fdef.arguments)
-                fprintf(out, ",\n        %s", stringForType(argument.type.name, false).constData());
-        }
-    }
-
-    // but constructors have no return types, so this needs comma control again
-    for (const FunctionDef &fdef : std::as_const(cdef->constructorList)) {
-        if (fdef.arguments.isEmpty())
-            continue;
-
-        fprintf(out, "%s\n        // constructor '%s'", comma, fdef.name.constData());
-        comma = "";
-        for (const auto &argument: fdef.arguments) {
-            fprintf(out, "%s\n        %s", comma,
-                    stringForType(argument.type.name, false).constData());
-            comma = ",";
-        }
-    }
-    fprintf(out, "\n    >,\n");
-    fprintf(out, "#endif // !QT_MOC_HAS_UINTDATA\n");
 
     fprintf(out, "    nullptr\n} };\n\n");
 
@@ -781,17 +580,6 @@ void Generator::addClassInfos()
         fprintf(out, "            { %4d, %4d },\n", stridx(c.name), stridx(c.value));
 }
 
-void Generator::generateClassInfos()
-{
-    if (cdef->classInfoList.isEmpty())
-        return;
-
-    fprintf(out, "\n // classinfo: key, value\n");
-
-    for (const ClassInfoDef &c : std::as_const(cdef->classInfoList))
-        fprintf(out, "    %4d, %4d,\n", stridx(c.name), stridx(c.value));
-}
-
 void Generator::registerFunctionStrings(const QList<FunctionDef> &list)
 {
     for (const FunctionDef &f : list) {
@@ -882,91 +670,6 @@ void Generator::addFunctions(const QList<FunctionDef> &list, const char *functyp
     }
 }
 
-void Generator::generateFunctions(const QList<FunctionDef> &list, const char *functype, int type,
-                                  int &paramsIndex, int &initialMetatypeOffset)
-{
-    if (list.isEmpty())
-        return;
-    fprintf(out, "\n // %ss: name, argc, parameters, tag, flags, initial metatype offsets\n", functype);
-
-    for (const FunctionDef &f : list) {
-        QByteArray comment;
-        uint flags = type;
-        if (f.access == FunctionDef::Private) {
-            flags |= AccessPrivate;
-            comment.append("Private");
-        } else if (f.access == FunctionDef::Public) {
-            flags |= AccessPublic;
-            comment.append("Public");
-        } else if (f.access == FunctionDef::Protected) {
-            flags |= AccessProtected;
-            comment.append("Protected");
-        }
-        if (f.isCompat) {
-            flags |= MethodCompatibility;
-            comment.append(" | MethodCompatibility");
-        }
-        if (f.wasCloned) {
-            flags |= MethodCloned;
-            comment.append(" | MethodCloned");
-        }
-        if (f.isScriptable) {
-            flags |= MethodScriptable;
-            comment.append(" | isScriptable");
-        }
-        if (f.revision > 0) {
-            flags |= MethodRevisioned;
-            comment.append(" | MethodRevisioned");
-        }
-
-        if (f.isConst) {
-            flags |= MethodIsConst;
-            comment.append(" | MethodIsConst ");
-        }
-
-        const int argc = int(f.arguments.size());
-        fprintf(out, "    %4d, %4d, %4d, %4d, 0x%02x, %4d /* %s */,\n",
-            stridx(f.name), argc, paramsIndex, stridx(f.tag), flags, initialMetatypeOffset, comment.constData());
-
-        paramsIndex += 1 + argc * 2;
-        // constructors don't have a return type
-        initialMetatypeOffset += (f.isConstructor ? 0 : 1) + argc;
-    }
-}
-
-void Generator::generateFunctionRevisions(const QList<FunctionDef> &list, const char *functype)
-{
-    if (list.size())
-        fprintf(out, "\n // %ss: revision\n", functype);
-    for (const FunctionDef &f : list)
-        fprintf(out, "    %4d,\n", f.revision);
-}
-
-void Generator::generateFunctionParameters(const QList<FunctionDef> &list, const char *functype)
-{
-    if (list.isEmpty())
-        return;
-    fprintf(out, "\n // %ss: parameters\n", functype);
-    for (const FunctionDef &f : list) {
-        fprintf(out, "    ");
-
-        // Types
-        const bool allowEmptyName = f.isConstructor;
-        generateTypeInfo(f.normalizedType, allowEmptyName);
-        fputc(',', out);
-        for (const ArgumentDef &arg : f.arguments) {
-            fputc(' ', out);
-            generateTypeInfo(arg.normalizedType, allowEmptyName);
-            fputc(',', out);
-        }
-
-        // Parameter names
-        for (const ArgumentDef &arg : f.arguments)
-            fprintf(out, " %4d,", stridx(arg.name));
-
-        fprintf(out, "\n");
-    }
-}
 
 void Generator::generateTypeInfo(const QByteArray &typeName, bool allowEmptyName)
 {
@@ -1074,65 +777,6 @@ void Generator::addProperties()
     }
 }
 
-void Generator::generateProperties()
-{
-    //
-    // Create meta data
-    //
-
-    if (cdef->propertyList.size())
-        fprintf(out, "\n // properties: name, type, flags, notifyId, revision\n");
-    for (const PropertyDef &p : std::as_const(cdef->propertyList)) {
-        uint flags = Invalid;
-        if (!isBuiltinType(p.type))
-            flags |= EnumOrFlag;
-        if (!p.member.isEmpty() && !p.constant)
-            flags |= Writable;
-        if (!p.read.isEmpty() || !p.member.isEmpty())
-            flags |= Readable;
-        if (!p.write.isEmpty()) {
-            flags |= Writable;
-            if (p.stdCppSet())
-                flags |= StdCppSet;
-        }
-
-        if (!p.reset.isEmpty())
-            flags |= Resettable;
-
-        if (p.designable != "false")
-            flags |= Designable;
-
-        if (p.scriptable != "false")
-            flags |= Scriptable;
-
-        if (p.stored != "false")
-            flags |= Stored;
-
-        if (p.user != "false")
-            flags |= User;
-
-        if (p.constant)
-            flags |= Constant;
-        if (p.final)
-            flags |= Final;
-        if (p.required)
-            flags |= Required;
-
-        if (!p.bind.isEmpty())
-            flags |= Bindable;
-
-        fprintf(out, "    %4d, ", stridx(p.name));
-        generateTypeInfo(p.type);
-        int notifyId = p.notifyId;
-        if (p.notifyId < -1) {
-            // signal is in parent class
-            const int indexInStrings = int(strings.indexOf(p.notify));
-            notifyId = indexInStrings | IsUnresolvedSignal;
-        }
-        fprintf(out, ", 0x%.8x, uint(%d), %d,\n", flags, notifyId, p.revision);
-    }
-}
-
 void Generator::registerEnumStrings()
 {
     for (const EnumDef &e : std::as_const(cdef->enumList)) {
@@ -1181,38 +825,6 @@ void Generator::addEnums()
         }
 
         fprintf(out, "        }),\n");
-    }
-}
-
-void Generator::generateEnums(int index)
-{
-    if (cdef->enumDeclarations.isEmpty())
-        return;
-
-    fprintf(out, "\n // enums: name, alias, flags, count, data\n");
-    index += QMetaObjectPrivate::IntsPerEnum * cdef->enumList.size();
-    int i;
-    for (i = 0; i < cdef->enumList.size(); ++i) {
-        const EnumDef &e = cdef->enumList.at(i);
-        uint flags = e.flags | cdef->enumDeclarations.value(e.name);
-        fprintf(out, "    %4d, %4d, 0x%.1x, %4d, %4d,\n",
-                 stridx(e.name),
-                 e.enumName.isNull() ? stridx(e.name) : stridx(e.enumName),
-                 flags,
-                 int(e.values.size()),
-                 index);
-        index += e.values.size() * 2;
-    }
-
-    fprintf(out, "\n // enum data: key, value\n");
-    for (const EnumDef &e : std::as_const(cdef->enumList)) {
-        QByteArray prefix = cdef->qualified;
-        if (e.flags & EnumIsScoped)
-            prefix += "::" + (e.enumName.isNull() ? e.name : e.enumName);
-        for (const QByteArray &val : e.values) {
-            fprintf(out, "    %4d, uint(%s::%s),\n",
-                    stridx(val), prefix.constData(), val.constData());
-        }
     }
 }
 

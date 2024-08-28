@@ -78,8 +78,6 @@ template <uint... Nx> constexpr auto stringData(const char (&...strings)[Nx])
     return result;
 }
 
-#  define QT_MOC_HAS_STRINGDATA       1
-
 struct NoType {};
 template <typename T> struct ForceCompleteMetaTypes {};
 
@@ -567,8 +565,6 @@ constexpr auto metaObjectData(uint flags, const Methods &methods, const Properti
 
     return result;
 }
-
-#define QT_MOC_HAS_UINTDATA    1
 
 template <typename T> inline std::enable_if_t<std::is_enum_v<T>> assignFlags(void *v, T t) noexcept
 {

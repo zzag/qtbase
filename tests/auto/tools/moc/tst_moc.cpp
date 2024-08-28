@@ -2599,13 +2599,11 @@ public Q_SLOTS:
     void someSlot2(int) {}
 public:
     Q_INVOKABLE PrivateClass()  {}
-#ifdef QT_MOC_HAS_UINTDATA  // access to private class' enums was fixed for Qt 6.9
     enum SomeEnum {
         Value0,
         Value1,
     };
     Q_ENUM(SomeEnum)
-#endif
 };
 
 void tst_Moc::privateClass()
