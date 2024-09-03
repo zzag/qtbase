@@ -819,7 +819,7 @@ QHttp2Connection *QHttp2Connection::createUpgradedConnection(QIODevice *socket,
     connection->m_connectionType = QHttp2Connection::Type::Client;
     // HTTP2 connection is already established and request was sent, so stream 1
     // is already 'active' and is closed for any further outgoing data.
-    QHttp2Stream *stream = connection->createStreamInternal().unwrap();
+    QHttp2Stream *stream = connection->createLocalStreamInternal().unwrap();
     Q_ASSERT(stream->streamID() == 1);
     stream->setState(QHttp2Stream::State::HalfClosedLocal);
     connection->m_upgradedConnection = true;
@@ -885,16 +885,16 @@ QH2Expected<QHttp2Stream *, QHttp2Connection::CreateStreamError> QHttp2Connectio
     Q_ASSERT(m_connectionType == Type::Client); // This overload is just for clients
     if (m_nextStreamID > lastValidStreamID)
         return { QHttp2Connection::CreateStreamError::StreamIdsExhausted };
-    return createStreamInternal();
+    return createLocalStreamInternal();
 }
 
 QH2Expected<QHttp2Stream *, QHttp2Connection::CreateStreamError>
-QHttp2Connection::createStreamInternal()
+QHttp2Connection::createLocalStreamInternal()
 {
     if (m_goingAway)
         return { QHttp2Connection::CreateStreamError::ReceivedGOAWAY };
     const quint32 streamID = m_nextStreamID;
-    if (size_t(m_maxConcurrentStreams) <= size_t(numActiveLocalStreams()))
+    if (size_t(m_peerMaxConcurrentStreams) <= size_t(numActiveLocalStreams()))
         return { QHttp2Connection::CreateStreamError::MaxConcurrentStreamsReached };
 
     if (QHttp2Stream *ptr = createStreamInternal_impl(streamID)) {
@@ -1217,6 +1217,7 @@ void QHttp2Connection::setH2Configuration(QHttp2Configuration config)
     maxSessionReceiveWindowSize = qint32(m_config.sessionReceiveWindowSize());
     pushPromiseEnabled = m_config.serverPushEnabled();
     streamInitialReceiveWindowSize = qint32(m_config.streamReceiveWindowSize());
+    m_maxConcurrentStreams = m_config.maxConcurrentStreams();
     encoder.setCompressStrings(m_config.huffmanCompressionEnabled());
 }
 
@@ -1413,9 +1414,19 @@ void QHttp2Connection::handleHEADERS()
     const bool isRemotelyInitiatedStream = isClient ^ isClientInitiatedStream;
 
     if (isRemotelyInitiatedStream && streamID > m_lastIncomingStreamID) {
+        bool streamCountIsOk = size_t(m_maxConcurrentStreams) > size_t(numActiveRemoteStreams());
         QHttp2Stream *newStream = createStreamInternal_impl(streamID);
         Q_ASSERT(newStream);
         m_lastIncomingStreamID = streamID;
+
+        if (!streamCountIsOk) {
+            newStream->setState(QHttp2Stream::State::Open);
+            newStream->streamError(PROTOCOL_ERROR, QLatin1String("Max concurrent streams reached"));
+
+            emit incomingStreamErrorOccured(CreateStreamError::MaxConcurrentStreamsReached);
+            return;
+        }
+
         qCDebug(qHttp2ConnectionLog, "[%p] Created new incoming stream %d", this, streamID);
         emit newIncomingStream(newStream);
     } else if (auto it = m_streams.constFind(streamID); it == m_streams.cend()) {
@@ -1627,6 +1638,7 @@ void QHttp2Connection::handlePUSH_PROMISE()
     if ((reservedID & 1) || reservedID <= m_lastIncomingStreamID || reservedID > lastValidStreamID)
         return connectionError(PROTOCOL_ERROR, "PUSH_PROMISE with invalid promised stream ID");
 
+    bool streamCountIsOk = size_t(m_maxConcurrentStreams) > size_t(numActiveRemoteStreams());
     // RFC 9113, 6.6: A receiver MUST treat the receipt of a PUSH_PROMISE that promises an
     // illegal stream identifier (Section 5.1.1) as a connection error
     auto *stream = createStreamInternal_impl(reservedID);
@@ -1634,6 +1646,12 @@ void QHttp2Connection::handlePUSH_PROMISE()
         return connectionError(PROTOCOL_ERROR, "PUSH_PROMISE with already active stream ID");
     m_lastIncomingStreamID = reservedID;
     stream->setState(QHttp2Stream::State::ReservedRemote);
+
+    if (!streamCountIsOk) {
+        stream->streamError(PROTOCOL_ERROR, QLatin1String("Max concurrent streams reached"));
+        emit incomingStreamErrorOccured(CreateStreamError::MaxConcurrentStreamsReached);
+        return;
+    }
 
     // "ignoring a PUSH_PROMISE frame causes the stream state to become
     // indeterminate" - let's send RST_STREAM frame with REFUSE_STREAM code.
@@ -1955,7 +1973,7 @@ bool QHttp2Connection::acceptSetting(Http2::Settings identifier, quint32 newValu
     case Settings::MAX_CONCURRENT_STREAMS_ID: {
         qCDebug(qHttp2ConnectionLog, "[%p] Received SETTINGS MAX_CONCURRENT_STREAMS %d", this,
                 newValue);
-        m_maxConcurrentStreams = newValue;
+        m_peerMaxConcurrentStreams = newValue;
         break;
     }
     case Settings::MAX_FRAME_SIZE_ID: {
