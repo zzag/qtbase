@@ -30,6 +30,7 @@ QT_WARNING_DISABLE_GCC("-Wfree-nonheap-object") // false positive tracking
 #include "private/qduplicatetracker_p.h"
 #include "qhashfunctions.h"
 #include "qstring.h"
+#include "qstringiterator_p.h"
 #include "qlocale.h"
 #include "qlocale_p.h"
 #include "qlocale_tools_p.h"
@@ -2207,6 +2208,124 @@ QString QLocale::toString(qulonglong i) const
                  ? 0 : QLocaleData::GroupDigits);
 
     return d->m_data->unsLongLongToString(i, -1, 10, -1, flags);
+}
+// ### Incorrect way of calculating the width, will be fixed soon.
+static qsizetype stringWidth(QStringView text)
+{
+    QStringIterator counter(text);
+    qsizetype count = 0;
+    while (counter.hasNext()) {
+        ++count;
+        [[maybe_unused]] auto ch = counter.next();
+    }
+    return count;
+}
+
+static unsigned calculateFlags(int fieldWidth, char32_t fillChar,
+                               const QLocale &locale)
+{
+    unsigned flags = QLocaleData::NoFlags;
+    if (!(locale.numberOptions() & QLocale::OmitGroupSeparator))
+        flags |= QLocaleData::GroupDigits;
+    if (fieldWidth < 0)
+        flags |= QLocaleData::LeftAdjusted;
+    else if (fillChar == U'0')
+        flags |= QLocaleData::ZeroPadded;
+
+    return flags;
+}
+
+static QString calculateFiller(qsizetype padding,
+                               char32_t fillChar,
+                               [[maybe_unused]] qsizetype fieldWidth,
+                               const QLocaleData *localeData)
+{
+    QString filler;
+    if (fillChar == U'0') {
+        Q_ASSERT(fieldWidth < 0);
+        filler = localeData->zeroDigit();
+    } else {
+        filler = QString(QChar::fromUcs4(fillChar));
+    }
+    // ### size is not width
+    if (padding > 1)
+        filler = filler.repeated(padding);
+    return filler;
+}
+
+/*!
+    \fn QString QLocale::toString(short number, int fieldWidth, char32_t fillChar) const
+    \fn QString QLocale::toString(int number, int fieldWidth, char32_t fillChar) const
+    \fn QString QLocale::toString(long number, int fieldWidth, char32_t fillChar) const
+    \include qlocale.cpp tostring-with-padding
+    \include qlocale.cpp tostring-signed-padding
+*/
+/*!
+//! [tostring-with-padding]
+    Returns a string representation of the given \a number.
+
+    The string's length shall be at least the absolute value of \a fieldWidth,
+    using \a fillChar as padding if the \a number has fewer digits. If
+    \a fillChar is \c{'0'} the zero digit of this locale is used as padding.
+    If \a fieldWidth is negative the string starts with its representation
+    of \a number and, if shorter, is padded to length \c{-fieldWidth} with
+    the given \a fillChar. For positive fieldWidth, the padding appears before
+    the representation of \a number.
+//! [tostring-with-padding]
+//! [tostring-signed-padding]
+    When the \a number is negative and \a fieldWidth is positive, if
+    \a fillChar is a \c{'0'} the padding is inserted between this locale's
+    minus sign and the start of the number's digits.
+    \overload toString()
+//! [tostring-signed-padding]
+ */
+QString QLocale::toString(qlonglong number, int fieldWidth, char32_t fillChar) const
+{
+    int absFieldWidth = qAbs(fieldWidth);
+    int width = (fillChar == U'0') ? absFieldWidth : -1;
+    unsigned flags = calculateFlags(fieldWidth, fillChar, *this);
+
+    QString result = d->m_data->longLongToString(number, -1, 10, width, flags);
+    qsizetype padding = absFieldWidth - stringWidth(result);
+
+    if (padding > 0) {
+        QString filler = calculateFiller(padding, fillChar, fieldWidth, d->m_data);
+        if (fieldWidth < 0)
+            result.append(filler);
+        else
+            result.prepend(filler);
+    }
+    return result;
+}
+
+/*!
+    \fn QString QLocale::toString(ushort number, int fieldWidth, char32_t fillChar) const
+    \fn QString QLocale::toString(uint number, int fieldWidth, char32_t fillChar) const
+    \fn QString QLocale::toString(ulong number, int fieldWidth, char32_t fillChar) const
+    \include qlocale.cpp tostring-with-padding
+    \overload toString()
+ */
+/*!
+    \include qlocale.cpp tostring-with-padding
+    \overload toString()
+ */
+QString QLocale::toString(qulonglong number, int fieldWidth, char32_t fillChar) const
+{
+    int absFieldWidth = qAbs(fieldWidth);
+    int width = (fillChar == U'0') ? absFieldWidth : -1;
+    unsigned flags = calculateFlags(fieldWidth, fillChar, *this);
+
+    QString result = d->m_data->unsLongLongToString(number, -1, 10, width, flags);
+    qsizetype padding = absFieldWidth - stringWidth(result);
+
+    if (padding > 0) {
+        QString filler = calculateFiller(padding, fillChar, fieldWidth, d->m_data);
+        if (fieldWidth < 0)
+            result.append(filler);
+        else
+            result.prepend(filler);
+    }
+    return result;
 }
 
 /*!

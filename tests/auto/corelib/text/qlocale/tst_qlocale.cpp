@@ -64,6 +64,10 @@ private slots:
     void stringToFloat();
     void doubleToString_data();
     void doubleToString();
+    void longlongToString_data();
+    void longlongToString();
+    void qulonglongToString_data();
+    void qulonglongToString();
     void strtod_data();
     void strtod();
     void long_long_conversion_data();
@@ -1407,6 +1411,282 @@ void tst_QLocale::doubleToString()
     // System locale is irrelevant here:
     TransientLocale ignoreme(LC_ALL, "de_DE.UTF-8");
     QCOMPARE(locale.toString(num, mode, precision), numStr);
+}
+
+void tst_QLocale::longlongToString_data()
+{
+    QTest::addColumn<QString>("localeName");
+    QTest::addColumn<qlonglong>("number");
+    QTest::addColumn<int>("fieldWidth");
+    QTest::addColumn<char32_t>("fillChar");
+    QTest::addColumn<bool>("grouped");
+    QTest::addColumn<QString>("numStr");
+
+    QTest::newRow("pl_PL 23500 0 x f")
+            << u"pl_PL"_s << qlonglong(23500)  << 0   << U'x' << false << u"23500"_s;
+    QTest::newRow("pl_PL 23500 0 x t")
+            << u"pl_PL"_s << qlonglong(23500)  << 0   << U'x' << true  << u"23\u00A0500"_s;
+    QTest::newRow("pl_PL 23500 10 x f")
+            << u"pl_PL"_s << qlonglong(23500)  << 10  << U'x' << false << u"xxxxx23500"_s;
+    QTest::newRow("pl_PL 23500 10 x t")
+            << u"pl_PL"_s << qlonglong(23500)  << 10  << U'x' << true  << u"xxxx23\u00A0500"_s;
+    QTest::newRow("pl_PL 23500 -10 x f")
+            << u"pl_PL"_s << qlonglong(23500)  << -10 << U'x' << false << u"23500xxxxx"_s;
+    QTest::newRow("nb_NO 23500 -10 x t")
+            << u"nb_NO"_s << qlonglong(23500)  << -10 << U'x' << true  << u"23\u00A0500xxxx"_s;
+    QTest::newRow("pl_PL -23500 10 x f")
+            << u"pl_PL"_s << qlonglong(-23500) << 10  << U'x' << false << u"xxxx-23500"_s;
+    QTest::newRow("pl_PL -23500 10 x t")
+            << u"pl_PL"_s << qlonglong(-23500) << 10  << U'x' << true  << u"xxx-23\u00A0500"_s;
+    QTest::newRow("pl_PL -23500 -10 x f")
+            << u"pl_PL"_s << qlonglong(-23500) << -10 << U'x' << false << u"-23500xxxx"_s;
+    QTest::newRow("nb_NO -23500 -10 x t")
+            << u"nb_NO"_s << qlonglong(-23500) << -10 << U'x' << true  << u"\u221223\u00A0500xxx"_s;
+
+    QTest::newRow("pl_PL 23500 0 \u0020 f")
+            << u"pl_PL"_s << qlonglong(23500)  << 0   << U' ' << false << u"23500"_s;
+    QTest::newRow("pl_PL 23500 0 \u0020 t")
+            << u"pl_PL"_s << qlonglong(23500)  << 0   << U' ' << true  << u"23\u00A0500"_s;
+    QTest::newRow("pl_PL 23500 10 \u0020 f")
+            << u"pl_PL"_s << qlonglong(23500)  << 10  << U' ' << false << u"     23500"_s;
+    QTest::newRow("pl_PL 23500 10 \u0020 t")
+            << u"pl_PL"_s << qlonglong(23500)  << 10  << U' ' << true  << u"    23\u00A0500"_s;
+    QTest::newRow("pl_PL 23500 -10 \u0020 f")
+            << u"pl_PL"_s << qlonglong(23500)  << -10 << U' ' << false << u"23500     "_s;
+    QTest::newRow("nb_NO 23500 -10 \u0020 t")
+            << u"nb_NO"_s << qlonglong(23500)  << -10 << U' ' << true  << u"23\u00A0500    "_s;
+    QTest::newRow("pl_PL -23500 10 \u0020 f")
+            << u"pl_PL"_s << qlonglong(-23500) << 10  << U' ' << false << u"    -23500"_s;
+    QTest::newRow("pl_PL -23500 10 \u0020 t")
+            << u"pl_PL"_s << qlonglong(-23500) << 10  << U' ' << true  << u"   -23\u00A0500"_s;
+    QTest::newRow("pl_PL -23500 -10 \u0020 f")
+            << u"pl_PL"_s << qlonglong(-23500) << -10 << U' ' << false << u"-23500    "_s;
+    QTest::newRow("nb_NO -23500 -10 \u0020 t")
+            << u"nb_NO"_s << qlonglong(-23500) << -10 << U' ' << true  << u"\u221223\u00A0500   "_s;
+
+    QTest::newRow("pl_PL 23000000 0 0 t")
+            << u"pl_PL"_s << qlonglong(23000000)  << 0   << U'0' << true  << u"23\u00A0000\u00A0000"_s;
+    QTest::newRow("pl_PL 23000000 0 0 f")
+            << u"pl_PL"_s << qlonglong(23000000)  << 0   << U'0' << false << u"23000000"_s;
+    QTest::newRow("pl_PL 23000000 15 0 t")
+            << u"pl_PL"_s << qlonglong(23000000)  << 15  << U'0' << true  << u"0000023\u00A0000\u00A0000"_s;
+    QTest::newRow("pl_PL 23000000 15 0 f")
+            << u"pl_PL"_s << qlonglong(23000000)  << 15  << U'0' << false << u"000000023000000"_s;
+    QTest::newRow("pl_PL 23000000 -15 0 t")
+            << u"pl_PL"_s << qlonglong(23000000)  << -15 << U'0' << true  << u"23\u00A0000\u00A000000000"_s;
+    QTest::newRow("pl_PL 23000000 -15 0 f")
+            << u"pl_PL"_s << qlonglong(23000000)  << -15 << U'0' << false << u"230000000000000"_s;
+    QTest::newRow("ja_JP -23000000 -15 0 t")
+            << u"ja_JP"_s << qlonglong(-23000000) << -15 << U'0' << true  << u"-23,000,0000000"_s;
+    QTest::newRow("ja_JP -23000000 -15 0 f")
+            << u"ja_JP"_s << qlonglong(-23000000) << -15 << U'0' << false << u"-23000000000000"_s;
+    QTest::newRow("ja_JP -23000000 15 0 t")
+            << u"ja_JP"_s << qlonglong(-23000000) << 15  << U'0' << true  << u"-000023,000,000"_s;
+    QTest::newRow("ja_JP -23000000 15 0 f")
+            << u"ja_JP"_s << qlonglong(-23000000) << 15  << U'0' << false << u"-00000023000000"_s;
+
+    QTest::newRow("hi_IN 23500 0 0 f")
+            << u"hi_IN"_s << qlonglong(23500)  << 0   << U'0' << false << u"23500"_s;
+    QTest::newRow("hi_IN 23500 0 0 t")
+            << u"hi_IN"_s << qlonglong(23500)  << 0   << U'0' << true  << u"23,500"_s;
+    QTest::newRow("hi_IN 23500 10 0 f")
+            << u"hi_IN"_s << qlonglong(23500)  << 10  << U'0' << false << u"0000023500"_s;
+    QTest::newRow("hi_IN 23500 10 0 t")
+            << u"hi_IN"_s << qlonglong(23500)  << 10  << U'0' << true  << u"000023,500"_s;
+    QTest::newRow("hi_IN 23500 -10 0 f")
+            << u"hi_IN"_s << qlonglong(23500)  << -10 << U'0' << false << u"2350000000"_s;
+    QTest::newRow("hi_IN 23500 -10 0 t")
+            << u"hi_IN"_s << qlonglong(23500)  << -10 << U'0' << true  << u"23,5000000"_s;
+    QTest::newRow("hi_IN -23500 10 0 f")
+            << u"hi_IN"_s << qlonglong(-23500) << 10  << U'0' << false << u"-000023500"_s;
+    QTest::newRow("hi_IN -23500 10 0 t")
+            << u"hi_IN"_s << qlonglong(-23500) << 10  << U'0' << true  << u"-00023,500"_s;
+    QTest::newRow("hi_IN -23500 -10 0 f")
+            << u"hi_IN"_s << qlonglong(-23500) << -10 << U'0' << false << u"-235000000"_s;
+    QTest::newRow("hi_IN -23500 -10 0 t")
+            << u"hi_IN"_s << qlonglong(-23500) << -10 << U'0' << true  << u"-23,500000"_s;
+
+    QTest::newRow("hi_IN 23000000 0 0 t")
+            << u"hi_IN"_s << qlonglong(23000000)  << 0   << U'0' << true  << u"2,30,00,000"_s;
+    QTest::newRow("hi_IN 23000000 0 0 f")
+            << u"hi_IN"_s << qlonglong(23000000)  << 0   << U'0' << false << u"23000000"_s;
+    QTest::newRow("hi_IN 23000000 15 0 t")
+            << u"hi_IN"_s << qlonglong(23000000)  << 15  << U'0' << true  << u"00002,30,00,000"_s;
+    QTest::newRow("hi_IN 23000000 15 0 f")
+            << u"hi_IN"_s << qlonglong(23000000)  << 15  << U'0' << false << u"000000023000000"_s;
+    QTest::newRow("hi_IN 23000000 -15 0 t")
+            << u"hi_IN"_s << qlonglong(23000000)  << -15 << U'0' << true  << u"2,30,00,0000000"_s;
+    QTest::newRow("hi_IN 23000000 -15 0 f")
+            << u"hi_IN"_s << qlonglong(23000000)  << -15 << U'0' << false << u"230000000000000"_s;
+    QTest::newRow("hi_IN -23000000 -15 0 t")
+            << u"hi_IN"_s << qlonglong(-23000000) << -15 << U'0' << true  << u"-2,30,00,000000"_s;
+    QTest::newRow("hi_IN -23000000 -15 0 f")
+            << u"hi_IN"_s << qlonglong(-23000000) << -15 << U'0' << false << u"-23000000000000"_s;
+    QTest::newRow("hi_IN -23000000 15 0 t")
+            << u"hi_IN"_s << qlonglong(-23000000) << 15  << U'0' << true  << u"-0002,30,00,000"_s;
+    QTest::newRow("hi_IN -23000000 15 0 f")
+            << u"hi_IN"_s << qlonglong(-23000000) << 15  << U'0' << false << u"-00000023000000"_s;
+
+    QTest::newRow("emoji -2300 7 😀 f")
+        << u"en_US"_s << qlonglong(-23000) << 7  << U'😀' << false << u"😀-23000"_s;
+    QTest::newRow("emoji -2300 -7 😀 f")
+        << u"en_US"_s << qlonglong(-23000) << -7 << U'😀' << false << u"-23000😀"_s;
+    QTest::newRow("emoji -2300 8 😀 t")
+        << u"en_US"_s << qlonglong(-23000) << 8  << U'😀' << true  << u"😀-23,000"_s;
+    QTest::newRow("emoji -2300 -8 😀 t")
+        << u"en_US"_s << qlonglong(-23000) << -8 << U'😀' << true  << u"-23,000😀"_s;
+
+    QTest::newRow("ccp_BD -2300 6 𑄃 f")
+        << u"ccp_BD"_s << qlonglong(-2300) << 6  << U'𑄃' << false << u"𑄃-𑄸𑄹𑄶𑄶"_s;
+    QTest::newRow("ccp_BD -2300 -6 𑄃 f")
+        << u"ccp_BD"_s << qlonglong(-2300) << -6 << U'𑄃' << false << u"-𑄸𑄹𑄶𑄶𑄃"_s;
+    QTest::newRow("ccp_BD -2300 7 𑄃 t")
+        << u"ccp_BD"_s << qlonglong(-2300) << 7  << U'𑄃' << true  << u"𑄃-𑄸,𑄹𑄶𑄶"_s;
+    QTest::newRow("ccp_BD -2300 -7 𑄃 t")
+        << u"ccp_BD"_s << qlonglong(-2300) << -7 << U'𑄃' << true  << u"-𑄸,𑄹𑄶𑄶𑄃"_s;
+}
+
+void tst_QLocale::longlongToString()
+{
+    QFETCH(QString, localeName);
+    QFETCH(QString, numStr);
+    QFETCH(qlonglong, number);
+    QFETCH(int, fieldWidth);
+    QFETCH(char32_t, fillChar);
+    QFETCH(bool, grouped);
+
+    QLocale locale(localeName);
+    auto toCompare = locale.toString(number, fieldWidth, fillChar);
+    if (grouped) {
+        QCOMPARE(toCompare, numStr);
+    } else {
+        locale.setNumberOptions(QLocale::OmitGroupSeparator);
+        QCOMPARE(locale.toString(number, fieldWidth, fillChar), numStr);
+    }
+}
+
+void tst_QLocale::qulonglongToString_data()
+{
+    QTest::addColumn<QString>("localeName");
+    QTest::addColumn<qulonglong>("number");
+    QTest::addColumn<int>("fieldWidth");
+    QTest::addColumn<char32_t>("fillChar");
+    QTest::addColumn<bool>("grouped");
+    QTest::addColumn<QString>("numStr");
+
+    QTest::newRow("pl_PL 23500 0 x f")
+            << u"pl_PL"_s << qulonglong(23500)  << 0   << U'x' << false << u"23500"_s;
+    QTest::newRow("pl_PL 23500 0 x t")
+            << u"pl_PL"_s << qulonglong(23500)  << 0   << U'x' << true  << u"23\u00A0500"_s;
+    QTest::newRow("pl_PL 23500 10 x f")
+            << u"pl_PL"_s << qulonglong(23500)  << 10  << U'x' << false << u"xxxxx23500"_s;
+    QTest::newRow("pl_PL 23500 10 x t")
+            << u"pl_PL"_s << qulonglong(23500)  << 10  << U'x' << true  << u"xxxx23\u00A0500"_s;
+    QTest::newRow("pl_PL 23500 -10 x f")
+            << u"pl_PL"_s << qulonglong(23500)  << -10 << U'x' << false << u"23500xxxxx"_s;
+    QTest::newRow("nb_NO 23500 -10 x t")
+            << u"nb_NO"_s << qulonglong(23500)  << -10 << U'x' << true  << u"23\u00A0500xxxx"_s;
+
+    QTest::newRow("pl_PL 23000000 0 \u0020 t")
+            << u"pl_PL"_s << qulonglong(23000000) << 0   << U' ' << true  << u"23\u00A0000\u00A0000"_s;
+    QTest::newRow("pl_PL 23000000 0 \u0020 f")
+            << u"pl_PL"_s << qulonglong(23000000) << 0   << U' ' << false << u"23000000"_s;
+    QTest::newRow("nb_NO 23000000 15 \u0020 t")
+            << u"nb_NO"_s << qulonglong(23000000) << 15  << U' ' << true  << u"     23\u00A0000\u00A0000"_s;
+    QTest::newRow("nb_NO 23000000 15 \u0020 f")
+            << u"nb_NO"_s << qulonglong(23000000) << 15  << U' ' << false << u"       23000000"_s;
+    QTest::newRow("ja_JP 23000000 -15 \u0020 t")
+            << u"ja_JP"_s << qulonglong(23000000) << -15 << U' ' << true  << u"23,000,000     "_s;
+    QTest::newRow("ja_JP 23000000 -15 \u0020 f")
+            << u"ja_JP"_s << qulonglong(23000000) << -15 << U' ' << false << u"23000000       "_s;
+
+    QTest::newRow("ja_JP 23500 0 0 f")
+            << u"ja_JP"_s << qulonglong(23500) << 0   << U'0' << false << u"23500"_s;
+    QTest::newRow("ja_JP 23500 0 0 t")
+            << u"ja_JP"_s << qulonglong(23500) << 0   << U'0' << true  << u"23,500"_s;
+    QTest::newRow("nb_NO 23500 10 0 f")
+            << u"nb_NO"_s << qulonglong(23500) << 10  << U'0' << false << u"0000023500"_s;
+    QTest::newRow("nb_NO 23500 10 0 t")
+            << u"nb_NO"_s << qulonglong(23500) << 10  << U'0' << true  << u"000023\u00A0500"_s;
+    QTest::newRow("pl_PL 23500 -10 0 f")
+            << u"pl_PL"_s << qulonglong(23500) << -10 << U'0' << false << u"2350000000"_s;
+    QTest::newRow("pl_PL 23500 -10 0 t")
+            << u"pl_PL"_s << qulonglong(23500) << -10 << U'0' << true  << u"23\u00A05000000"_s;
+
+    QTest::newRow("pl_PL 23000000 0 0 t")
+            << u"pl_PL"_s << qulonglong(23000000) << 0   << U'0' << true  << u"23\u00A0000\u00A0000"_s;
+    QTest::newRow("pl_PL 23000000 0 0 f")
+            << u"pl_PL"_s << qulonglong(23000000) << 0   << U'0' << false << u"23000000"_s;
+    QTest::newRow("nb_NO 23000000 15 0 t")
+            << u"nb_NO"_s << qulonglong(23000000) << 15  << U'0' << true  << u"0000023\u00A0000\u00A0000"_s;
+    QTest::newRow("nb_NO 23000000 15 0 f")
+            << u"nb_NO"_s << qulonglong(23000000) << 15  << U'0' << false << u"000000023000000"_s;
+    QTest::newRow("ja_JP 23000000 -15 0 t")
+            << u"ja_JP"_s << qulonglong(23000000) << -15 << U'0' << true  << u"23,000,00000000"_s;
+    QTest::newRow("ja_JP 23000000 -15 0 f")
+            << u"ja_JP"_s << qulonglong(23000000) << -15 << U'0' << false << u"230000000000000"_s;
+
+    QTest::newRow("hi_IN 23500 0 0 f")
+            << u"hi_IN"_s << qulonglong(23500) << 0   << U'0' << false << u"23500"_s;
+    QTest::newRow("hi_IN 23500 0 0 t")
+            << u"hi_IN"_s << qulonglong(23500) << 0   << U'0' << true  << u"23,500"_s;
+    QTest::newRow("hi_IN 23500 10 0 f")
+            << u"hi_IN"_s << qulonglong(23500) << 10  << U'0' << false << u"0000023500"_s;
+    QTest::newRow("hi_IN 23500 10 0 t")
+            << u"hi_IN"_s << qulonglong(23500) << 10  << U'0' << true  << u"000023,500"_s;
+    QTest::newRow("hi_IN 23500 -10 0 f")
+            << u"hi_IN"_s << qulonglong(23500) << -10 << U'0' << false << u"2350000000"_s;
+    QTest::newRow("hi_IN 23500 -10 0 t")
+            << u"hi_IN"_s << qulonglong(23500) << -10 << U'0' << true  << u"23,5000000"_s;
+
+    QTest::newRow("hi_IN 23000000 0 0 t")
+            << u"hi_IN"_s << qulonglong(23000000) << 0   << U'0' << true  << u"2,30,00,000"_s;
+    QTest::newRow("hi_IN 23000000 0 0 f")
+            << u"hi_IN"_s << qulonglong(23000000) << 0   << U'0' << false << u"23000000"_s;
+    QTest::newRow("hi_IN 23000000 15 0 t")
+            << u"hi_IN"_s << qulonglong(23000000) << 15  << U'0' << true  << u"00002,30,00,000"_s;
+    QTest::newRow("hi_IN 23000000 15 0 f")
+            << u"hi_IN"_s << qulonglong(23000000) << 15  << U'0' << false << u"000000023000000"_s;
+    QTest::newRow("hi_IN 23000000 -15 0 t")
+            << u"hi_IN"_s << qulonglong(23000000) << -15 << U'0' << true  << u"2,30,00,0000000"_s;
+    QTest::newRow("hi_IN 23000000 -15 0 f")
+            << u"hi_IN"_s << qulonglong(23000000) << -15 << U'0' << false << u"230000000000000"_s;
+
+    QTest::newRow("emoji 2300 6 😀 f")
+        << u"en_US"_s << qulonglong(23000) << 6  << U'😀' << false << u"😀23000"_s;
+    QTest::newRow("emoji 2300 -6 😀 f")
+        << u"en_US"_s << qulonglong(23000) << -6 << U'😀' << false << u"23000😀"_s;
+    QTest::newRow("emoji 2300 7 😀 t")
+        << u"en_US"_s << qulonglong(23000) << 7  << U'😀' << true  << u"😀23,000"_s;
+    QTest::newRow("emoji 2300 -7 😀 t")
+        << u"en_US"_s << qulonglong(23000) << -7 << U'😀' << true  << u"23,000😀"_s;
+
+    QTest::newRow("ccp_BD 2300 5 𑄃 f")
+        << u"ccp_BD"_s << qulonglong(2300) << 5  << U'𑄃' << false << u"𑄃𑄸𑄹𑄶𑄶"_s;
+    QTest::newRow("ccp_BD 2300 -5 𑄃 f")
+        << u"ccp_BD"_s << qulonglong(2300) << -5 << U'𑄃' << false << u"𑄸𑄹𑄶𑄶𑄃"_s;
+    QTest::newRow("ccp_BD 2300 6 𑄃 t")
+        << u"ccp_BD"_s << qulonglong(2300) << 6  << U'𑄃' << true  << u"𑄃𑄸,𑄹𑄶𑄶"_s;
+    QTest::newRow("ccp_BD 2300 -6 𑄃 t")
+        << u"ccp_BD"_s << qulonglong(2300) << -6 << U'𑄃' << true  << u"𑄸,𑄹𑄶𑄶𑄃"_s;
+}
+
+void tst_QLocale::qulonglongToString()
+{
+    QFETCH(QString, localeName);
+    QFETCH(QString, numStr);
+    QFETCH(qulonglong, number);
+    QFETCH(int, fieldWidth);
+    QFETCH(char32_t, fillChar);
+    QFETCH(bool, grouped);
+
+    QLocale locale(localeName);
+    if (grouped) {
+        QCOMPARE(locale.toString(number, fieldWidth, fillChar), numStr);
+    } else {
+        locale.setNumberOptions(QLocale::OmitGroupSeparator);
+        QCOMPARE(locale.toString(number, fieldWidth, fillChar), numStr);
+    }
 }
 
 void tst_QLocale::strtod_data()
