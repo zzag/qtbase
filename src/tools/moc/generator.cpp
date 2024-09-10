@@ -1314,23 +1314,18 @@ void Generator::generateSignal(const FunctionDef *def, int index)
         fprintf(out, "    %s _t0{};\n", returnType.constData());
     }
 
-    fprintf(out, "    void *_a[] = { ");
+    fprintf(out, "    QMetaObject::activate<%s>(%s, &staticMetaObject, %d, ",
+            def->normalizedType.constData(), thisPtr.constData(), index);
     if (def->normalizedType == "void") {
         fprintf(out, "nullptr");
     } else {
-        if (def->returnTypeIsVolatile)
-             fprintf(out, "const_cast<void*>(reinterpret_cast<const volatile void*>(std::addressof(_t0)))");
-        else
-             fprintf(out, "const_cast<void*>(reinterpret_cast<const void*>(std::addressof(_t0)))");
+        fprintf(out, "std::addressof(_t0)");
     }
     int i;
     for (i = 1; i < offset; ++i)
-        if (i <= def->arguments.size() && def->arguments.at(i - 1).type.isVolatile)
-            fprintf(out, ", const_cast<void*>(reinterpret_cast<const volatile void*>(std::addressof(_t%d)))", i);
-        else
-            fprintf(out, ", const_cast<void*>(reinterpret_cast<const void*>(std::addressof(_t%d)))", i);
-    fprintf(out, " };\n");
-    fprintf(out, "    QMetaObject::activate(%s, &staticMetaObject, %d, _a);\n", thisPtr.constData(), index);
+        fprintf(out, ", _t%d", i);
+    fprintf(out, ");\n");
+
     if (def->normalizedType != "void")
         fprintf(out, "    return _t0;\n");
     fprintf(out, "}\n");
