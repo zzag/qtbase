@@ -88,6 +88,14 @@ template <typename FuncType> inline bool indexOfMethod(void **_a, FuncType f, in
     return true;
 }
 
+template <typename Prop, typename Value> inline bool setProperty(Prop &property, Value &&value)
+{
+    if (property == value)
+        return false;
+    property = std::forward<Value>(value);
+    return true;
+}
+
 struct NoType {};
 template <typename T> struct ForceCompleteMetaTypes {};
 

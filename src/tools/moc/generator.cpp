@@ -1195,23 +1195,22 @@ void Generator::generateStaticMetacall()
                     fprintf(out, "        case %d: %s%s(*reinterpret_cast< %s*>(_v)); break;\n",
                             propindex, prefix.constData(), p.write.constData(), p.type.constData());
                 } else {
-                    fprintf(out, "        case %d:\n", propindex);
-                    fprintf(out, "            if (%s%s != *reinterpret_cast< %s*>(_v)) {\n",
-                            prefix.constData(), p.member.constData(), p.type.constData());
-                    fprintf(out, "                %s%s = *reinterpret_cast< %s*>(_v);\n",
-                            prefix.constData(), p.member.constData(), p.type.constData());
-                    if (!p.notify.isEmpty() && p.notifyId > -1) {
-                        const FunctionDef &f = cdef->signalList.at(p.notifyId);
-                        if (f.arguments.size() == 0)
-                            fprintf(out, "                Q_EMIT _t->%s();\n", p.notify.constData());
-                        else if (f.arguments.size() == 1 && f.arguments.at(0).normalizedType == p.type)
-                            fprintf(out, "                Q_EMIT _t->%s(%s%s);\n",
-                                    p.notify.constData(), prefix.constData(), p.member.constData());
-                    } else if (!p.notify.isEmpty() && p.notifyId < -1) {
-                        fprintf(out, "                Q_EMIT _t->%s();\n", p.notify.constData());
+                    fprintf(out, "        case %d:", propindex);
+                    if (p.notify.isEmpty()) {
+                        fprintf(out, " QtMocHelpers::setProperty(%s%s, *reinterpret_cast<%s*>(_v)); break;\n",
+                                prefix.constData(), p.member.constData(), p.type.constData());
+                    } else {
+                        fprintf(out, "\n            if (QtMocHelpers::setProperty(%s%s, *reinterpret_cast<%s*>(_v)))\n",
+                                prefix.constData(), p.member.constData(), p.type.constData());
+                        fprintf(out, "                Q_EMIT _t->%s(", p.notify.constData());
+                        if (p.notifyId > -1) {
+                            const FunctionDef &f = cdef->signalList.at(p.notifyId);
+                            if (f.arguments.size() == 1 && f.arguments.at(0).normalizedType == p.type)
+                                fprintf(out, "%s%s", prefix.constData(), p.member.constData());
+                        }
+                        fprintf(out, ");\n");
+                        fprintf(out, "            break;\n");
                     }
-                    fprintf(out, "            }\n");
-                    fprintf(out, "            break;\n");
                 }
             }
             fprintf(out, "        default: break;\n");

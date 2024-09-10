@@ -16,8 +16,8 @@ struct CustomType
     QString str;
     CustomType(const QString &str = QString()) : str(str) {}
     operator QString() const { return str; }
-    friend bool operator!=(const CustomType &a, const CustomType &b)
-    { return a.str != b.str; }
+    friend bool operator==(const CustomType &a, const CustomType &b)
+    { return a.str == b.str; }
 };
 
 Q_DECLARE_METATYPE(CustomType)
