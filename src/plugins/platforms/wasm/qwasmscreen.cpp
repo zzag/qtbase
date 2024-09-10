@@ -34,16 +34,6 @@ QWasmScreen::QWasmScreen(const emscripten::val &containerOrCanvas)
       m_deadKeySupport(std::make_unique<QWasmDeadKeySupport>())
 {
     auto document = m_container["ownerDocument"];
-    // Each screen is represented by a div container. All of the windows exist therein as
-    // its children. Qt versions < 6.5 used to represent screens as canvas. Support that by
-    // transforming the canvas into a div.
-    if (m_container["tagName"].call<std::string>("toLowerCase") == "canvas") {
-        qWarning() << "Support for canvas elements as an element backing screen is deprecated. The "
-                      "canvas provided for the screen will be transformed into a div.";
-        auto container = document.call<emscripten::val>("createElement", emscripten::val("div"));
-        m_container["parentNode"].call<void>("replaceChild", container, m_container);
-        m_container = container;
-    }
 
     // Create an intermediate container which we can remove during cleanup in ~QWasmScreen().
     // This is required due to the attachShadow() call below; there is no corresponding
@@ -54,6 +44,11 @@ QWasmScreen::QWasmScreen(const emscripten::val &containerOrCanvas)
     intermediateContainerStyle.set("width", std::string("100%"));
     intermediateContainerStyle.set("height", std::string("100%"));
     m_container.call<void>("appendChild", m_intermediateContainer);
+    // Each screen is represented by a div container. All of the windows exist therein as
+    // its children. Qt versions < 6.5 used to represent screens as canvas elements; this
+    // is no longer supported.
+    if (m_container["tagName"].call<std::string>("toLowerCase") == "canvas")
+        qFatal() << "Qt does not support using a canvas element as the container element. Use a div element instead";
 
     auto shadowOptions = emscripten::val::object();
     shadowOptions.set("mode", "open");
