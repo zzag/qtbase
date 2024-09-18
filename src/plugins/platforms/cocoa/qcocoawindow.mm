@@ -1301,12 +1301,12 @@ void QCocoaWindow::windowWillStartLiveResize()
     m_inLiveResize = true;
 }
 
-bool QCocoaWindow::inLiveResize() const
+bool QCocoaWindow::allowsIndependentThreadedRendering() const
 {
     // Use member variable to track this instead of reflecting
     // NSView.inLiveResize directly, so it can be called from
     // non-main threads.
-    return m_inLiveResize;
+    return !m_inLiveResize;
 }
 
 void QCocoaWindow::windowDidEndLiveResize()

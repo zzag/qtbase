@@ -189,7 +189,7 @@ public:
     Q_DECLARE_FLAGS(RecreationReasons, RecreationReason)
     Q_FLAG(RecreationReasons)
 
-    bool inLiveResize() const override;
+    bool allowsIndependentThreadedRendering() const override;
 
 protected:
     void recreateWindowIfNeeded();
