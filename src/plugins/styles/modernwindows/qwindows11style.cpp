@@ -471,62 +471,69 @@ void QWindows11Style::drawComplexControl(ComplexControl control, const QStyleOpt
 #endif // QT_CONFIG(combobox)
     case CC_ScrollBar:
         if (const QStyleOptionSlider *scrollbar = qstyleoption_cast<const QStyleOptionSlider *>(option)) {
-            const bool vertical = scrollbar->orientation == Qt::Vertical;
-            const bool horizontal = scrollbar->orientation == Qt::Horizontal;
-            const bool isMouseOver = state & State_MouseOver;
+            QCachedPainter cp(painter, QLatin1StringView("win11_scrollbar")
+                                       % HexString<uint8_t>(colorSchemeIndex)
+                                       % HexString<int>(scrollbar->minimum)
+                                       % HexString<int>(scrollbar->maximum)
+                                       % HexString<int>(scrollbar->sliderPosition),
+                              scrollbar, scrollbar->rect.size());
+            if (cp.needsPainting()) {
+                const bool vertical = scrollbar->orientation == Qt::Vertical;
+                const bool horizontal = scrollbar->orientation == Qt::Horizontal;
+                const bool isMouseOver = state & State_MouseOver;
 
-            if (isMouseOver) {
-                QRectF rect = scrollbar->rect;
-                const QPointF center = rect.center();
-                if (vertical && rect.width() > 24) {
-                    rect.marginsRemoved(QMargins(0, 2, 2, 2));
-                    rect.setWidth(rect.width() / 2);
-                } else if (horizontal && rect.height() > 24) {
-                    rect.marginsRemoved(QMargins(2, 0, 2, 2));
-                    rect.setHeight(rect.height() / 2);
-                }
-                rect.moveCenter(center);
-                painter->setBrush(scrollbar->palette.base());
-                painter->setPen(Qt::NoPen);
-                painter->drawRoundedRect(rect, topLevelRoundingRadius, topLevelRoundingRadius);
-
-                rect = rect.marginsRemoved(QMarginsF(0.5, 0.5, 0.5, 0.5));
-                painter->setBrush(Qt::NoBrush);
-                painter->setPen(WINUI3Colors[colorSchemeIndex][frameColorLight]);
-                painter->drawRoundedRect(rect, topLevelRoundingRadius + 0.5, topLevelRoundingRadius + 0.5);
-            }
-            if (sub & SC_ScrollBarSlider) {
-                QRectF rect = proxy()->subControlRect(CC_ScrollBar, option, SC_ScrollBarSlider, widget);
-                const QPointF center = rect.center();
-                if (vertical)
-                    rect.setWidth(isMouseOver ? rect.width() / 2 : 1);
-                else
-                    rect.setHeight(isMouseOver ? rect.height() / 2 : 1);
-                rect.moveCenter(center);
-                painter->setBrush(Qt::gray);
-                painter->setPen(Qt::NoPen);
-                painter->drawRoundedRect(rect, secondLevelRoundingRadius, secondLevelRoundingRadius);
-            }
-            if (sub & SC_ScrollBarAddLine) {
                 if (isMouseOver) {
-                    const QRectF rect = proxy()->subControlRect(CC_ScrollBar, option, SC_ScrollBarAddLine, widget);
-                    QFont f(assetFont);
-                    f.setPointSize(6);
-                    painter->setFont(f);
-                    painter->setPen(Qt::gray);
-                    const auto str = vertical ? QStringLiteral("\uEDDC") : QStringLiteral("\uEDDA");
-                    painter->drawText(rect, str, Qt::AlignVCenter | Qt::AlignHCenter);
+                    QRectF rect = scrollbar->rect;
+                    const QPointF center = rect.center();
+                    if (vertical && rect.width() > 24) {
+                        rect.marginsRemoved(QMargins(0, 2, 2, 2));
+                        rect.setWidth(rect.width() / 2);
+                    } else if (horizontal && rect.height() > 24) {
+                        rect.marginsRemoved(QMargins(2, 0, 2, 2));
+                        rect.setHeight(rect.height() / 2);
+                    }
+                    rect.moveCenter(center);
+                    cp->setBrush(scrollbar->palette.base());
+                    cp->setPen(Qt::NoPen);
+                    cp->drawRoundedRect(rect, topLevelRoundingRadius, topLevelRoundingRadius);
+                    rect = rect.marginsRemoved(QMarginsF(0.5, 0.5, 0.5, 0.5));
+                    cp->setBrush(Qt::NoBrush);
+                    cp->setPen(WINUI3Colors[colorSchemeIndex][frameColorLight]);
+                    cp->drawRoundedRect(rect, topLevelRoundingRadius + 0.5, topLevelRoundingRadius + 0.5);
                 }
-            }
-            if (sub & SC_ScrollBarSubLine) {
-                if (isMouseOver) {
-                    const QRectF rect = proxy()->subControlRect(CC_ScrollBar, option, SC_ScrollBarSubLine, widget);
-                    QFont f(assetFont);
-                    f.setPointSize(6);
-                    painter->setFont(f);
-                    painter->setPen(Qt::gray);
-                    const auto str = vertical ? QStringLiteral("\uEDDB") : QStringLiteral("\uEDD9");
-                    painter->drawText(rect, str, Qt::AlignVCenter | Qt::AlignHCenter);
+                if (sub & SC_ScrollBarSlider) {
+                    QRectF rect = proxy()->subControlRect(CC_ScrollBar, option, SC_ScrollBarSlider, widget);
+                    const QPointF center = rect.center();
+                    if (vertical)
+                        rect.setWidth(isMouseOver ? rect.width() / 2 : 1);
+                    else
+                        rect.setHeight(isMouseOver ? rect.height() / 2 : 1);
+                    rect.moveCenter(center);
+                    cp->setBrush(Qt::gray);
+                    cp->setPen(Qt::NoPen);
+                    cp->drawRoundedRect(rect, secondLevelRoundingRadius, secondLevelRoundingRadius);
+                }
+                if (sub & SC_ScrollBarAddLine) {
+                    if (isMouseOver) {
+                        const QRectF rect = proxy()->subControlRect(CC_ScrollBar, option, SC_ScrollBarAddLine, widget);
+                        QFont f = QFont(assetFont);
+                        f.setPointSize(6);
+                        cp->setFont(f);
+                        cp->setPen(Qt::gray);
+                        const auto str = vertical ? QStringLiteral("\uEDDC") : QStringLiteral("\uEDDA");
+                        cp->drawText(rect, str, Qt::AlignVCenter | Qt::AlignHCenter);
+                    }
+                }
+                if (sub & SC_ScrollBarSubLine) {
+                    if (isMouseOver) {
+                        const QRectF rect = proxy()->subControlRect(CC_ScrollBar, option, SC_ScrollBarSubLine, widget);
+                        QFont f = QFont(assetFont);
+                        f.setPointSize(6);
+                        cp->setFont(f);
+                        cp->setPen(Qt::gray);
+                        const auto str = vertical ? QStringLiteral("\uEDDB") : QStringLiteral("\uEDD9");
+                        cp->drawText(rect, str, Qt::AlignVCenter | Qt::AlignHCenter);
+                    }
                 }
             }
         }
