@@ -145,7 +145,6 @@ static void qt_fusion_draw_arrow(Qt::ArrowType type, QPainter *painter, const QS
         return;
 
     const qreal dpi = QStyleHelper::dpi(option);
-    const qreal dpr = QStyleHelper::getDpr(painter);
     const int arrowWidth = int(QStyleHelper::dpiScaled(14, dpi));
     const int arrowHeight = int(QStyleHelper::dpiScaled(8, dpi));
 
@@ -153,15 +152,11 @@ static void qt_fusion_draw_arrow(Qt::ArrowType type, QPainter *painter, const QS
     const int rectMax = qMin(rect.height(), rect.width());
     const int size = qMin(arrowMax, rectMax);
 
-    QPixmap cachePixmap;
-    const QString cacheKey = QStyleHelper::uniqueName("fusion-arrow"_L1
-                                                          % HexString<uint>(type)
-                                                          % HexString<uint>(color.rgba()),
-                                                      option, rect.size(), dpr);
-    if (!QPixmapCache::find(cacheKey, &cachePixmap)) {
-        cachePixmap = styleCachePixmap(rect.size(), dpr);
-        QPainter cachePainter(&cachePixmap);
-
+    const QString pixmapName = "fusion-arrow"_L1
+                               % HexString<uint>(type)
+                               % HexString<uint>(color.rgba());
+    QCachedPainter cp(painter, pixmapName, option, rect.size(), rect);
+    if (cp.needsPainting()) {
         QRectF arrowRect;
         arrowRect.setWidth(size);
         arrowRect.setHeight(arrowHeight * size / arrowWidth);
@@ -186,15 +181,11 @@ static void qt_fusion_draw_arrow(Qt::ArrowType type, QPainter *painter, const QS
             break;
         }
 
-        cachePainter.setPen(Qt::NoPen);
-        cachePainter.setBrush(color);
-        cachePainter.setRenderHint(QPainter::Antialiasing);
-        cachePainter.drawPolygon(triangle.data(), int(triangle.size()));
-
-        QPixmapCache::insert(cacheKey, cachePixmap);
+        cp->setPen(Qt::NoPen);
+        cp->setBrush(color);
+        cp->setRenderHint(QPainter::Antialiasing);
+        cp->drawPolygon(triangle.data(), int(triangle.size()));
     }
-
-    painter->drawPixmap(rect, cachePixmap);
 }
 
 static void qt_fusion_draw_mdibutton(QPainter *painter, const QStyleOptionTitleBar *option, const QRect &tmp, bool hover, bool sunken)
@@ -754,7 +745,6 @@ void QFusionStyle::drawPrimitive(PrimitiveElement elem,
         bool isDefault = false;
         bool isFlat = false;
         bool isDown = (option->state & State_Sunken) || (option->state & State_On);
-        QRect r;
 
         if (const QStyleOptionButton *button = qstyleoption_cast<const QStyleOptionButton*>(option)) {
             isDefault = (button->features & QStyleOptionButton::DefaultButton) && (button->state & State_Enabled);
@@ -763,7 +753,7 @@ void QFusionStyle::drawPrimitive(PrimitiveElement elem,
 
         if (isFlat && !isDown) {
             if (isDefault) {
-                r = option->rect.adjusted(0, 1, 0, -1);
+                const QRect r = option->rect.adjusted(0, 1, 0, -1);
                 painter->setPen(QPen(Qt::black));
                 const QLine lines[4] = {
                     QLine(QPoint(r.left() + 2, r.top()),
@@ -800,26 +790,26 @@ void QFusionStyle::drawPrimitive(PrimitiveElement elem,
         if (isDefault)
             buttonColor = mergedColors(buttonColor, highlightedOutline.lighter(130), 90);
 
-        BEGIN_STYLE_PIXMAPCACHE(u"pushbutton-" + buttonColor.name(QColor::HexArgb))
-        r = rect.adjusted(0, 1, -1, 0);
+        QCachedPainter p(painter, u"pushbutton-" + buttonColor.name(QColor::HexArgb), option);
+        if (p.needsPainting()) {
+            const QRect r = rect.adjusted(0, 1, -1, 0);
 
-        p->setRenderHint(QPainter::Antialiasing, true);
-        p->translate(0.5, -0.5);
+            p->setRenderHint(QPainter::Antialiasing, true);
+            p->translate(0.5, -0.5);
 
-        QLinearGradient gradient = qt_fusion_gradient(rect, (isEnabled && option->state & State_MouseOver ) ? buttonColor : buttonColor.darker(104));
-        p->setPen(Qt::transparent);
-        p->setBrush(isDown ? QBrush(buttonColor.darker(110)) : gradient);
-        p->drawRoundedRect(r, 2.0, 2.0);
-        p->setBrush(Qt::NoBrush);
+            QLinearGradient gradient = qt_fusion_gradient(rect, (isEnabled && option->state & State_MouseOver ) ? buttonColor : buttonColor.darker(104));
+            p->setPen(Qt::transparent);
+            p->setBrush(isDown ? QBrush(buttonColor.darker(110)) : gradient);
+            p->drawRoundedRect(r, 2.0, 2.0);
+            p->setBrush(Qt::NoBrush);
 
-        // Outline
-        p->setPen(!isEnabled ? QPen(darkOutline.lighter(115)) : QPen(darkOutline));
-        p->drawRoundedRect(r, 2.0, 2.0);
+            // Outline
+            p->setPen(!isEnabled ? QPen(darkOutline.lighter(115)) : QPen(darkOutline));
+            p->drawRoundedRect(r, 2.0, 2.0);
 
-        p->setPen(QFusionStylePrivate::innerContrastLine);
-        p->drawRoundedRect(r.adjusted(1, 1, -1, -1), 2.0, 2.0);
-
-        END_STYLE_PIXMAPCACHE
+            p->setPen(QFusionStylePrivate::innerContrastLine);
+            p->drawRoundedRect(r.adjusted(1, 1, -1, -1), 2.0, 2.0);
+        }
         }
         break;
     case PE_FrameTabWidget:
@@ -1138,17 +1128,14 @@ void QFusionStyle::drawControl(ControlElement element, const QStyleOption *optio
         if (const QStyleOptionHeader *header = qstyleoption_cast<const QStyleOptionHeader *>(option)) {
             const QStyleOptionHeaderV2 *headerV2 = qstyleoption_cast<const QStyleOptionHeaderV2 *>(option);
             const bool isSectionDragTarget = headerV2 ? headerV2->isSectionDragTarget : false;
-            const qreal dpr = QStyleHelper::getDpr(painter);
-            const QString pixmapName = QStyleHelper::uniqueName("headersection-"_L1
-                                                                    % HexString(header->position)
-                                                                    % HexString(header->orientation)
-                                                                    % QLatin1Char(isSectionDragTarget ? '1' : '0'),
-                                                                option, option->rect.size(), dpr);
-            QPixmap cache;
-            if (!QPixmapCache::find(pixmapName, &cache)) {
-                cache = styleCachePixmap(rect.size(), dpr);
+
+            const QString pixmapName = "headersection-"_L1
+                                       % HexString(header->position)
+                                       % HexString(header->orientation)
+                                       % QLatin1Char(isSectionDragTarget ? '1' : '0');
+            QCachedPainter cp(painter, pixmapName, option);
+            if (cp.needsPainting()) {
                 QRect pixmapRect(0, 0, rect.width(), rect.height());
-                QPainter cachePainter(&cache);
                 QColor buttonColor = d->buttonColor(option->palette);
                 QColor gradientStartColor = buttonColor.lighter(104);
                 QColor gradientStopColor = buttonColor.darker(102);
@@ -1169,28 +1156,25 @@ void QFusionStyle::drawControl(ControlElement element, const QStyleOption *optio
                     gradient.setColorAt(0.92, gradientStopColor);
                     gradient.setColorAt(1, gradientStopColor.darker(104));
                 }
-                cachePainter.fillRect(pixmapRect, gradient);
-                cachePainter.setPen(QFusionStylePrivate::innerContrastLine);
-                cachePainter.setBrush(Qt::NoBrush);
-                cachePainter.drawLine(pixmapRect.topLeft(), pixmapRect.topRight());
-                cachePainter.setPen(d->outline(option->palette));
-                cachePainter.drawLine(pixmapRect.bottomLeft(), pixmapRect.bottomRight());
+                cp->fillRect(pixmapRect, gradient);
+                cp->setPen(QFusionStylePrivate::innerContrastLine);
+                cp->setBrush(Qt::NoBrush);
+                cp->drawLine(pixmapRect.topLeft(), pixmapRect.topRight());
+                cp->setPen(d->outline(option->palette));
+                cp->drawLine(pixmapRect.bottomLeft(), pixmapRect.bottomRight());
 
                 if (header->orientation == Qt::Horizontal &&
                         header->position != QStyleOptionHeader::End &&
                         header->position != QStyleOptionHeader::OnlyOneSection) {
-                    cachePainter.setPen(QColor(0, 0, 0, 40));
-                    cachePainter.drawLine(pixmapRect.topRight(), pixmapRect.bottomRight() + QPoint(0, -1));
-                    cachePainter.setPen(QFusionStylePrivate::innerContrastLine);
-                    cachePainter.drawLine(pixmapRect.topRight() + QPoint(-1, 0), pixmapRect.bottomRight() + QPoint(-1, -1));
+                    cp->setPen(QColor(0, 0, 0, 40));
+                    cp->drawLine(pixmapRect.topRight(), pixmapRect.bottomRight() + QPoint(0, -1));
+                    cp->setPen(QFusionStylePrivate::innerContrastLine);
+                    cp->drawLine(pixmapRect.topRight() + QPoint(-1, 0), pixmapRect.bottomRight() + QPoint(-1, -1));
                 } else if (header->orientation == Qt::Vertical) {
-                    cachePainter.setPen(d->outline(option->palette));
-                    cachePainter.drawLine(pixmapRect.topRight(), pixmapRect.bottomRight());
+                    cp->setPen(d->outline(option->palette));
+                    cp->drawLine(pixmapRect.topRight(), pixmapRect.bottomRight());
                 }
-                cachePainter.end();
-                QPixmapCache::insert(pixmapName, cache);
             }
-            painter->drawPixmap(rect.topLeft(), cache);
         }
         painter->restore();
         break;
@@ -1878,17 +1862,11 @@ void QFusionStyle::drawComplexControl(ComplexControl control, const QStyleOption
 #if QT_CONFIG(spinbox)
     case CC_SpinBox:
         if (const QStyleOptionSpinBox *spinBox = qstyleoption_cast<const QStyleOptionSpinBox *>(option)) {
-            const qreal dpr = QStyleHelper::getDpr(painter);
-            QPixmap cache;
-            QString pixmapName = QStyleHelper::uniqueName("spinbox"_L1, spinBox, spinBox->rect.size(), dpr);
-            if (!QPixmapCache::find(pixmapName, &cache)) {
-
-                cache = styleCachePixmap(spinBox->rect.size(), dpr);
-
+            QCachedPainter cp(painter, "spinbox"_L1, option);
+            if (cp.needsPainting()) {
                 QRect pixmapRect(0, 0, spinBox->rect.width(), spinBox->rect.height());
                 QRect rect = pixmapRect;
                 QRect r = rect.adjusted(0, 1, 0, -1);
-                QPainter cachePainter(&cache);
                 QColor arrowColor = spinBox->palette.windowText().color();
                 arrowColor.setAlpha(160);
 
@@ -1905,18 +1883,18 @@ void QFusionStyle::drawComplexControl(ComplexControl control, const QStyleOption
                 QRect downRect = proxy()->subControlRect(CC_SpinBox, &spinBoxCopy, SC_SpinBoxDown, widget);
 
                 if (spinBox->frame) {
-                    cachePainter.save();
-                    cachePainter.setRenderHint(QPainter::Antialiasing, true);
-                    cachePainter.translate(0.5, 0.5);
+                    cp->save();
+                    cp->setRenderHint(QPainter::Antialiasing, true);
+                    cp->translate(0.5, 0.5);
 
                     // Fill background
-                    cachePainter.setPen(Qt::NoPen);
-                    cachePainter.setBrush(option->palette.base());
-                    cachePainter.drawRoundedRect(r.adjusted(0, 0, -1, -1), 2, 2);
+                    cp->setPen(Qt::NoPen);
+                    cp->setBrush(option->palette.base());
+                    cp->drawRoundedRect(r.adjusted(0, 0, -1, -1), 2, 2);
 
                     // Draw inner shadow
-                    cachePainter.setPen(QFusionStylePrivate::topShadow);
-                    cachePainter.drawLine(QPoint(r.left() + 2, r.top() + 1), QPoint(r.right() - 2, r.top() + 1));
+                    cp->setPen(QFusionStylePrivate::topShadow);
+                    cp->drawLine(QPoint(r.left() + 2, r.top() + 1), QPoint(r.right() - 2, r.top() + 1));
 
                     if (!upRect.isNull()) {
                         // Draw button gradient
@@ -1925,67 +1903,67 @@ void QFusionStyle::drawComplexControl(ComplexControl control, const QStyleOption
                         const QLinearGradient gradient = qt_fusion_gradient(updownRect, (isEnabled && option->state & State_MouseOver )
                                                        ? buttonColor : buttonColor.darker(104));
 
-                        cachePainter.setPen(Qt::NoPen);
-                        cachePainter.setBrush(gradient);
+                        cp->setPen(Qt::NoPen);
+                        cp->setBrush(gradient);
 
-                        cachePainter.save();
-                        cachePainter.setClipRect(updownRect);
-                        cachePainter.drawRoundedRect(r.adjusted(0, 0, -1, -1), 2, 2);
-                        cachePainter.setPen(QPen(QFusionStylePrivate::innerContrastLine));
-                        cachePainter.setBrush(Qt::NoBrush);
-                        cachePainter.drawRoundedRect(r.adjusted(1, 1, -2, -2), 2, 2);
-                        cachePainter.restore();
+                        cp->save();
+                        cp->setClipRect(updownRect);
+                        cp->drawRoundedRect(r.adjusted(0, 0, -1, -1), 2, 2);
+                        cp->setPen(QPen(QFusionStylePrivate::innerContrastLine));
+                        cp->setBrush(Qt::NoBrush);
+                        cp->drawRoundedRect(r.adjusted(1, 1, -2, -2), 2, 2);
+                        cp->restore();
                     }
 
                     if ((spinBox->stepEnabled & QAbstractSpinBox::StepUpEnabled) && upIsActive) {
                         if (sunken)
-                            cachePainter.fillRect(upRect.adjusted(0, -1, 0, 0), gradientStopColor.darker(110));
+                            cp->fillRect(upRect.adjusted(0, -1, 0, 0), gradientStopColor.darker(110));
                         else if (hover)
-                            cachePainter.fillRect(upRect.adjusted(0, -1, 0, 0), QFusionStylePrivate::innerContrastLine);
+                            cp->fillRect(upRect.adjusted(0, -1, 0, 0), QFusionStylePrivate::innerContrastLine);
                     }
 
                     if ((spinBox->stepEnabled & QAbstractSpinBox::StepDownEnabled) && downIsActive) {
                         if (sunken)
-                            cachePainter.fillRect(downRect.adjusted(0, 0, 0, 1), gradientStopColor.darker(110));
+                            cp->fillRect(downRect.adjusted(0, 0, 0, 1), gradientStopColor.darker(110));
                         else if (hover)
-                            cachePainter.fillRect(downRect.adjusted(0, 0, 0, 1), QFusionStylePrivate::innerContrastLine);
+                            cp->fillRect(downRect.adjusted(0, 0, 0, 1), QFusionStylePrivate::innerContrastLine);
                     }
 
-                    cachePainter.setPen(hasFocus ? d->highlightedOutline(option->palette) : outline);
-                    cachePainter.setBrush(Qt::NoBrush);
-                    cachePainter.drawRoundedRect(r.adjusted(0, 0, -1, -1), 2, 2);
+                    cp->setPen(hasFocus ? d->highlightedOutline(option->palette) : outline);
+                    cp->setBrush(Qt::NoBrush);
+                    cp->drawRoundedRect(r.adjusted(0, 0, -1, -1), 2, 2);
                     if (hasFocus) {
                         QColor softHighlight = option->palette.highlight().color();
                         softHighlight.setAlpha(40);
-                        cachePainter.setPen(softHighlight);
-                        cachePainter.drawRoundedRect(r.adjusted(1, 1, -2, -2), 1.7, 1.7);
+                        cp->setPen(softHighlight);
+                        cp->drawRoundedRect(r.adjusted(1, 1, -2, -2), 1.7, 1.7);
                     }
-                    cachePainter.restore();
+                    cp->restore();
                 }
 
                 if (spinBox->buttonSymbols != QAbstractSpinBox::NoButtons) {
                     // buttonSymbols == NoButtons results in 'null' rects
                     // and a tiny rect painted in the corner.
-                    cachePainter.setPen(outline);
+                    cp->setPen(outline);
                     if (spinBox->direction == Qt::RightToLeft)
-                        cachePainter.drawLine(QLineF(upRect.right(), upRect.top() - 0.5, upRect.right(), downRect.bottom() + 1.5));
+                        cp->drawLine(QLineF(upRect.right(), upRect.top() - 0.5, upRect.right(), downRect.bottom() + 1.5));
                     else
-                        cachePainter.drawLine(QLineF(upRect.left(), upRect.top() - 0.5, upRect.left(), downRect.bottom() + 1.5));
+                        cp->drawLine(QLineF(upRect.left(), upRect.top() - 0.5, upRect.left(), downRect.bottom() + 1.5));
                 }
 
                 if (upIsActive && sunken) {
-                    cachePainter.setPen(gradientStopColor.darker(130));
-                    cachePainter.drawLine(downRect.left() + 1, downRect.top(), downRect.right(), downRect.top());
-                    cachePainter.drawLine(upRect.left() + 1, upRect.top(), upRect.left() + 1, upRect.bottom());
-                    cachePainter.drawLine(upRect.left() + 1, upRect.top() - 1, upRect.right(), upRect.top() - 1);
+                    cp->setPen(gradientStopColor.darker(130));
+                    cp->drawLine(downRect.left() + 1, downRect.top(), downRect.right(), downRect.top());
+                    cp->drawLine(upRect.left() + 1, upRect.top(), upRect.left() + 1, upRect.bottom());
+                    cp->drawLine(upRect.left() + 1, upRect.top() - 1, upRect.right(), upRect.top() - 1);
                 }
 
                 if (downIsActive && sunken) {
-                    cachePainter.setPen(gradientStopColor.darker(130));
-                    cachePainter.drawLine(downRect.left() + 1, downRect.top(), downRect.left() + 1, downRect.bottom() + 1);
-                    cachePainter.drawLine(downRect.left() + 1, downRect.top(), downRect.right(), downRect.top());
-                    cachePainter.setPen(gradientStopColor.darker(110));
-                    cachePainter.drawLine(downRect.left() + 1, downRect.bottom() + 1, downRect.right(), downRect.bottom() + 1);
+                    cp->setPen(gradientStopColor.darker(130));
+                    cp->drawLine(downRect.left() + 1, downRect.top(), downRect.left() + 1, downRect.bottom() + 1);
+                    cp->drawLine(downRect.left() + 1, downRect.top(), downRect.right(), downRect.top());
+                    cp->setPen(gradientStopColor.darker(110));
+                    cp->drawLine(downRect.left() + 1, downRect.bottom() + 1, downRect.right(), downRect.bottom() + 1);
                 }
 
                 QColor disabledColor = mergedColors(arrowColor, option->palette.button().color());
@@ -1994,27 +1972,23 @@ void QFusionStyle::drawComplexControl(ComplexControl control, const QStyleOption
                     int centerY = upRect.center().y();
 
                     // plus/minus
-                    cachePainter.setPen((spinBox->stepEnabled & QAbstractSpinBox::StepUpEnabled) ? arrowColor : disabledColor);
-                    cachePainter.drawLine(centerX - 1, centerY, centerX + 3, centerY);
-                    cachePainter.drawLine(centerX + 1, centerY - 2, centerX + 1, centerY + 2);
+                    cp->setPen((spinBox->stepEnabled & QAbstractSpinBox::StepUpEnabled) ? arrowColor : disabledColor);
+                    cp->drawLine(centerX - 1, centerY, centerX + 3, centerY);
+                    cp->drawLine(centerX + 1, centerY - 2, centerX + 1, centerY + 2);
 
                     centerX = downRect.center().x();
                     centerY = downRect.center().y();
-                    cachePainter.setPen((spinBox->stepEnabled & QAbstractSpinBox::StepDownEnabled) ? arrowColor : disabledColor);
-                    cachePainter.drawLine(centerX - 1, centerY, centerX + 3, centerY);
+                    cp->setPen((spinBox->stepEnabled & QAbstractSpinBox::StepDownEnabled) ? arrowColor : disabledColor);
+                    cp->drawLine(centerX - 1, centerY, centerX + 3, centerY);
 
                 } else if (spinBox->buttonSymbols == QAbstractSpinBox::UpDownArrows){
                     // arrows
-                    qt_fusion_draw_arrow(Qt::UpArrow, &cachePainter, option, upRect.adjusted(0, 0, 0, 1),
+                    qt_fusion_draw_arrow(Qt::UpArrow, cp.painter(), option, upRect.adjusted(0, 0, 0, 1),
                                          (spinBox->stepEnabled & QAbstractSpinBox::StepUpEnabled) ? arrowColor : disabledColor);
-                    qt_fusion_draw_arrow(Qt::DownArrow, &cachePainter, option, downRect,
+                    qt_fusion_draw_arrow(Qt::DownArrow, cp.painter(), option, downRect,
                                          (spinBox->stepEnabled & QAbstractSpinBox::StepDownEnabled) ? arrowColor : disabledColor);
                 }
-
-                cachePainter.end();
-                QPixmapCache::insert(pixmapName, cache);
             }
-            painter->drawPixmap(spinBox->rect.topLeft(), cache);
         }
         break;
 #endif // QT_CONFIG(spinbox)
@@ -2567,17 +2541,13 @@ void QFusionStyle::drawComplexControl(ComplexControl control, const QStyleOption
             bool hasFocus = option->state & State_HasFocus && option->state & State_KeyboardFocusChange;
             bool sunken = comboBox->state & State_On; // play dead, if combobox has no items
             bool isEnabled = (comboBox->state & State_Enabled);
-            const qreal dpr = QStyleHelper::getDpr(painter);
-            QPixmap cache;
-            const QString pixmapName = QStyleHelper::uniqueName("combobox"_L1
-                                                                    % QLatin1StringView(sunken ? "-sunken" : "")
-                                                                    % QLatin1StringView(comboBox->editable ? "-editable" : "")
-                                                                    % QLatin1StringView(isEnabled ? "-enabled" : "")
-                                                                    % QLatin1StringView(!comboBox->frame ? "-frameless" : ""),
-                                                                option, comboBox->rect.size(), dpr);
-            if (!QPixmapCache::find(pixmapName, &cache)) {
-                cache = styleCachePixmap(comboBox->rect.size(), dpr);
-                QPainter cachePainter(&cache);
+            const QString pixmapName = "combobox"_L1
+                                       % QLatin1StringView(sunken ? "-sunken" : "")
+                                       % QLatin1StringView(comboBox->editable ? "-editable" : "")
+                                       % QLatin1StringView(isEnabled ? "-enabled" : "")
+                                       % QLatin1StringView(!comboBox->frame ? "-frameless" : "");
+            QCachedPainter cp(painter, "spinbox"_L1, option);
+            if (cp.needsPainting()) {
                 QRect pixmapRect(0, 0, comboBox->rect.width(), comboBox->rect.height());
                 QStyleOptionComboBox comboBoxCopy = *comboBox;
                 comboBoxCopy.rect = pixmapRect;
@@ -2599,42 +2569,42 @@ void QFusionStyle::drawComplexControl(ComplexControl control, const QStyleOption
                     }
 
                     if (comboBox->frame) {
-                        cachePainter.save();
-                        cachePainter.setRenderHint(QPainter::Antialiasing, true);
-                        cachePainter.translate(0.5, 0.5);
-                        cachePainter.setPen(Qt::NoPen);
-                        cachePainter.setBrush(buttonOption.palette.base());
-                        cachePainter.drawRoundedRect(rect.adjusted(0, 0, -1, -1), 2, 2);
-                        cachePainter.restore();
-                        proxy()->drawPrimitive(PE_FrameLineEdit, &buttonOption, &cachePainter, widget);
+                        cp->save();
+                        cp->setRenderHint(QPainter::Antialiasing, true);
+                        cp->translate(0.5, 0.5);
+                        cp->setPen(Qt::NoPen);
+                        cp->setBrush(buttonOption.palette.base());
+                        cp->drawRoundedRect(rect.adjusted(0, 0, -1, -1), 2, 2);
+                        cp->restore();
+                        proxy()->drawPrimitive(PE_FrameLineEdit, &buttonOption, cp.painter(), widget);
                     }
 
                     // Draw button clipped
-                    cachePainter.save();
-                    cachePainter.setClipRect(downArrowRect.adjusted(0, 0, 1, 0));
+                    cp->save();
+                    cp->setClipRect(downArrowRect.adjusted(0, 0, 1, 0));
                     buttonOption.rect.setLeft(comboBox->direction == Qt::LeftToRight ?
                                                   downArrowRect.left() - 6: downArrowRect.right() + 6);
-                    proxy()->drawPrimitive(PE_PanelButtonCommand, &buttonOption, &cachePainter, widget);
-                    cachePainter.restore();
-                    cachePainter.setPen( QPen(hasFocus ? option->palette.highlight() : outline.lighter(110), 1));
+                    proxy()->drawPrimitive(PE_PanelButtonCommand, &buttonOption, cp.painter(), widget);
+                    cp->restore();
+                    cp->setPen( QPen(hasFocus ? option->palette.highlight() : outline.lighter(110), 1));
 
                     if (!sunken) {
                         int borderSize = 1;
                         if (comboBox->direction == Qt::RightToLeft) {
-                            cachePainter.drawLine(QPoint(downArrowRect.right() - 1, downArrowRect.top() + borderSize ),
-                                                  QPoint(downArrowRect.right() - 1, downArrowRect.bottom() - borderSize));
+                            cp->drawLine(QPoint(downArrowRect.right() - 1, downArrowRect.top() + borderSize ),
+                                         QPoint(downArrowRect.right() - 1, downArrowRect.bottom() - borderSize));
                         } else {
-                            cachePainter.drawLine(QPoint(downArrowRect.left() , downArrowRect.top() + borderSize),
-                                                  QPoint(downArrowRect.left() , downArrowRect.bottom() - borderSize));
+                            cp->drawLine(QPoint(downArrowRect.left() , downArrowRect.top() + borderSize),
+                                         QPoint(downArrowRect.left() , downArrowRect.bottom() - borderSize));
                         }
                     } else {
                         if (comboBox->direction == Qt::RightToLeft) {
-                            cachePainter.drawLine(QPoint(downArrowRect.right(), downArrowRect.top() + 2),
-                                                  QPoint(downArrowRect.right(), downArrowRect.bottom() - 2));
+                            cp->drawLine(QPoint(downArrowRect.right(), downArrowRect.top() + 2),
+                                         QPoint(downArrowRect.right(), downArrowRect.bottom() - 2));
 
                         } else {
-                            cachePainter.drawLine(QPoint(downArrowRect.left(), downArrowRect.top() + 2),
-                                                  QPoint(downArrowRect.left(), downArrowRect.bottom() - 2));
+                            cp->drawLine(QPoint(downArrowRect.left(), downArrowRect.top() + 2),
+                                         QPoint(downArrowRect.left(), downArrowRect.bottom() - 2));
                         }
                     }
                 } else {
@@ -2646,18 +2616,15 @@ void QFusionStyle::drawComplexControl(ComplexControl control, const QStyleOption
                         buttonOption.state |= State_Sunken;
                         buttonOption.state &= ~State_MouseOver;
                     }
-                    proxy()->drawPrimitive(PE_PanelButtonCommand, &buttonOption, &cachePainter, widget);
+                    proxy()->drawPrimitive(PE_PanelButtonCommand, &buttonOption, cp.painter(), widget);
                 }
                 if (comboBox->subControls & SC_ComboBoxArrow) {
                     // Draw the up/down arrow
                     QColor arrowColor = option->palette.buttonText().color();
                     arrowColor.setAlpha(160);
-                    qt_fusion_draw_arrow(Qt::DownArrow, &cachePainter, option, downArrowRect, arrowColor);
+                    qt_fusion_draw_arrow(Qt::DownArrow, cp.painter(), option, downArrowRect, arrowColor);
                 }
-                cachePainter.end();
-                QPixmapCache::insert(pixmapName, cache);
             }
-            painter->drawPixmap(comboBox->rect.topLeft(), cache);
         }
         painter->restore();
         break;
