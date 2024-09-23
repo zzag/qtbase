@@ -10908,10 +10908,12 @@ void QWidget::setParent(QWidget *parent, Qt::WindowFlags f)
                         << "to support" << surfaceType;
                     const auto windowStateBeforeDestroy = newParentWithWindow->windowState();
                     const auto visibilityBeforeDestroy = newParentWithWindow->isVisible();
+                    const auto positionBeforeDestroy = newParentWithWindow->pos();
                     newParentWithWindow->destroy();
                     newParentWithWindow->create();
                     Q_ASSERT(newParentWithWindow->windowHandle());
                     newParentWithWindow->windowHandle()->setWindowStates(windowStateBeforeDestroy);
+                    newParentWithWindow->move(positionBeforeDestroy);
                     QWidgetPrivate::get(newParentWithWindow)->setVisible(visibilityBeforeDestroy);
                 } else if (auto *backingStore = newParentWithWindow->backingStore()) {
                     // If we don't recreate we still need to make sure the native parent
