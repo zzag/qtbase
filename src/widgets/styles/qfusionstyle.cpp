@@ -2664,7 +2664,6 @@ void QFusionStyle::drawComplexControl(ComplexControl control, const QStyleOption
 #if QT_CONFIG(slider)
     case CC_Slider:
         if (const QStyleOptionSlider *slider = qstyleoption_cast<const QStyleOptionSlider *>(option)) {
-            const qreal dpr = QStyleHelper::getDpr(painter);
             QRect groove = proxy()->subControlRect(CC_Slider, option, SC_SliderGroove, widget);
             QRect handle = proxy()->subControlRect(CC_Slider, option, SC_SliderHandle, widget);
 
@@ -2672,7 +2671,6 @@ void QFusionStyle::drawComplexControl(ComplexControl control, const QStyleOption
             bool ticksAbove = slider->tickPosition & QSlider::TicksAbove;
             bool ticksBelow = slider->tickPosition & QSlider::TicksBelow;
             QColor activeHighlight = d->highlight(option->palette);
-            QPixmap cache;
             QBrush oldBrush = painter->brush();
             QPen oldPen = painter->pen();
             QColor shadowAlpha(Qt::black);
@@ -2682,20 +2680,15 @@ void QFusionStyle::drawComplexControl(ComplexControl control, const QStyleOption
 
 
             if ((option->subControls & SC_SliderGroove) && groove.isValid()) {
-                QColor grooveColor;
-                grooveColor.setHsv(buttonColor.hue(),
-                                   qMin(255, (int)(buttonColor.saturation())),
-                                   qMin(255, (int)(buttonColor.value()*0.9)));
-                QString groovePixmapName = QStyleHelper::uniqueName("slider_groove"_L1, option,
-                                                                    groove.size(), dpr);
                 QRect pixmapRect(0, 0, groove.width(), groove.height());
-
                 // draw background groove
-                if (!QPixmapCache::find(groovePixmapName, &cache)) {
-                    cache = styleCachePixmap(pixmapRect.size(), dpr);
-                    QPainter groovePainter(&cache);
-                    groovePainter.setRenderHint(QPainter::Antialiasing, true);
-                    groovePainter.translate(0.5, 0.5);
+                QCachedPainter cp(painter, "slider_groove"_L1, option, groove.size(), groove);
+                if (cp.needsPainting()) {
+                    const auto grooveColor =
+                        QColor::fromHsv(buttonColor.hue(),
+                                        qMin(255, (int)(buttonColor.saturation())),
+                                        qMin(255, (int)(buttonColor.value()*0.9)));
+                    cp->translate(0.5, 0.5);
                     QLinearGradient gradient;
                     if (horizontal) {
                         gradient.setStart(pixmapRect.center().x(), pixmapRect.top());
@@ -2705,23 +2698,33 @@ void QFusionStyle::drawComplexControl(ComplexControl control, const QStyleOption
                         gradient.setStart(pixmapRect.left(), pixmapRect.center().y());
                         gradient.setFinalStop(pixmapRect.right(), pixmapRect.center().y());
                     }
-                    groovePainter.setPen(QPen(outline));
+                    cp->setPen(QPen(outline));
                     gradient.setColorAt(0, grooveColor.darker(110));
                     gradient.setColorAt(1, grooveColor.lighter(110));//palette.button().color().darker(115));
-                    groovePainter.setBrush(gradient);
-                    groovePainter.drawRoundedRect(pixmapRect.adjusted(1, 1, -2, -2), 1, 1);
-                    groovePainter.end();
-                    QPixmapCache::insert(groovePixmapName, cache);
+                    cp->setBrush(gradient);
+                    cp->drawRoundedRect(pixmapRect.adjusted(1, 1, -2, -2), 1, 1);
                 }
-                painter->drawPixmap(groove.topLeft(), cache);
+                cp.finish();
 
                 // draw blue groove highlight
                 QRect clipRect;
-                if (!groovePixmapName.isEmpty())
-                    groovePixmapName += "_blue"_L1;
-                if (!QPixmapCache::find(groovePixmapName, &cache)) {
-                    cache = styleCachePixmap(pixmapRect.size(), dpr);
-                    QPainter groovePainter(&cache);
+                if (horizontal) {
+                    if (slider->upsideDown)
+                        clipRect = QRect(handle.right(), groove.top(), groove.right() - handle.right(), groove.height());
+                    else
+                        clipRect = QRect(groove.left(), groove.top(),
+                                         handle.left() - slider->rect.left(), groove.height());
+                } else {
+                    if (slider->upsideDown)
+                        clipRect = QRect(groove.left(), handle.bottom(), groove.width(), groove.height() - (handle.bottom() - slider->rect.top()));
+                    else
+                        clipRect = QRect(groove.left(), groove.top(), groove.width(), handle.top() - groove.top());
+                }
+                painter->save();
+                painter->setClipRect(clipRect.adjusted(0, 0, 1, 1), Qt::IntersectClip);
+
+                QCachedPainter cpBlue(painter, "slider_groove_blue"_L1, option, groove.size(), groove);
+                if (cpBlue.needsPainting()) {
                     QLinearGradient gradient;
                     if (horizontal) {
                         gradient.setStart(pixmapRect.center().x(), pixmapRect.top());
@@ -2737,34 +2740,18 @@ void QFusionStyle::drawComplexControl(ComplexControl control, const QStyleOption
                     if (qGray(grooveOutline.rgb()) > qGray(highlightedoutline.rgb()))
                         grooveOutline = highlightedoutline;
 
-                    groovePainter.setRenderHint(QPainter::Antialiasing, true);
-                    groovePainter.translate(0.5, 0.5);
-                    groovePainter.setPen(QPen(grooveOutline));
+                    cpBlue->setRenderHint(QPainter::Antialiasing, true);
+                    cpBlue->translate(0.5, 0.5);
+                    cpBlue->setPen(QPen(grooveOutline));
                     gradient.setColorAt(0, activeHighlight);
                     gradient.setColorAt(1, activeHighlight.lighter(130));
-                    groovePainter.setBrush(gradient);
-                    groovePainter.drawRoundedRect(pixmapRect.adjusted(1, 1, -2, -2), 1, 1);
-                    groovePainter.setPen(QFusionStylePrivate::innerContrastLine);
-                    groovePainter.setBrush(Qt::NoBrush);
-                    groovePainter.drawRoundedRect(pixmapRect.adjusted(2, 2, -3, -3), 1, 1);
-                    groovePainter.end();
-                    QPixmapCache::insert(groovePixmapName, cache);
+                    cpBlue->setBrush(gradient);
+                    cpBlue->drawRoundedRect(pixmapRect.adjusted(1, 1, -2, -2), 1, 1);
+                    cpBlue->setPen(QFusionStylePrivate::innerContrastLine);
+                    cpBlue->setBrush(Qt::NoBrush);
+                    cpBlue->drawRoundedRect(pixmapRect.adjusted(2, 2, -3, -3), 1, 1);
                 }
-                if (horizontal) {
-                    if (slider->upsideDown)
-                        clipRect = QRect(handle.right(), groove.top(), groove.right() - handle.right(), groove.height());
-                    else
-                        clipRect = QRect(groove.left(), groove.top(),
-                                         handle.left() - slider->rect.left(), groove.height());
-                } else {
-                    if (slider->upsideDown)
-                        clipRect = QRect(groove.left(), handle.bottom(), groove.width(), groove.height() - (handle.bottom() - slider->rect.top()));
-                    else
-                        clipRect = QRect(groove.left(), groove.top(), groove.width(), handle.top() - groove.top());
-                }
-                painter->save();
-                painter->setClipRect(clipRect.adjusted(0, 0, 1, 1), Qt::IntersectClip);
-                painter->drawPixmap(groove.topLeft(), cache);
+                cpBlue.finish();
                 painter->restore();
             }
 
@@ -2830,50 +2817,41 @@ void QFusionStyle::drawComplexControl(ComplexControl control, const QStyleOption
             }
             // draw handle
             if ((option->subControls & SC_SliderHandle) ) {
-                QString handlePixmapName = QStyleHelper::uniqueName("slider_handle"_L1, option,
-                                                                    handle.size(), dpr);
-                if (!QPixmapCache::find(handlePixmapName, &cache)) {
-                    cache = styleCachePixmap(handle.size(), dpr);
+                QCachedPainter cp(painter, "slider_handle"_L1, option, handle.size(), handle);
+                if (cp.needsPainting()) {
                     QRect pixmapRect(0, 0, handle.width(), handle.height());
-                    QPainter handlePainter(&cache);
                     QRect gradRect = pixmapRect.adjusted(2, 2, -2, -2);
 
                     // gradient fill
                     QRect r = pixmapRect.adjusted(1, 1, -2, -2);
                     QLinearGradient gradient = qt_fusion_gradient(gradRect, d->buttonColor(option->palette),horizontal ? TopDown : FromLeft);
 
-                    handlePainter.setRenderHint(QPainter::Antialiasing, true);
-                    handlePainter.translate(0.5, 0.5);
+                    cp->setRenderHint(QPainter::Antialiasing, true);
+                    cp->translate(0.5, 0.5);
 
-                    handlePainter.setPen(Qt::NoPen);
-                    handlePainter.setBrush(QColor(0, 0, 0, 40));
-                    handlePainter.drawRect(horizontal ? r.adjusted(-1, 2, 1, -2) : r.adjusted(2, -1, -2, 1));
+                    cp->setPen(Qt::NoPen);
+                    cp->setBrush(QColor(0, 0, 0, 40));
+                    cp->drawRect(horizontal ? r.adjusted(-1, 2, 1, -2) : r.adjusted(2, -1, -2, 1));
 
-                    handlePainter.setPen(QPen(d->outline(option->palette)));
+                    cp->setPen(QPen(d->outline(option->palette)));
                     if (option->state & State_HasFocus && option->state & State_KeyboardFocusChange)
-                        handlePainter.setPen(QPen(d->highlightedOutline(option->palette)));
+                        cp->setPen(QPen(d->highlightedOutline(option->palette)));
 
-                    handlePainter.setBrush(gradient);
-                    handlePainter.drawRoundedRect(r, 2, 2);
-                    handlePainter.setBrush(Qt::NoBrush);
-                    handlePainter.setPen(QFusionStylePrivate::innerContrastLine);
-                    handlePainter.drawRoundedRect(r.adjusted(1, 1, -1, -1), 2, 2);
+                    cp->setBrush(gradient);
+                    cp->drawRoundedRect(r, 2, 2);
+                    cp->setBrush(Qt::NoBrush);
+                    cp->setPen(QFusionStylePrivate::innerContrastLine);
+                    cp->drawRoundedRect(r.adjusted(1, 1, -1, -1), 2, 2);
 
                     QColor cornerAlpha = outline.darker(120);
                     cornerAlpha.setAlpha(80);
 
                     //handle shadow
-                    handlePainter.setPen(shadowAlpha);
-                    handlePainter.drawLine(QPoint(r.left() + 2, r.bottom() + 1), QPoint(r.right() - 2, r.bottom() + 1));
-                    handlePainter.drawLine(QPoint(r.right() + 1, r.bottom() - 3), QPoint(r.right() + 1, r.top() + 4));
-                    handlePainter.drawLine(QPoint(r.right() - 1, r.bottom()), QPoint(r.right() + 1, r.bottom() - 2));
-
-                    handlePainter.end();
-                    QPixmapCache::insert(handlePixmapName, cache);
+                    cp->setPen(shadowAlpha);
+                    cp->drawLine(QPoint(r.left() + 2, r.bottom() + 1), QPoint(r.right() - 2, r.bottom() + 1));
+                    cp->drawLine(QPoint(r.right() + 1, r.bottom() - 3), QPoint(r.right() + 1, r.top() + 4));
+                    cp->drawLine(QPoint(r.right() - 1, r.bottom()), QPoint(r.right() + 1, r.bottom() - 2));
                 }
-
-                painter->drawPixmap(handle.topLeft(), cache);
-
             }
             painter->setBrush(oldBrush);
             painter->setPen(oldPen);
