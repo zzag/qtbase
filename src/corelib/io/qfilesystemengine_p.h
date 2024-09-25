@@ -116,7 +116,18 @@ public:
     static QString tempPath();
 
     static bool createDirectory(const QFileSystemEntry &entry, bool createParents,
-                                std::optional<QFile::Permissions> permissions = std::nullopt);
+                                std::optional<QFile::Permissions> permissions = std::nullopt)
+    {
+        if (createParents)
+            return mkpath(entry, permissions);
+        return mkdir(entry, permissions);
+    }
+
+    static bool mkdir(const QFileSystemEntry &entry,
+                      std::optional<QFile::Permissions> permissions = std::nullopt);
+    static bool mkpath(const QFileSystemEntry &entry,
+                       std::optional<QFile::Permissions> permissions = std::nullopt);
+
     static bool removeDirectory(const QFileSystemEntry &entry, bool removeEmptyParents)
     {
         if (removeEmptyParents)

@@ -1526,32 +1526,43 @@ static bool createDirectoryWithParents(const QString &nativeName,
     return isDir(nativeName);
 }
 
-//static
-bool QFileSystemEngine::createDirectory(const QFileSystemEntry &entry, bool createParents,
-                                        std::optional<QFile::Permissions> permissions)
+bool QFileSystemEngine::mkpath(const QFileSystemEntry &entry,
+                               std::optional<QFile::Permissions> permissions)
 {
     QString dirName = entry.filePath();
     Q_CHECK_FILE_NAME(dirName, false);
-
-    dirName = QDir::toNativeSeparators(QDir::cleanPath(dirName));
 
     QNativeFilePermissions nativePermissions(permissions, true);
     if (!nativePermissions.isOk())
         return false;
 
     auto securityAttributes = nativePermissions.securityAttributes();
+    dirName = QDir::toNativeSeparators(QDir::cleanPath(dirName));
 
     // try to mkdir this directory
     DWORD lastError;
     if (mkDir(dirName, securityAttributes, &lastError))
         return true;
-    // mkpath should return true, if the directory already exists, mkdir false.
-    if (!createParents)
-        return false;
+    // mkpath should return true, if the directory already exists
     if (lastError == ERROR_ALREADY_EXISTS || lastError == ERROR_ACCESS_DENIED)
         return isDirPath(dirName, nullptr);
 
     return createDirectoryWithParents(dirName, securityAttributes, false);
+}
+
+bool QFileSystemEngine::mkdir(const QFileSystemEntry &entry,
+                              std::optional<QFile::Permissions> permissions)
+{
+    QString dirName = entry.filePath();
+    Q_CHECK_FILE_NAME(dirName, false);
+
+
+    QNativeFilePermissions nativePermissions(permissions, true);
+    if (!nativePermissions.isOk())
+        return false;
+
+    dirName = QDir::toNativeSeparators(QDir::cleanPath(dirName));
+    return mkDir(dirName, nativePermissions.securityAttributes());
 }
 
 bool QFileSystemEngine::rmdir(const QFileSystemEntry &entry)
