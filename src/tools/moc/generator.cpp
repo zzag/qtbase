@@ -330,38 +330,32 @@ void Generator::generateCode()
             tagType = "QtMocHelpers::ForceCompleteMetaTypes<" + tagType + '>';
         fprintf(out, "    return QtMocHelpers::metaObjectData<%s, %s>(%s,\n"
                      "            qt_methods, qt_properties, qt_enums%s);\n"
-                 "}\n",
+                     "}\n",
                 ownType, tagType.constData(), metaObjectFlags, uintDataParams);
     }
 
+    QByteArray metaVarNameSuffix;
     if (cdef->hasQNamespace) {
-        // We can always access the function above if it's at namespace scope.
-        fprintf(out, "static constexpr auto qt_meta_data_types_%s =\n"
-                     "    %s::qt_create_metaobjectdata<qt_meta_tag_%s_t>();\n",
-                qualifiedClassNameIdentifier.constData(), cdef->qualified.constData(),
-                qualifiedClassNameIdentifier.constData());
-    } else {
-        // If this is a class, it might itself be private, so we need an extra
-        // level of indirection to access the function above.
-        fprintf(out, "template <> constexpr inline auto qt_call_create_metaobjectdata<qt_meta_tag_%s_t>()\n"
-                     "{\n"
-                     "    return %s::qt_create_metaobjectdata<qt_meta_tag_%s_t>();\n"
-                     "}\n"
-                     "static constexpr auto qt_meta_data_types_%s =\n"
-                     "    qt_call_create_metaobjectdata<qt_meta_tag_%s_t>();\n",
-                qualifiedClassNameIdentifier.constData(), cdef->qualified.constData(),
-                qualifiedClassNameIdentifier.constData(), qualifiedClassNameIdentifier.constData(),
-                qualifiedClassNameIdentifier.constData());
-    }
+        // Q_NAMESPACE does not define the variables, so we have to. Declare as
+        // plain, file-scope static variables (not templates).
+        metaVarNameSuffix = '_' + qualifiedClassNameIdentifier;
+        const char *n = metaVarNameSuffix.constData();
+        fprintf(out, R"(
+static constexpr auto qt_staticMetaObjectContent%s =
+    %s::qt_create_metaobjectdata<qt_meta_tag%s_t>();
+static constexpr auto qt_staticMetaObjectStaticContent%s =
+    qt_staticMetaObjectContent%s.data;
+static constexpr auto qt_staticMetaObjectRelocatingContent%s =
+    qt_staticMetaObjectContent%s.metaTypes;
 
-    // create a copy of qt_meta_data_types' members so the uint array ends up
-    // in the pure .rodata section while the meta types is in .data.rel.ro
-    fprintf(out, "static constexpr auto qt_meta_data_%s =\n"
-                 "    qt_meta_data_types_%s.data;\n",
-            qualifiedClassNameIdentifier.constData(), qualifiedClassNameIdentifier.constData());
-    fprintf(out, "static constexpr auto qt_meta_types_%s =\n"
-                 "    qt_meta_data_types_%s.metaTypes;\n\n",
-            qualifiedClassNameIdentifier.constData(), qualifiedClassNameIdentifier.constData());
+)",
+                n, cdef->qualified.constData(), n,
+                n, n,
+                n, n);
+    } else {
+        // Q_OBJECT and Q_GADGET do declare them, so we just use the templates.
+        metaVarNameSuffix = "<qt_meta_tag_" + qualifiedClassNameIdentifier + "_t>";
+    }
 
 //
 // Build extra array
@@ -450,8 +444,9 @@ void Generator::generateCode()
     else
         fprintf(out, "    nullptr,\n");
     fprintf(out, "    qt_meta_stringdata_%s.offsetsAndSizes,\n"
-            "    qt_meta_data_%s.data(),\n", qualifiedClassNameIdentifier.constData(),
-            qualifiedClassNameIdentifier.constData());
+            "    qt_staticMetaObjectStaticContent%s.data(),\n",
+            qualifiedClassNameIdentifier.constData(),
+            metaVarNameSuffix.constData());
     if (hasStaticMetaCall)
         fprintf(out, "    qt_static_metacall,\n");
     else
@@ -462,8 +457,8 @@ void Generator::generateCode()
     else
         fprintf(out, "    qt_meta_extradata_%s,\n", qualifiedClassNameIdentifier.constData());
 
-    fprintf(out, "    qt_meta_types_%s.data(),\n",
-            qualifiedClassNameIdentifier.constData());
+    fprintf(out, "    qt_staticMetaObjectRelocatingContent%s.data(),\n",
+            metaVarNameSuffix.constData());
 
     fprintf(out, "    nullptr\n} };\n\n");
 

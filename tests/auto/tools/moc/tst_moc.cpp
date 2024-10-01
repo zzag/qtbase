@@ -922,7 +922,6 @@ private:
     QString m_moc;
     QString m_sourceDirectory;
     QString qtIncludePath;
-    class PrivateClass;
     QString sMember;
     const QString sConst;
     PrivatePropertyTest *pPPTest;
@@ -2588,7 +2587,15 @@ void tst_Moc::warnings()
 #endif
 }
 
-class tst_Moc::PrivateClass : public QObject
+class OuterPrivateClass
+{
+    // not a Q_OBJECT, otherwise some friendship is granted
+    class PrivateClass;
+public:
+    static void doTest();
+};
+
+class OuterPrivateClass::PrivateClass : public QObject
 {
     Q_PROPERTY(int someProperty READ someSlot WRITE someSlot2)
 Q_OBJECT
@@ -2607,6 +2614,11 @@ public:
 };
 
 void tst_Moc::privateClass()
+{
+    OuterPrivateClass::doTest();
+}
+
+void OuterPrivateClass::doTest()
 {
     QCOMPARE(PrivateClass::staticMetaObject.indexOfConstructor("PrivateClass()"), 0);
     QVERIFY(PrivateClass::staticMetaObject.indexOfSignal("someSignal()") > 0);
