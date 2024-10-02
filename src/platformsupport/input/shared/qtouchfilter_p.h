@@ -1,5 +1,7 @@
 // Copyright (C) 2016 Jolla Ltd, author: <gunnar.sletta@jollamobile.com>
 // SPDX-License-Identifier: LicenseRef-Qt-Commercial OR LGPL-3.0-only OR GPL-2.0-only OR GPL-3.0-only
+#ifndef QTOUCHFILTER_P_H
+#define QTOUCHFILTER_P_H
 
 #include <private/qglobal_p.h>
 
@@ -16,9 +18,9 @@
 
 QT_BEGIN_NAMESPACE
 
-struct QEvdevTouchFilter
+struct QTouchFilter
 {
-    QEvdevTouchFilter();
+    QTouchFilter();
 
     void initialize(float pos, float velocity);
     void update(float pos, float velocity, float timeDelta);
@@ -92,11 +94,11 @@ private:
     mat2 H;
 };
 
-inline QEvdevTouchFilter::QEvdevTouchFilter()
+inline QTouchFilter::QTouchFilter()
 {
 }
 
-inline void QEvdevTouchFilter::initialize(float pos, float velocity)
+inline void QTouchFilter::initialize(float pos, float velocity)
 {
     x = vec2(pos, velocity);
 
@@ -109,7 +111,7 @@ inline void QEvdevTouchFilter::initialize(float pos, float velocity)
              0.0f, 0.1f);
 }
 
-inline void QEvdevTouchFilter::update(float pos, float velocity, float dT)
+inline void QTouchFilter::update(float pos, float velocity, float dT)
 {
     A.b = dT;
 
@@ -137,3 +139,5 @@ inline void QEvdevTouchFilter::update(float pos, float velocity, float dT)
 }
 
 QT_END_NAMESPACE
+
+#endif // QTOUCHFILTER_P_H
