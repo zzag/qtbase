@@ -556,9 +556,7 @@ void QDebug::putQtOrdering(QtOrderingPrivate::QtOrderingTypeFlag flags, Qt::part
 /*!
     \fn QDebug::swap(QDebug &other)
     \since 5.0
-
-    Swaps this debug stream instance with \a other. This function is
-    very fast and never fails.
+    \memberswap{debug stream instance}
 */
 
 /*!
