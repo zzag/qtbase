@@ -69,6 +69,8 @@ qt_internal_extend_target(InputSupportPrivate CONDITION QT_FEATURE_vxworksevdev
         vxkeyboard/qvxkeyboardmanager.cpp vxkeyboard/qvxkeyboardmanager_p.h
         vxmouse/qvxmousehandler.cpp vxmouse/qvxmousehandler_p.h
         vxmouse/qvxmousemanager.cpp vxmouse/qvxmousemanager_p.h
+        vxtouch/qvxtouchhandler.cpp vxtouch/qvxtouchhandler_p.h
+        vxtouch/qvxtouchmanager.cpp vxtouch/qvxtouchmanager_p.h
     INCLUDE_DIRECTORIES
         shared
 )

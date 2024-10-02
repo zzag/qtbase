@@ -51,6 +51,7 @@
 #elif QT_CONFIG(vxworksevdev)
 #include <QtInputSupport/private/qvxkeyboardmanager_p.h>
 #include <QtInputSupport/private/qvxmousemanager_p.h>
+#include <QtInputSupport/private/qvxtouchmanager_p.h>
 #endif
 
 #if QT_CONFIG(tslib)
@@ -440,6 +441,7 @@ void QEglFSIntegration::createInputHandlers()
 #elif QT_CONFIG(vxworksevdev)
     m_kbdMgr = new QVxKeyboardManager("VxKeyboard"_L1, QString() /* spec */, this);
     new QVxMouseManager("VxMouse"_L1, QString() /* spec */, this);
+    new QVxTouchManager("VxTouch"_L1, QString() /* spec */, this);
 #endif
 
 #if QT_CONFIG(integrityhid)
