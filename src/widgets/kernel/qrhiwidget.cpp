@@ -438,7 +438,7 @@ QImage QRhiWidgetPrivate::grabFramebuffer()
                             imageFormat);
         QImage result;
         if (rhi->isYUpInFramebuffer())
-            result = wrapperImage.mirrored();
+            result = wrapperImage.flipped();
         else
             result = wrapperImage.copy();
         result.setDevicePixelRatio(q->devicePixelRatio());

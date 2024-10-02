@@ -8368,7 +8368,7 @@ void tst_QWidget::renderRTL()
     menu.setLayoutDirection(Qt::RightToLeft);
     QImage imageRTL(menu.size(), QImage::Format_ARGB32);
     menu.render(&imageRTL);
-    imageRTL = imageRTL.mirrored(true, false);
+    imageRTL.flip(Qt::Horizontal);
     //imageRTL.save("/tmp/rendered_2.png");
 
     QCOMPARE(imageLTR.height(), imageRTL.height());

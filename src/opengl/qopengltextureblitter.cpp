@@ -674,7 +674,7 @@ void QOpenGLTextureBlitter::setOpacity(float opacity)
     \a texture corresponds to a texture attached to an FBO pass
     OriginBottomLeft. On the other hand, when \a texture is based on
     unflipped image data, pass OriginTopLeft. This is more efficient
-    than using QImage::mirrored().
+    than using QImage::flipped().
 
     \sa targetTransform(), Origin, bind()
  */

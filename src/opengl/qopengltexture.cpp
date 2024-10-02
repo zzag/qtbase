@@ -2059,7 +2059,7 @@ QOpenGLTexture *QOpenGLTexturePrivate::createTextureView(QOpenGLTexture::Target 
 
     \code
     // Prepare texture
-    QOpenGLTexture *texture = new QOpenGLTexture(QImage(fileName).mirrored());
+    QOpenGLTexture *texture = new QOpenGLTexture(QImage(fileName).flipped());
     texture->setMinificationFilter(QOpenGLTexture::LinearMipMapLinear);
     texture->setMagnificationFilter(QOpenGLTexture::Linear);
     ...
@@ -2068,7 +2068,7 @@ QOpenGLTexture *QOpenGLTexturePrivate::createTextureView(QOpenGLTexture::Target 
     glDrawArrays(...);
     \endcode
 
-    Note that the QImage is mirrored vertically to account for the fact that
+    Note that the QImage is flipped vertically to account for the fact that
     OpenGL and QImage use opposite directions for the y axis. Another option
     would be to transform your texture coordinates.
 */
