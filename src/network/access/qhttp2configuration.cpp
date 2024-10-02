@@ -281,7 +281,7 @@ unsigned QHttp2Configuration::maxConcurrentStreams() const
 }
 
 /*!
-    Swaps this configuration with the \a other configuration.
+    \memberswap{configuration}
 */
 void QHttp2Configuration::swap(QHttp2Configuration &other) noexcept
 {
