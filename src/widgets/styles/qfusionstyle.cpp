@@ -157,9 +157,7 @@ static void qt_fusion_draw_arrow(Qt::ArrowType type, QPainter *painter, const QS
                                % HexString<uint>(color.rgba());
     QCachedPainter cp(painter, pixmapName, option, rect.size(), rect);
     if (cp.needsPainting()) {
-        QRectF arrowRect;
-        arrowRect.setWidth(size);
-        arrowRect.setHeight(arrowHeight * size / arrowWidth);
+        QRectF arrowRect(0, 0, size, arrowHeight * size / arrowWidth);
         if (type == Qt::LeftArrow || type == Qt::RightArrow)
             arrowRect = arrowRect.transposed();
         arrowRect.moveTo((rect.width() - arrowRect.width()) / 2.0,
@@ -190,34 +188,25 @@ static void qt_fusion_draw_arrow(Qt::ArrowType type, QPainter *painter, const QS
 
 static void qt_fusion_draw_mdibutton(QPainter *painter, const QStyleOptionTitleBar *option, const QRect &tmp, bool hover, bool sunken)
 {
-    QColor dark;
-    dark.setHsv(option->palette.button().color().hue(),
-                qMin(255, (int)(option->palette.button().color().saturation())),
-                qMin(255, (int)(option->palette.button().color().value()*0.7)));
-
-    QColor highlight = option->palette.highlight().color();
-
     bool active = (option->titleBarState & QStyle::State_Active);
-    QColor titleBarHighlight(255, 255, 255, 60);
+    const QColor dark = QColor::fromHsv(option->palette.button().color().hue(),
+                                        qMin(255, option->palette.button().color().saturation()),
+                                        qMin(255, int(option->palette.button().color().value() * 0.7)));
+    const QColor highlight = option->palette.highlight().color();
+    const QColor titleBarHighlight(sunken ? highlight.darker(130) : QColor(255, 255, 255, 60));
+    const QColor mdiButtonBorderColor(active ? highlight.darker(180): dark.darker(110));
 
     if (sunken)
-        painter->fillRect(tmp.adjusted(1, 1, -1, -1), option->palette.highlight().color().darker(120));
+        painter->fillRect(tmp.adjusted(1, 1, -1, -1), highlight.darker(120));
     else if (hover)
         painter->fillRect(tmp.adjusted(1, 1, -1, -1), QColor(255, 255, 255, 20));
 
-    QColor mdiButtonGradientStartColor;
-    QColor mdiButtonGradientStopColor;
-
-    mdiButtonGradientStartColor = QColor(0, 0, 0, 40);
-    mdiButtonGradientStopColor = QColor(255, 255, 255, 60);
-
-    if (sunken)
-        titleBarHighlight = highlight.darker(130);
+    const QColor mdiButtonGradientStartColor(0, 0, 0, 40);
+    const QColor mdiButtonGradientStopColor(255, 255, 255, 60);
 
     QLinearGradient gradient(tmp.center().x(), tmp.top(), tmp.center().x(), tmp.bottom());
     gradient.setColorAt(0, mdiButtonGradientStartColor);
     gradient.setColorAt(1, mdiButtonGradientStopColor);
-    QColor mdiButtonBorderColor(active ? option->palette.highlight().color().darker(180): dark.darker(110));
 
     painter->setPen(QPen(mdiButtonBorderColor));
     const QLine lines[4] = {
@@ -322,13 +311,8 @@ void QFusionStyle::drawPrimitive(PrimitiveElement elem,
     Q_ASSERT(option);
     Q_D (const QFusionStyle);
 
-    QRect rect = option->rect;
-    int state = option->state;
-
     const QColor outline = d->outline(option->palette);
     const QColor highlightedOutline = d->highlightedOutline(option->palette);
-
-    const QColor tabFrameColor = d->tabFrameColor(option->palette);
 
     switch (elem) {
 
@@ -440,24 +424,19 @@ void QFusionStyle::drawPrimitive(PrimitiveElement elem,
         return;
     case PE_IndicatorHeaderArrow:
         if (const QStyleOptionHeader *header = qstyleoption_cast<const QStyleOptionHeader *>(option)) {
-            QRect r = header->rect;
+            const QRect r = header->rect.translated(0, -2);
             QColor arrowColor = header->palette.windowText().color();
             arrowColor.setAlpha(180);
-            QPoint offset = QPoint(0, -2);
 
+            Qt::ArrowType arrowType = Qt::UpArrow;
 #if defined(Q_OS_LINUX)
-            if (header->sortIndicator & QStyleOptionHeader::SortUp) {
-                qt_fusion_draw_arrow(Qt::UpArrow, painter, option, r.translated(offset), arrowColor);
-            } else if (header->sortIndicator & QStyleOptionHeader::SortDown) {
-                qt_fusion_draw_arrow(Qt::DownArrow, painter, option, r.translated(offset), arrowColor);
-            }
+            if (header->sortIndicator & QStyleOptionHeader::SortDown)
+                arrowType = Qt::DownArrow;
 #else
-            if (header->sortIndicator & QStyleOptionHeader::SortUp) {
-                qt_fusion_draw_arrow(Qt::DownArrow, painter, option, r.translated(offset), arrowColor);
-            } else if (header->sortIndicator & QStyleOptionHeader::SortDown) {
-                qt_fusion_draw_arrow(Qt::UpArrow, painter, option, r.translated(offset), arrowColor);
-            }
+            if (header->sortIndicator & QStyleOptionHeader::SortUp)
+                arrowType = Qt::DownArrow;
 #endif
+            qt_fusion_draw_arrow(arrowType, painter, option, r, arrowColor);
         }
         break;
     case PE_IndicatorButtonDropDown:
@@ -466,7 +445,7 @@ void QFusionStyle::drawPrimitive(PrimitiveElement elem,
 
     case PE_IndicatorToolBarSeparator:
     {
-        QRect rect = option->rect;
+        const QRect &rect = option->rect;
         const int margin = 6;
         if (option->state & State_Horizontal) {
             const int offset = rect.width()/2;
@@ -535,9 +514,9 @@ void QFusionStyle::drawPrimitive(PrimitiveElement elem,
     {
         QColor softshadow = option->palette.window().color().darker(120);
 
-        QRect rect= option->rect;
+        const QRect &rect = option->rect;
         painter->setPen(softshadow);
-        painter->drawRect(option->rect.adjusted(0, 0, -1, -1));
+        painter->drawRect(rect.adjusted(0, 0, -1, -1));
         painter->setPen(QPen(option->palette.light(), 1));
         painter->drawLine(QPoint(rect.left() + 1, rect.top() + 1), QPoint(rect.left() + 1, rect.bottom() - 1));
         painter->setPen(QPen(option->palette.window().color().darker(120)));
@@ -570,9 +549,9 @@ void QFusionStyle::drawPrimitive(PrimitiveElement elem,
     case PE_FrameWindow:
         painter->save();
     {
-        QRect rect= option->rect;
+        const QRect &rect = option->rect;
         painter->setPen(QPen(outline.darker(150)));
-        painter->drawRect(option->rect.adjusted(0, 0, -1, -1));
+        painter->drawRect(rect.adjusted(0, 0, -1, -1));
         painter->setPen(QPen(option->palette.light(), 1));
         painter->drawLine(QPoint(rect.left() + 1, rect.top() + 1),
                           QPoint(rect.left() + 1, rect.bottom() - 1));
@@ -586,7 +565,7 @@ void QFusionStyle::drawPrimitive(PrimitiveElement elem,
         break;
     case PE_FrameLineEdit:
     {
-        QRect r = rect;
+        const QRect &r = option->rect;
         bool hasFocus = option->state & State_HasFocus;
 
         painter->save();
@@ -618,11 +597,12 @@ void QFusionStyle::drawPrimitive(PrimitiveElement elem,
         if (const QStyleOptionButton *checkbox = qstyleoption_cast<const QStyleOptionButton*>(option)) {
             painter->setRenderHint(QPainter::Antialiasing, true);
             painter->translate(0.5, 0.5);
-            rect = rect.adjusted(0, 0, -1, -1);
+            const QRect rect = option->rect.adjusted(0, 0, -1, -1);
 
             QColor pressedColor = mergedColors(option->palette.base().color(), option->palette.windowText().color(), 85);
             painter->setBrush(Qt::NoBrush);
 
+            const auto state = option->state;
             // Gradient fill
             QLinearGradient gradient(rect.topLeft(), rect.bottomLeft());
             gradient.setColorAt(0, (state & State_Sunken) ? pressedColor : option->palette.base().color().darker(115));
@@ -676,9 +656,10 @@ void QFusionStyle::drawPrimitive(PrimitiveElement elem,
         painter->save();
     {
         QColor pressedColor = mergedColors(option->palette.base().color(), option->palette.windowText().color(), 85);
-        painter->setBrush((state & State_Sunken) ? pressedColor : option->palette.base().color());
+        painter->setBrush((option->state & State_Sunken) ? pressedColor : option->palette.base().color());
         painter->setRenderHint(QPainter::Antialiasing, true);
         QPainterPath circle;
+        const QRect &rect = option->rect;
         const QPointF circleCenter = rect.center() + QPoint(1, 1);
         const qreal outlineRadius = (rect.width() + (rect.width() + 1) % 2) / 2.0 - 1;
         circle.addEllipse(circleCenter, outlineRadius, outlineRadius);
@@ -687,7 +668,7 @@ void QFusionStyle::drawPrimitive(PrimitiveElement elem,
             painter->setPen(QPen(highlightedOutline));
         painter->drawPath(circle);
 
-        if (state & (State_On )) {
+        if (option->state & State_On) {
             circle = QPainterPath();
             const qreal checkmarkRadius = outlineRadius / 2.32;
             circle.addEllipse(circleCenter, checkmarkRadius, checkmarkRadius);
@@ -703,19 +684,20 @@ void QFusionStyle::drawPrimitive(PrimitiveElement elem,
         break;
     case PE_IndicatorToolBarHandle:
     {
+        const QPoint center = option->rect.center();
         //draw grips
         if (option->state & State_Horizontal) {
             for (int i = -3 ; i < 2 ; i += 3) {
                 for (int j = -8 ; j < 10 ; j += 3) {
-                    painter->fillRect(rect.center().x() + i, rect.center().y() + j, 2, 2, QFusionStylePrivate::lightShade);
-                    painter->fillRect(rect.center().x() + i, rect.center().y() + j, 1, 1, QFusionStylePrivate::darkShade);
+                    painter->fillRect(center.x() + i, center.y() + j, 2, 2, QFusionStylePrivate::lightShade);
+                    painter->fillRect(center.x() + i, center.y() + j, 1, 1, QFusionStylePrivate::darkShade);
                 }
             }
         } else { //vertical toolbar
             for (int i = -6 ; i < 12 ; i += 3) {
                 for (int j = -3 ; j < 2 ; j += 3) {
-                    painter->fillRect(rect.center().x() + i, rect.center().y() + j, 2, 2, QFusionStylePrivate::lightShade);
-                    painter->fillRect(rect.center().x() + i, rect.center().y() + j, 1, 1, QFusionStylePrivate::darkShade);
+                    painter->fillRect(center.x() + i, center.y() + j, 2, 2, QFusionStylePrivate::lightShade);
+                    painter->fillRect(center.x() + i, center.y() + j, 1, 1, QFusionStylePrivate::darkShade);
                 }
             }
         }
@@ -728,7 +710,7 @@ void QFusionStyle::drawPrimitive(PrimitiveElement elem,
             //### check for d->alt_down
             if (!(fropt->state & State_KeyboardFocusChange))
                 return;
-            QRect rect = option->rect;
+            const QRect &rect = option->rect;
 
             painter->save();
             painter->setRenderHint(QPainter::Antialiasing, true);
@@ -741,7 +723,7 @@ void QFusionStyle::drawPrimitive(PrimitiveElement elem,
             gradient.setColorAt(0, fillcolor.lighter(160));
             gradient.setColorAt(1, fillcolor);
             painter->setBrush(gradient);
-            painter->drawRoundedRect(option->rect.adjusted(0, 0, -1, -1), 1, 1);
+            painter->drawRoundedRect(rect.adjusted(0, 0, -1, -1), 1, 1);
             painter->restore();
         }
         break;
@@ -787,17 +769,15 @@ void QFusionStyle::drawPrimitive(PrimitiveElement elem,
         bool hasFocus = (option->state & State_HasFocus && option->state & State_KeyboardFocusChange);
         QColor buttonColor = d->buttonColor(option->palette);
 
-        QColor darkOutline = outline;
-        if (hasFocus | isDefault) {
-            darkOutline = highlightedOutline;
-        }
 
         if (isDefault)
             buttonColor = mergedColors(buttonColor, highlightedOutline.lighter(130), 90);
 
         QCachedPainter p(painter, u"pushbutton-" + buttonColor.name(QColor::HexArgb), option);
         if (p.needsPainting()) {
+            const QRect &rect = option->rect;
             const QRect r = rect.adjusted(0, 1, -1, 0);
+            const QColor &darkOutline = (hasFocus | isDefault) ? highlightedOutline : outline;
 
             p->setRenderHint(QPainter::Antialiasing, true);
             p->translate(0.5, -0.5);
@@ -819,19 +799,20 @@ void QFusionStyle::drawPrimitive(PrimitiveElement elem,
         break;
     case PE_FrameTabWidget:
         painter->save();
-        painter->fillRect(option->rect.adjusted(0, 0, -1, -1), tabFrameColor);
+        painter->fillRect(option->rect.adjusted(0, 0, -1, -1), d->tabFrameColor(option->palette));
 #if QT_CONFIG(tabwidget)
         if (const QStyleOptionTabWidgetFrame *twf = qstyleoption_cast<const QStyleOptionTabWidgetFrame *>(option)) {
-            QColor borderColor = outline.lighter(110);
             QRect rect = option->rect.adjusted(0, 0, -1, -1);
 
             // Shadow outline
             if (twf->shape != QTabBar::RoundedSouth) {
                 rect.adjust(0, 0, 0, -1);
+                QColor borderColor = outline.lighter(110);
                 QColor alphaShadow(Qt::black);
                 alphaShadow.setAlpha(15);
                 painter->setPen(alphaShadow);
-                painter->drawLine(option->rect.bottomLeft(), option->rect.bottomRight());            painter->setPen(borderColor);
+                painter->drawLine(option->rect.bottomLeft(), option->rect.bottomRight());
+                painter->setPen(borderColor);
             }
 
             // outline
