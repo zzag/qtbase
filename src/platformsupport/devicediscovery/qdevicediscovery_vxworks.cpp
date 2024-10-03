@@ -79,8 +79,16 @@ bool QDeviceDiscoveryVxWorks::checkDeviceType(const QString &device)
         }
 
         if (m_types & Device_Mouse) {
-            if ((devCap & EV_DEV_REL) && (devCap & EV_DEV_KEY)) {
+            if ((devCap & EV_DEV_REL) && (devCap & EV_DEV_KEY) && !(devCap & EV_DEV_ABS)) {
                 qCDebug(lcDD) << "DeviceDiscovery found mouse at" << device;
+                QT_CLOSE(fd);
+                return true;
+            }
+        }
+
+        if ((m_types & (Device_Touchpad | Device_Touchscreen))) {
+            if ((m_types & Device_Touchscreen) && (devCap & EV_DEV_ABS && (devCap & EV_DEV_KEY))) {
+                qCDebug(lcDD) << "DeviceDiscovery found touchscreen at" << device;
                 QT_CLOSE(fd);
                 return true;
             }
