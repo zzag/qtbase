@@ -852,10 +852,6 @@ void QFusionStyle::drawControl(ControlElement element, const QStyleOption *optio
                                const QWidget *widget) const
 {
     Q_D (const QFusionStyle);
-    QRect rect = option->rect;
-    QColor outline = d->outline(option->palette);
-    QColor highlightedOutline = d->highlightedOutline(option->palette);
-    QColor shadow = QFusionStylePrivate::darkShade;
 
     switch (element) {
     case CE_ComboBoxLabel:
@@ -894,16 +890,17 @@ void QFusionStyle::drawControl(ControlElement element, const QStyleOption *optio
     {
         // Don't draw handle for single pixel splitters
         if (option->rect.width() > 1 && option->rect.height() > 1) {
+            const QPoint center = option->rect.center();
             //draw grips
             if (option->state & State_Horizontal) {
                 for (int j = -6 ; j< 12 ; j += 3) {
-                    painter->fillRect(rect.center().x() + 1, rect.center().y() + j, 2, 2, QFusionStylePrivate::lightShade);
-                    painter->fillRect(rect.center().x() + 1, rect.center().y() + j, 1, 1, QFusionStylePrivate::darkShade);
+                    painter->fillRect(center.x() + 1, center.y() + j, 2, 2, QFusionStylePrivate::lightShade);
+                    painter->fillRect(center.x() + 1, center.y() + j, 1, 1, QFusionStylePrivate::darkShade);
                 }
             } else {
                 for (int i = -6; i< 12 ; i += 3) {
-                    painter->fillRect(rect.center().x() + i, rect.center().y(), 2, 2, QFusionStylePrivate::lightShade);
-                    painter->fillRect(rect.center().x() + i, rect.center().y(), 1, 1, QFusionStylePrivate::darkShade);
+                    painter->fillRect(center.x() + i, center.y(), 2, 2, QFusionStylePrivate::lightShade);
+                    painter->fillRect(center.x() + i, center.y(), 1, 1, QFusionStylePrivate::darkShade);
                 }
             }
         }
@@ -912,6 +909,7 @@ void QFusionStyle::drawControl(ControlElement element, const QStyleOption *optio
 #if QT_CONFIG(rubberband)
     case CE_RubberBand:
         if (qstyleoption_cast<const QStyleOptionRubberBand *>(option)) {
+            const QRect &rect = option->rect;
             QColor highlight = option->palette.color(QPalette::Active, QPalette::Highlight);
             painter->save();
             QColor penColor = highlight.darker(120);
@@ -921,19 +919,19 @@ void QFusionStyle::drawControl(ControlElement element, const QStyleOption *optio
                                 qMin(highlight.green()/2 + 110, 255),
                                 qMin(highlight.blue()/2 + 110, 255));
             dimHighlight.setAlpha(widget && widget->isWindow() ? 255 : 80);
-            QLinearGradient gradient(rect.topLeft(), QPoint(rect.bottomLeft().x(), rect.bottomLeft().y()));
+            QLinearGradient gradient(rect.topLeft(), rect.bottomLeft());
             gradient.setColorAt(0, dimHighlight.lighter(120));
             gradient.setColorAt(1, dimHighlight);
             painter->setRenderHint(QPainter::Antialiasing, true);
             painter->translate(0.5, 0.5);
             painter->setBrush(dimHighlight);
-            painter->drawRoundedRect(option->rect.adjusted(0, 0, -1, -1), 1, 1);
+            painter->drawRoundedRect(rect.adjusted(0, 0, -1, -1), 1, 1);
             //when the rectangle we get is large enough, draw the inner rectangle.
-            if (option->rect.width() > 2 && option->rect.height() > 2) {
+            if (rect.width() > 2 && rect.height() > 2) {
                 QColor innerLine = Qt::white;
                 innerLine.setAlpha(40);
                 painter->setPen(innerLine);
-                painter->drawRoundedRect(option->rect.adjusted(1, 1, -2, -2), 1, 1);
+                painter->drawRoundedRect(rect.adjusted(1, 1, -2, -2), 1, 1);
             }
             painter->restore();
         }
@@ -942,12 +940,13 @@ void QFusionStyle::drawControl(ControlElement element, const QStyleOption *optio
     case CE_SizeGrip:
         painter->save();
     {
+        const QPoint center = option->rect.center();
         //draw grips
         for (int i = -6; i< 12 ; i += 3) {
             for (int j = -6 ; j< 12 ; j += 3) {
                 if ((option->direction == Qt::LeftToRight && i > -j) || (option->direction == Qt::RightToLeft && j > i) ) {
-                    painter->fillRect(rect.center().x() + i, rect.center().y() + j, 2, 2, QFusionStylePrivate::lightShade);
-                    painter->fillRect(rect.center().x() + i, rect.center().y() + j, 1, 1, QFusionStylePrivate::darkShade);
+                    painter->fillRect(center.x() + i, center.y() + j, 2, 2, QFusionStylePrivate::lightShade);
+                    painter->fillRect(center.x() + i, center.y() + j, 1, 1, QFusionStylePrivate::darkShade);
                 }
             }
         }
@@ -961,15 +960,16 @@ void QFusionStyle::drawControl(ControlElement element, const QStyleOption *optio
             if (widget && !(qobject_cast<const QMainWindow*> (widget->parentWidget())))
                 break;
 
+            const QRect &rect = option->rect;
             // Draws the light line above and the dark line below menu bars and
             // tool bars.
-            QLinearGradient gradient(option->rect.topLeft(), option->rect.bottomLeft());
+            QLinearGradient gradient(rect.topLeft(), rect.bottomLeft());
             if (!(option->state & State_Horizontal))
                 gradient = QLinearGradient(rect.left(), rect.center().y(),
                                            rect.right(), rect.center().y());
             gradient.setColorAt(0, option->palette.window().color().lighter(104));
             gradient.setColorAt(1, option->palette.window().color());
-            painter->fillRect(option->rect, gradient);
+            painter->fillRect(rect, gradient);
 
             constexpr QColor light = QFusionStylePrivate::lightShade;
             constexpr QColor shadow = QFusionStylePrivate::darkShade;
@@ -982,25 +982,25 @@ void QFusionStyle::drawControl(ControlElement element, const QStyleOption *optio
                     // line at the bottom to blend with the central
                     // widget.
                     painter->setPen(light);
-                    painter->drawLine(option->rect.bottomLeft(), option->rect.bottomRight());
+                    painter->drawLine(rect.bottomLeft(), rect.bottomRight());
                     painter->setPen(shadow);
-                    painter->drawLine(option->rect.left(), option->rect.bottom() - 1,
-                                      option->rect.right(), option->rect.bottom() - 1);
+                    painter->drawLine(rect.left(), rect.bottom() - 1,
+                                      rect.right(), rect.bottom() - 1);
                 } else {
                     // All others draw a single dark line at the bottom.
                     painter->setPen(shadow);
-                    painter->drawLine(option->rect.bottomLeft(), option->rect.bottomRight());
+                    painter->drawLine(rect.bottomLeft(), rect.bottomRight());
                 }
                 // All top toolbar lines draw a light line at the top.
                 painter->setPen(light);
-                painter->drawLine(option->rect.topLeft(), option->rect.topRight());
+                painter->drawLine(rect.topLeft(), rect.topRight());
             } else if (toolBar->toolBarArea == Qt::BottomToolBarArea) {
                 if (toolBar->positionOfLine == QStyleOptionToolBar::End
                         || toolBar->positionOfLine == QStyleOptionToolBar::Middle) {
                     // The end and middle bottom tool bar lines draw a dark
                     // line at the bottom.
                     painter->setPen(shadow);
-                    painter->drawLine(option->rect.bottomLeft(), option->rect.bottomRight());
+                    painter->drawLine(rect.bottomLeft(), rect.bottomRight());
                 }
                 if (toolBar->positionOfLine == QStyleOptionToolBar::Beginning
                         || toolBar->positionOfLine == QStyleOptionToolBar::OnlyOne) {
@@ -1011,22 +1011,22 @@ void QFusionStyle::drawControl(ControlElement element, const QStyleOption *optio
                     // main window has a menu bar and a status bar, and
                     // possibly dock widgets.
                     painter->setPen(shadow);
-                    painter->drawLine(option->rect.left(), option->rect.bottom() - 1,
-                                      option->rect.right(), option->rect.bottom() - 1);
+                    painter->drawLine(rect.left(), rect.bottom() - 1,
+                                      rect.right(), rect.bottom() - 1);
                     painter->setPen(light);
-                    painter->drawLine(option->rect.bottomLeft(), option->rect.bottomRight());
+                    painter->drawLine(rect.bottomLeft(), rect.bottomRight());
                 }
                 if (toolBar->positionOfLine == QStyleOptionToolBar::End) {
                     painter->setPen(shadow);
-                    painter->drawLine(option->rect.topLeft(), option->rect.topRight());
+                    painter->drawLine(rect.topLeft(), rect.topRight());
                     painter->setPen(light);
-                    painter->drawLine(option->rect.left(), option->rect.top() + 1,
-                                      option->rect.right(), option->rect.top() + 1);
+                    painter->drawLine(rect.left(), rect.top() + 1,
+                                      rect.right(), rect.top() + 1);
 
                 } else {
                     // All other bottom toolbars draw a light line at the top.
                     painter->setPen(light);
-                    painter->drawLine(option->rect.topLeft(), option->rect.topRight());
+                    painter->drawLine(rect.topLeft(), rect.topRight());
                 }
             }
             if (toolBar->toolBarArea == Qt::LeftToolBarArea) {
@@ -1035,41 +1035,41 @@ void QFusionStyle::drawControl(ControlElement element, const QStyleOption *optio
                     // The middle and left end toolbar lines draw a light
                     // line to the left.
                     painter->setPen(light);
-                    painter->drawLine(option->rect.topLeft(), option->rect.bottomLeft());
+                    painter->drawLine(rect.topLeft(), rect.bottomLeft());
                 }
                 if (toolBar->positionOfLine == QStyleOptionToolBar::End) {
                     // All other left toolbar lines draw a dark line to the right
                     painter->setPen(shadow);
-                    painter->drawLine(option->rect.right() - 1, option->rect.top(),
-                                      option->rect.right() - 1, option->rect.bottom());
+                    painter->drawLine(rect.right() - 1, rect.top(),
+                                      rect.right() - 1, rect.bottom());
                     painter->setPen(light);
-                    painter->drawLine(option->rect.topRight(), option->rect.bottomRight());
+                    painter->drawLine(rect.topRight(), rect.bottomRight());
                 } else {
                     // All other left toolbar lines draw a dark line to the right
                     painter->setPen(shadow);
-                    painter->drawLine(option->rect.topRight(), option->rect.bottomRight());
+                    painter->drawLine(rect.topRight(), rect.bottomRight());
                 }
             } else if (toolBar->toolBarArea == Qt::RightToolBarArea) {
                 if (toolBar->positionOfLine == QStyleOptionToolBar::Middle
                         || toolBar->positionOfLine == QStyleOptionToolBar::End) {
                     // Right middle and end toolbar lines draw the dark right line
                     painter->setPen(shadow);
-                    painter->drawLine(option->rect.topRight(), option->rect.bottomRight());
+                    painter->drawLine(rect.topRight(), rect.bottomRight());
                 }
                 if (toolBar->positionOfLine == QStyleOptionToolBar::End
                         || toolBar->positionOfLine == QStyleOptionToolBar::OnlyOne) {
                     // The right end and single toolbar draws the dark
                     // line on its left edge
                     painter->setPen(shadow);
-                    painter->drawLine(option->rect.topLeft(), option->rect.bottomLeft());
+                    painter->drawLine(rect.topLeft(), rect.bottomLeft());
                     // And a light line next to it
                     painter->setPen(light);
-                    painter->drawLine(option->rect.left() + 1, option->rect.top(),
-                                      option->rect.left() + 1, option->rect.bottom());
+                    painter->drawLine(rect.left() + 1, rect.top(),
+                                      rect.left() + 1, rect.bottom());
                 } else {
                     // Other right toolbars draw a light line on its left edge
                     painter->setPen(light);
-                    painter->drawLine(option->rect.topLeft(), option->rect.bottomLeft());
+                    painter->drawLine(rect.topLeft(), rect.bottomLeft());
                 }
             }
             painter->setPen(oldPen);
@@ -1083,10 +1083,9 @@ void QFusionStyle::drawControl(ControlElement element, const QStyleOption *optio
 
             QRect titleRect = subElementRect(SE_DockWidgetTitleBarText, option, widget);
             if (verticalTitleBar) {
-                QRect rect = dwOpt->rect;
-                QRect r = rect.transposed();
-                titleRect = QRect(r.left() + rect.bottom()
-                                  - titleRect.bottom(),
+                const QRect &rect = dwOpt->rect;
+                const QRect r = rect.transposed();
+                titleRect = QRect(r.left() + rect.bottom() - titleRect.bottom(),
                                   r.top() + titleRect.left() - rect.left(),
                                   titleRect.height(), titleRect.width());
 
@@ -1121,6 +1120,7 @@ void QFusionStyle::drawControl(ControlElement element, const QStyleOption *optio
                                        % QLatin1Char(isSectionDragTarget ? '1' : '0');
             QCachedPainter cp(painter, pixmapName, option);
             if (cp.needsPainting()) {
+                const QRect &rect = option->rect;
                 QRect pixmapRect(0, 0, rect.width(), rect.height());
                 QColor buttonColor = d->buttonColor(option->palette);
                 QColor gradientStartColor = buttonColor.lighter(104);
@@ -1167,6 +1167,7 @@ void QFusionStyle::drawControl(ControlElement element, const QStyleOption *optio
     case CE_ProgressBarGroove:
         painter->save();
     {
+        const QRect &rect = option->rect;
         painter->setRenderHint(QPainter::Antialiasing, true);
         painter->translate(0.5, 0.5);
 
@@ -1176,7 +1177,7 @@ void QFusionStyle::drawControl(ControlElement element, const QStyleOption *optio
         painter->drawLine(rect.topLeft() - QPoint(0, 1), rect.topRight() - QPoint(0, 1));
 
         painter->setBrush(option->palette.base());
-        painter->setPen(QPen(outline));
+        painter->setPen(QPen(d->outline(option->palette)));
         painter->drawRoundedRect(rect.adjusted(0, 0, -1, -1), 2, 2);
 
         // Inner shadow
@@ -1190,6 +1191,7 @@ void QFusionStyle::drawControl(ControlElement element, const QStyleOption *optio
         painter->save();
         painter->setRenderHint(QPainter::Antialiasing, true);
         if (const QStyleOptionProgressBar *bar = qstyleoption_cast<const QStyleOptionProgressBar *>(option)) {
+            QRect rect = option->rect;
             painter->translate(rect.topLeft());
             rect.translate(-rect.topLeft());
             const auto indeterminate = (bar->minimum == 0 && bar->maximum == 0);
@@ -1229,6 +1231,7 @@ void QFusionStyle::drawControl(ControlElement element, const QStyleOption *optio
             QRect progressBar;
             QColor highlight = d->highlight(option->palette);
             QColor highlightedoutline = highlight.darker(140);
+            QColor outline = d->outline(option->palette);
             if (qGray(outline.rgb()) > qGray(highlightedoutline.rgb()))
                 outline = highlightedoutline;
 
@@ -1296,7 +1299,7 @@ void QFusionStyle::drawControl(ControlElement element, const QStyleOption *optio
         break;
     case CE_ProgressBarLabel:
         if (const QStyleOptionProgressBar *bar = qstyleoption_cast<const QStyleOptionProgressBar *>(option)) {
-            QRect rect = bar->rect;
+            const QRect &rect = bar->rect;
             QRect leftRect = rect;
             QRect rightRect = rect;
             QColor textColor = option->palette.text().color();
@@ -1347,6 +1350,7 @@ void QFusionStyle::drawControl(ControlElement element, const QStyleOption *optio
         painter->save();
         if (const QStyleOptionMenuItem *mbi = qstyleoption_cast<const QStyleOptionMenuItem *>(option))
         {
+            const QRect &rect = option->rect;
             QStyleOptionMenuItem item = *mbi;
             item.rect = mbi->rect.adjusted(0, 1, 0, -3);
             QColor highlightOutline = option->palette.highlight().color().darker(125);
@@ -1357,11 +1361,10 @@ void QFusionStyle::drawControl(ControlElement element, const QStyleOption *optio
             bool act = mbi->state & State_Selected && mbi->state & State_Sunken;
             bool dis = !(mbi->state & State_Enabled);
 
-            QRect r = option->rect;
             if (act) {
                 painter->setBrush(option->palette.highlight().color());
                 painter->setPen(QPen(highlightOutline));
-                painter->drawRect(r.adjusted(0, 0, -1, -1));
+                painter->drawRect(rect.adjusted(0, 0, -1, -1));
 
                 //                painter->drawRoundedRect(r.adjusted(1, 1, -1, -1), 2, 2);
 
@@ -1372,11 +1375,10 @@ void QFusionStyle::drawControl(ControlElement element, const QStyleOption *optio
                     alignment |= Qt::TextHideMnemonic;
                 proxy()->drawItemText(painter, item.rect, alignment, mbi->palette, mbi->state & State_Enabled, mbi->text, textRole);
             } else {
-
                 QColor shadow = mergedColors(option->palette.window().color().darker(120),
-                                             outline.lighter(140), 60);
+                                             d->outline(option->palette).lighter(140), 60);
                 painter->setPen(QPen(shadow));
-                painter->drawLine(option->rect.bottomLeft(), option->rect.bottomRight());
+                painter->drawLine(rect.bottomLeft(), rect.bottomRight());
             }
         }
         painter->restore();
@@ -1385,8 +1387,6 @@ void QFusionStyle::drawControl(ControlElement element, const QStyleOption *optio
         painter->save();
         // Draws one item in a popup menu.
         if (const QStyleOptionMenuItem *menuItem = qstyleoption_cast<const QStyleOptionMenuItem *>(option)) {
-            QColor highlightOutline = highlightedOutline;
-            QColor highlight = option->palette.highlight().color();
             if (menuItem->menuItemType == QStyleOptionMenuItem::Separator) {
                 int w = 0;
                 const int margin = int(QStyleHelper::dpiScaled(5, option));
@@ -1398,7 +1398,7 @@ void QFusionStyle::drawControl(ControlElement element, const QStyleOption *optio
                                           QPalette::Text);
                     w = menuItem->fontMetrics.horizontalAdvance(menuItem->text) + margin;
                 }
-                painter->setPen(shadow.lighter(106));
+                painter->setPen(QFusionStylePrivate::darkShade.lighter(106));
                 const bool reverse = menuItem->direction == Qt::RightToLeft;
                 qreal y = menuItem->rect.center().y() + 0.5f;
                 painter->drawLine(QPointF(menuItem->rect.left() + margin + (reverse ? 0 : w), y),
@@ -1408,7 +1408,9 @@ void QFusionStyle::drawControl(ControlElement element, const QStyleOption *optio
             }
             const bool selected = menuItem->state & State_Selected && menuItem->state & State_Enabled;
             if (selected) {
-                QRect r = option->rect;
+                const QColor highlightOutline = d->highlightedOutline(option->palette);
+                const QColor highlight = option->palette.highlight().color();
+                const QRect &r = option->rect;
                 painter->fillRect(r, highlight);
                 painter->setPen(QPen(highlightOutline));
                 painter->drawRect(QRectF(r).adjusted(0.5, 0.5, -0.5, -0.5));
@@ -1615,11 +1617,12 @@ void QFusionStyle::drawControl(ControlElement element, const QStyleOption *optio
     case CE_MenuBarEmptyArea:
         painter->save();
     {
+        const QRect &rect = option->rect;
         painter->fillRect(rect, option->palette.window());
         QColor shadow = mergedColors(option->palette.window().color().darker(120),
-                                     outline.lighter(140), 60);
+                                     d->outline(option->palette).lighter(140), 60);
         painter->setPen(QPen(shadow));
-        painter->drawLine(option->rect.bottomLeft(), option->rect.bottomRight());
+        painter->drawLine(rect.bottomLeft(), rect.bottomRight());
     }
         painter->restore();
         break;
@@ -1682,6 +1685,7 @@ void QFusionStyle::drawControl(ControlElement element, const QStyleOption *optio
 
             QLinearGradient fillGradient(rect.topLeft(), rect.bottomLeft());
             QLinearGradient outlineGradient(rect.topLeft(), rect.bottomLeft());
+            const QColor outline = d->outline(option->palette);
             QPen outlinePen = outline.lighter(110);
             if (selected) {
                 fillGradient.setColorAt(0, tabFrameColor.lighter(104));
