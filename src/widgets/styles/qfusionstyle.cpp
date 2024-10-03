@@ -1749,23 +1749,6 @@ void QFusionStyle::drawComplexControl(ComplexControl control, const QStyleOption
 
     Q_D (const QFusionStyle);
 
-#if QT_CONFIG(spinbox) || QT_CONFIG(slider)
-    QColor buttonColor = d->buttonColor(option->palette);
-    QColor gradientStopColor = buttonColor;
-#endif
-#if QT_CONFIG(slider)
-    QColor gradientStartColor = buttonColor.lighter(118);
-#endif
-    QColor outline = d->outline(option->palette);
-
-    QColor alphaCornerColor;
-    if (widget) {
-        // ### backgroundrole/foregroundrole should be part of the style option
-        alphaCornerColor = mergedColors(option->palette.color(widget->backgroundRole()), outline);
-    } else {
-        alphaCornerColor = mergedColors(option->palette.window().color(), outline);
-    }
-
     switch (control) {
     case CC_GroupBox:
         painter->save();
@@ -1834,9 +1817,10 @@ void QFusionStyle::drawComplexControl(ComplexControl control, const QStyleOption
         if (const QStyleOptionSpinBox *spinBox = qstyleoption_cast<const QStyleOptionSpinBox *>(option)) {
             QCachedPainter cp(painter, "spinbox"_L1, option);
             if (cp.needsPainting()) {
-                QRect pixmapRect(0, 0, spinBox->rect.width(), spinBox->rect.height());
-                QRect rect = pixmapRect;
-                QRect r = rect.adjusted(0, 1, 0, -1);
+                const QRect pixmapRect(0, 0, spinBox->rect.width(), spinBox->rect.height());
+                const QRect r = pixmapRect.adjusted(0, 1, 0, -1);
+                const QColor buttonColor = d->buttonColor(option->palette);
+                const QColor &gradientStopColor = buttonColor;
                 QColor arrowColor = spinBox->palette.windowText().color();
                 arrowColor.setAlpha(160);
 
@@ -1868,7 +1852,6 @@ void QFusionStyle::drawComplexControl(ComplexControl control, const QStyleOption
 
                     if (!upRect.isNull()) {
                         // Draw button gradient
-                        const QColor buttonColor = d->buttonColor(option->palette);
                         const QRect updownRect = upRect.adjusted(0, -2, 0, downRect.height() + 2);
                         const QLinearGradient gradient = qt_fusion_gradient(updownRect, (isEnabled && option->state & State_MouseOver )
                                                        ? buttonColor : buttonColor.darker(104));
@@ -1899,7 +1882,7 @@ void QFusionStyle::drawComplexControl(ComplexControl control, const QStyleOption
                             cp->fillRect(downRect.adjusted(0, 0, 0, 1), QFusionStylePrivate::innerContrastLine);
                     }
 
-                    cp->setPen(hasFocus ? d->highlightedOutline(option->palette) : outline);
+                    cp->setPen(hasFocus ? d->highlightedOutline(option->palette) : d->outline(option->palette));
                     cp->setBrush(Qt::NoBrush);
                     cp->drawRoundedRect(r.adjusted(0, 0, -1, -1), 2, 2);
                     if (hasFocus) {
@@ -1914,7 +1897,7 @@ void QFusionStyle::drawComplexControl(ComplexControl control, const QStyleOption
                 if (spinBox->buttonSymbols != QAbstractSpinBox::NoButtons) {
                     // buttonSymbols == NoButtons results in 'null' rects
                     // and a tiny rect painted in the corner.
-                    cp->setPen(outline);
+                    cp->setPen(d->outline(option->palette));
                     if (spinBox->direction == Qt::RightToLeft)
                         cp->drawLine(QLineF(upRect.right(), upRect.top() - 0.5, upRect.right(), downRect.bottom() + 1.5));
                     else
@@ -1968,8 +1951,9 @@ void QFusionStyle::drawComplexControl(ComplexControl control, const QStyleOption
             const int buttonMargin = 5;
             bool active = (titleBar->titleBarState & State_Active);
             QRect fullRect = titleBar->rect;
-            QPalette palette = option->palette;
-            QColor highlight = option->palette.highlight().color();
+            const QPalette &palette = option->palette;
+            const QColor highlight = palette.highlight().color();
+            const QColor outline = d->outline(palette);
 
             QColor titleBarFrameBorder(active ? highlight.darker(180): outline.darker(110));
             QColor titleBarHighlight(active ? highlight.lighter(120): palette.window().color().lighter(120));
@@ -2022,8 +2006,7 @@ void QFusionStyle::drawComplexControl(ComplexControl control, const QStyleOption
             }
             // draw title
             QRect textRect = proxy()->subControlRect(CC_TitleBar, titleBar, SC_TitleBarLabel, widget);
-            painter->setPen(active? (titleBar->palette.text().color().lighter(120)) :
-                                    titleBar->palette.text().color() );
+            painter->setPen(active ? palette.text().color().lighter(120) : palette.text().color());
             // Note workspace also does elliding but it does not use the correct font
             QString title = painter->fontMetrics().elidedText(titleBar->text, Qt::ElideRight, textRect.width() - 14);
             painter->drawText(textRect.adjusted(1, 1, 1, 1), title, QTextOption(Qt::AlignHCenter | Qt::AlignVCenter));
@@ -2326,7 +2309,7 @@ void QFusionStyle::drawComplexControl(ComplexControl control, const QStyleOption
             QRect scrollBarGroove = proxy()->subControlRect(control, scrollBar, SC_ScrollBarGroove, widget);
 
             QRect rect = option->rect;
-            QColor alphaOutline = outline;
+            QColor alphaOutline = d->outline(option->palette);
             alphaOutline.setAlpha(180);
 
             QColor arrowColor = option->palette.windowText().color();
@@ -2361,6 +2344,7 @@ void QFusionStyle::drawComplexControl(ComplexControl control, const QStyleOption
                     gradient = QLinearGradient(rect.left(), rect.center().y(),
                                                rect.right(), rect.center().y());
                 if (!transient || !isDarkBg) {
+                    QColor buttonColor = d->buttonColor(option->palette);
                     gradient.setColorAt(0, buttonColor.darker(107));
                     gradient.setColorAt(0.1, buttonColor.darker(105));
                     gradient.setColorAt(0.9, buttonColor.darker(105));
@@ -2402,9 +2386,12 @@ void QFusionStyle::drawComplexControl(ComplexControl control, const QStyleOption
 
             QLinearGradient highlightedGradient = gradient;
 
-            QColor midColor2 = mergedColors(gradientStartColor, gradientStopColor, 40);
-            gradient.setColorAt(0, d->buttonColor(option->palette).lighter(108));
-            gradient.setColorAt(1, d->buttonColor(option->palette));
+            const QColor buttonColor = d->buttonColor(option->palette);
+            const QColor gradientStartColor = buttonColor.lighter(118);
+            const QColor &gradientStopColor = buttonColor;
+            const QColor midColor2 = mergedColors(gradientStartColor, gradientStopColor, 40);
+            gradient.setColorAt(0, buttonColor.lighter(108));
+            gradient.setColorAt(1, buttonColor);
 
             highlightedGradient.setColorAt(0, gradientStartColor.darker(102));
             highlightedGradient.setColorAt(1, gradientStopColor.lighter(102));
@@ -2556,7 +2543,7 @@ void QFusionStyle::drawComplexControl(ComplexControl control, const QStyleOption
                                                   downArrowRect.left() - 6: downArrowRect.right() + 6);
                     proxy()->drawPrimitive(PE_PanelButtonCommand, &buttonOption, cp.painter(), widget);
                     cp->restore();
-                    cp->setPen( QPen(hasFocus ? option->palette.highlight() : outline.lighter(110), 1));
+                    cp->setPen(QPen(hasFocus ? option->palette.highlight() : d->outline(option->palette).lighter(110), 1));
 
                     if (!sunken) {
                         int borderSize = 1;
@@ -2607,13 +2594,16 @@ void QFusionStyle::drawComplexControl(ComplexControl control, const QStyleOption
             bool horizontal = slider->orientation == Qt::Horizontal;
             bool ticksAbove = slider->tickPosition & QSlider::TicksAbove;
             bool ticksBelow = slider->tickPosition & QSlider::TicksBelow;
-            QColor activeHighlight = d->highlight(option->palette);
+            const QColor activeHighlight = d->highlight(option->palette);
             QBrush oldBrush = painter->brush();
             QPen oldPen = painter->pen();
             QColor shadowAlpha(Qt::black);
             shadowAlpha.setAlpha(10);
+            QColor outline;
             if (option->state & State_HasFocus && option->state & State_KeyboardFocusChange)
                 outline = d->highlightedOutline(option->palette);
+            else
+                outline = d->outline(option->palette);
 
 
             if ((option->subControls & SC_SliderGroove) && groove.isValid()) {
@@ -2621,6 +2611,7 @@ void QFusionStyle::drawComplexControl(ComplexControl control, const QStyleOption
                 // draw background groove
                 QCachedPainter cp(painter, "slider_groove"_L1, option, groove.size(), groove);
                 if (cp.needsPainting()) {
+                    const QColor buttonColor = d->buttonColor(option->palette);
                     const auto grooveColor =
                         QColor::fromHsv(buttonColor.hue(),
                                         qMin(255, (int)(buttonColor.saturation())),
@@ -2671,8 +2662,7 @@ void QFusionStyle::drawComplexControl(ComplexControl control, const QStyleOption
                         gradient.setStart(pixmapRect.left(), pixmapRect.center().y());
                         gradient.setFinalStop(pixmapRect.right(), pixmapRect.center().y());
                     }
-                    QColor highlight = d->highlight(option->palette);
-                    QColor highlightedoutline = highlight.darker(140);
+                    const QColor highlightedoutline = activeHighlight.darker(140);
                     QColor grooveOutline = outline;
                     if (qGray(grooveOutline.rgb()) > qGray(highlightedoutline.rgb()))
                         grooveOutline = highlightedoutline;
@@ -2770,10 +2760,7 @@ void QFusionStyle::drawComplexControl(ComplexControl control, const QStyleOption
                     cp->setBrush(QColor(0, 0, 0, 40));
                     cp->drawRect(horizontal ? r.adjusted(-1, 2, 1, -2) : r.adjusted(2, -1, -2, 1));
 
-                    cp->setPen(QPen(d->outline(option->palette)));
-                    if (option->state & State_HasFocus && option->state & State_KeyboardFocusChange)
-                        cp->setPen(QPen(d->highlightedOutline(option->palette)));
-
+                    cp->setPen(QPen(outline));
                     cp->setBrush(gradient);
                     cp->drawRoundedRect(r, 2, 2);
                     cp->setBrush(Qt::NoBrush);
