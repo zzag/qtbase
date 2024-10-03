@@ -134,6 +134,25 @@ simdEncodeAscii(uchar *&dst, const char16_t *&nextAscii, const char16_t *&src, c
             return ~_mm256_movemask_epi8(nonAscii);
         };
 
+        if constexpr (Cpu & CpuFeatureAVX512VL) {
+            // with AVX512/AXV10, we always process everything
+            if (sizeBytes <= Step * sizeof(char16_t)) {
+                uint mask = _bzhi_u32(-1, uint(sizeBytes / 2));
+                __m256i data1 = _mm256_maskz_loadu_epi16(mask, src);
+                __m256i data2 = _mm256_maskz_loadu_epi16(mask >> 16, src + Step / 2);
+                __m256i packed = _mm256_packus_epi16(data1, data2);
+                __m256i permuted = _mm256_permute4x64_epi64(packed, _MM_SHUFFLE(3, 1, 2, 0));
+                __mmask32 nonAscii = _mm256_mask_cmple_epi8_mask(mask, permuted, _mm256_setzero_si256());
+
+                // store, even if there are non-ASCII characters here
+                _mm256_mask_storeu_epi8(dst, mask, permuted);
+                if (nonAscii)
+                    return maybeFoundNonAscii(nonAscii);
+                adjustToEnd();
+                return true;
+            }
+        }
+
         if (sizeBytes >= Step * sizeof(char16_t)) {
             // do 32 characters at a time
             qptrdiff offset = 0;
@@ -278,6 +297,25 @@ simdDecodeAscii(char16_t *&dst, const uchar *&nextAscii, const uchar *&src, cons
             };
             return R{ n1, n2, any };
         };
+
+        if constexpr (Cpu & CpuFeatureAVX512VL) {
+            // with AVX512/AXV10, we always process everything
+            if (end - src <= Step) {
+                __mmask32 mask = _bzhi_u32(-1, uint(end - src));
+                __m256i data = _mm256_maskz_loadu_epi8(mask, src);
+                __mmask32 nonAscii = _mm256_mask_cmple_epi8_mask(mask, data, _mm256_setzero_si256());
+
+                // store everything, even mojibake
+                __m256i extended1 = _mm256_cvtepu8_epi16(_mm256_castsi256_si128(data));
+                __m256i extended2 = _mm256_cvtepu8_epi16(_mm256_extracti64x2_epi64(data, 1));
+                _mm256_mask_storeu_epi16(dst, mask, extended1);
+                _mm256_mask_storeu_epi16(dst + Step/2, mask >> 16, extended2);
+                if (nonAscii)
+                    return maybeFoundNonAscii(nonAscii);
+                adjustToEnd();
+                return true;
+            }
+        }
 
         if (end - src >= Step) {
             // do 32 characters at a time
