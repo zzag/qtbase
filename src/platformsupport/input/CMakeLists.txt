@@ -65,8 +65,13 @@ qt_internal_extend_target(InputSupportPrivate CONDITION QT_FEATURE_evdev AND QT_
 
 qt_internal_extend_target(InputSupportPrivate CONDITION QT_FEATURE_vxworksevdev
     SOURCES
+        vxkeyboard/qvxkeyboard_defaultmap_p.h
+        vxkeyboard/qvxkeyboardhandler.cpp vxkeyboard/qvxkeyboardhandler_p.h
+        vxkeyboard/qvxkeyboardmanager.cpp vxkeyboard/qvxkeyboardmanager_p.h
         vxmouse/qvxmousehandler.cpp vxmouse/qvxmousehandler_p.h
         vxmouse/qvxmousemanager.cpp vxmouse/qvxmousemanager_p.h
+    INCLUDE_DIRECTORIES
+        shared
 )
 
 qt_internal_extend_target(InputSupportPrivate CONDITION QT_FEATURE_tslib
