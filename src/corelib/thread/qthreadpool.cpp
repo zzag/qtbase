@@ -249,6 +249,7 @@ void QThreadPoolPrivate::startThread(QRunnable *runnable)
     if (objectName.isEmpty())
         objectName = u"Thread (pooled)"_s;
     thread->setObjectName(objectName);
+    thread->setServiceLevel(serviceLevel);
     Q_ASSERT(!allThreads.contains(thread.get())); // if this assert hits, we have an ABA problem (deleted threads don't get removed here)
     allThreads.insert(thread.get());
     ++activeThreads;
@@ -762,6 +763,38 @@ void QThreadPool::releaseThread()
     QMutexLocker locker(&d->mutex);
     --d->reservedThreads;
     d->tryToStartMoreThreads();
+}
+
+/*!
+    \since 6.9
+
+    Sets the Quality of Service level of thread objects created after the call
+    to this setter to \a serviceLevel.
+
+    Support is not available on every platform. Consult
+    QThread::setServiceLevel() for details.
+
+    \sa serviceLevel(), QThread::serviceLevel()
+*/
+void QThreadPool::setServiceLevel(QThread::QualityOfService serviceLevel)
+{
+    Q_D(QThreadPool);
+    QMutexLocker locker(&d->mutex);
+    d->serviceLevel = serviceLevel;
+}
+
+/*!
+    \since 6.9
+
+    Returns the current Quality of Service level of the thread.
+
+    \sa setServiceLevel(), QThread::serviceLevel()
+*/
+QThread::QualityOfService QThreadPool::serviceLevel() const
+{
+    Q_D(const QThreadPool);
+    QMutexLocker locker(&d->mutex);
+    return d->serviceLevel;
 }
 
 /*!
