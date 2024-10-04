@@ -27,6 +27,8 @@ QT_REQUIRE_CONFIG(process);
 
 using namespace Qt::StringLiterals;
 
+enum class Throw { OnFail = 1 };
+
 struct BenchmarkResult
 {
     qint64  total;
@@ -622,7 +624,7 @@ struct TestLogger
         return outputFile.readAll();
     }
 
-    bool shouldIgnoreTest(const QString &test) const;
+    bool shouldIgnoreTest(const QString &test, Throw throwing) const;
 
     operator QTestLog::LogMode() const { return logger; }
 
@@ -631,12 +633,18 @@ struct TestLogger
     ArgumentStyle argumentStyle = NewStyleArgument;
 };
 
-bool TestLogger::shouldIgnoreTest(const QString &test) const
+bool TestLogger::shouldIgnoreTest(const QString &test, Throw throwing) const
 {
 #if defined(QT_USE_APPLE_UNIFIED_LOGGING)
     if (logger == QTestLog::Apple)
         return true;
 #endif
+
+    if (throwing == Throw::OnFail && test == "cmptest") {
+        // This test requires continuing the same test function after failure,
+        // so the output is different with this flag.
+        return true;
+    }
 
     if (!qEnvironmentVariableIsEmpty("WAYLAND_DISPLAY")) {
         qDebug() << "TestLogger::shouldIgnoreTest() ignore" << test << "on wayland/xwayland!";
@@ -1025,8 +1033,6 @@ TestProcessResult runTestProcess(const QString &test, const QStringList &argumen
     return { process.exitCode(), standardOutput, standardError };
 }
 
-enum class Throw { OnFail = 1 };
-
 /*
     Runs a single test and verifies the output against the expected results.
 */
@@ -1034,7 +1040,7 @@ void runTest(const QString &test, const TestLoggers &requestedLoggers, Throw thr
 {
     TestLoggers loggers;
     for (auto logger : requestedLoggers) {
-        if (!logger.shouldIgnoreTest(test))
+        if (!logger.shouldIgnoreTest(test, throwing))
             loggers += logger;
     }
 

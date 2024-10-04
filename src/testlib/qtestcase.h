@@ -621,19 +621,17 @@ namespace QTest
     inline bool qCompare(const T1 &t1, const T2 &t2, const char *actual, const char *expected,
                          const char *file, int line)
     {
-        using D1 = std::decay_t<T1>;
-        using D2 = std::decay_t<T2>;
         using Internal::genericToString;
         if constexpr (QtPrivate::is_standard_or_extended_integer_type_v<T1>
                       && QtPrivate::is_standard_or_extended_integer_type_v<T2>) {
             return compare_helper(q20::cmp_equal(t1, t2), "Compared values are not the same",
                                   std::addressof(t1), std::addressof(t2),
-                                  genericToString<D1>, genericToString<D2>,
+                                  genericToString<T1>, genericToString<T2>,
                                   actual, expected, file, line);
         } else {
             return compare_helper(t1 == t2, "Compared values are not the same",
                                   std::addressof(t1), std::addressof(t2),
-                                  genericToString<D1>, genericToString<D2>,
+                                  genericToString<T1>, genericToString<T2>,
                                   actual, expected, file, line);
         }
     }
@@ -745,12 +743,16 @@ namespace QTest
         using Internal::genericToString;
         using Comparator = Internal::Compare<op>;
 
+        // force decaying of T1 and T2
+        auto doReport = [&](bool result, const D1 &lhs_, const D2 &rhs_) {
+            return reportResult(result, std::addressof(lhs_), std::addressof(rhs_),
+                                genericToString<D1>, genericToString<D2>,
+                                lhsExpr, rhsExpr, op, file, line);
+        };
+
         /* assumes that op does not actually move from lhs and rhs */
         bool result = Comparator::compare(std::forward<T1>(lhs), std::forward<T2>(rhs));
-        return reportResult(result, std::addressof(lhs), std::addressof(rhs),
-                            genericToString<D1>, genericToString<D2>,
-                            lhsExpr, rhsExpr, op, file, line);
-
+        return doReport(result, std::forward<T1>(lhs), std::forward<T2>(rhs));
     }
 }
 
