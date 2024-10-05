@@ -1056,15 +1056,12 @@ void Generator::generateStaticMetacall()
     if (!cdef->signalList.isEmpty()) {
         usedArgs |= UsedC | UsedA;
         fprintf(out, "    if (_c == QMetaObject::IndexOfMethod) {\n");
-        fprintf(out, "        int *result = reinterpret_cast<int *>(_a[0]);\n");
-        bool anythingUsed = false;
         for (int methodindex = 0; methodindex < int(cdef->signalList.size()); ++methodindex) {
             const FunctionDef &f = cdef->signalList.at(methodindex);
             if (f.wasCloned || !f.inPrivateClass.isEmpty() || f.isStatic)
                 continue;
-            anythingUsed = true;
-            fprintf(out, "        {\n");
-            fprintf(out, "            using _q_method_type = %s (%s::*)(",f.type.rawName.constData() , cdef->classname.constData());
+            fprintf(out, "        if (QtMocHelpers::indexOfMethod<%s (%s::*)(",
+                    f.type.rawName.constData() , cdef->classname.constData());
 
             const auto begin = f.arguments.cbegin();
             const auto end = f.arguments.cend();
@@ -1079,18 +1076,11 @@ void Generator::generateStaticMetacall()
                     fprintf(out, ", ");
                 fprintf(out, "%s", "QPrivateSignal");
             }
-            if (f.isConst)
-                fprintf(out, ") const;\n");
-            else
-                fprintf(out, ");\n");
-            fprintf(out, "            if (_q_method_type _q_method = &%s::%s; *reinterpret_cast<_q_method_type *>(_a[1]) == _q_method) {\n",
-                    cdef->classname.constData(), f.name.constData());
-            fprintf(out, "                *result = %d;\n", methodindex);
-            fprintf(out, "                return;\n");
-            fprintf(out, "            }\n        }\n");
+            fprintf(out, ")%s>(_a, &%s::%s, %d))\n",
+                    f.isConst ? " const" : "",
+                    cdef->classname.constData(), f.name.constData(), methodindex);
+            fprintf(out, "            return;\n");
         }
-        if (!anythingUsed)
-            fprintf(out, "        (void)result;\n");
         fprintf(out, "    }\n");
     }
 

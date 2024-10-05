@@ -78,6 +78,16 @@ template <uint... Nx> constexpr auto stringData(const char (&...strings)[Nx])
     return result;
 }
 
+template <typename FuncType> inline bool indexOfMethod(void **_a, FuncType f, int index) noexcept
+{
+    int *result = static_cast<int *>(_a[0]);
+    auto candidate = reinterpret_cast<FuncType *>(_a[1]);
+    if (*candidate != f)
+        return false;
+    *result = index;
+    return true;
+}
+
 struct NoType {};
 template <typename T> struct ForceCompleteMetaTypes {};
 
