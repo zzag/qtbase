@@ -839,8 +839,10 @@ void QWindows11Style::drawPrimitive(PrimitiveElement element, const QStyleOption
         break;
     case PE_IndicatorHeaderArrow:
         if (const QStyleOptionHeader *header = qstyleoption_cast<const QStyleOptionHeader *>(option)) {
+            QFont f(assetFont);
+            f.setPointSize(6);
+            painter->setFont(f);
             painter->setPen(header->palette.text().color());
-            painter->setFont(assetFont);
             QRectF rect = option->rect;
             if (header->sortIndicator & QStyleOptionHeader::SortUp) {
                 painter->drawText(rect,Qt::AlignCenter,"\uE96D");
