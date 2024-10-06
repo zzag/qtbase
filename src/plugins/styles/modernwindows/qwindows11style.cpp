@@ -885,7 +885,21 @@ void QWindows11Style::drawPrimitive(PrimitiveElement element, const QStyleOption
                 painter->drawText(rect, Qt::AlignVCenter | Qt::AlignHCenter,"\uE73C");
         }
         break;
-
+    case PE_IndicatorBranch: {
+            if (option->state & State_Children) {
+                const bool isReverse = option->direction == Qt::RightToLeft;
+                const bool isOpen = option->state & QStyle::State_Open;
+                QFont f(assetFont);
+                f.setPointSize(6);
+                painter->setFont(f);
+                painter->setPen(option->palette.color(isOpen ? QPalette::Active : QPalette::Disabled,
+                                                      QPalette::WindowText));
+                const auto str = isOpen ? QStringLiteral(u"\uE96E") :
+                                          (isReverse ? QStringLiteral(u"\uE96F") : QStringLiteral(u"\uE970"));
+                painter->drawText(option->rect, Qt::AlignCenter, str);
+            }
+        }
+        break;
     case PE_IndicatorRadioButton:
         {
             if (option->styleObject->property("_q_end_radius").isNull())
