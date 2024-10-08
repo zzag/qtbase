@@ -35,6 +35,20 @@ uint nameToBuiltinType(const QByteArray &name)
     return tp < uint(QMetaType::User) ? tp : uint(QMetaType::UnknownType);
 }
 
+constexpr const char *cxxTypeTag(TypeTags t)
+{
+    if (t & TypeTag::HasEnum) {
+        if (t & TypeTag::HasClass)
+            return "enum class ";
+        if (t & TypeTag::HasStruct)
+            return "enum struct ";
+        return "enum ";
+    }
+    if (t & TypeTag::HasClass) return "class ";
+    if (t & TypeTag::HasStruct) return "struct ";
+    return "";
+}
+
 /*
   Returns \c true if the type is a built-in type.
 */
@@ -710,8 +724,8 @@ void Generator::addProperties()
 {
     for (const PropertyDef &p : std::as_const(cdef->propertyList)) {
         fprintf(out, "        // property '%s'\n"
-                     "        QtMocHelpers::PropertyData<%s>(%d, ",
-                p.name.constData(), p.type.constData(), stridx(p.name));
+                     "        QtMocHelpers::PropertyData<%s%s>(%d, ",
+                p.name.constData(), cxxTypeTag(p.typeTag), p.type.constData(), stridx(p.name));
         generateTypeInfo(p.type);
         fputc(',', out);
 
@@ -888,9 +902,10 @@ QMultiMap<QByteArray, int> Generator::automaticPropertyMetaTypesHelper()
 {
     QMultiMap<QByteArray, int> automaticPropertyMetaTypes;
     for (int i = 0; i < int(cdef->propertyList.size()); ++i) {
-        const QByteArray propertyType = cdef->propertyList.at(i).type;
+        const PropertyDef &p = cdef->propertyList.at(i);
+        const QByteArray propertyType = p.type;
         if (registerableMetaType(propertyType) && !isBuiltinType(propertyType))
-            automaticPropertyMetaTypes.insert(propertyType, i);
+            automaticPropertyMetaTypes.insert(cxxTypeTag(p.typeTag) + propertyType, i);
     }
     return automaticPropertyMetaTypes;
 }
@@ -1157,14 +1172,17 @@ void Generator::generateStaticMetacall()
                             propindex, p.type.constData(), prefix.constData(), p.read.constData());
 #endif
                 else if (p.read == "default")
-                    fprintf(out, "        case %d: *reinterpret_cast< %s*>(_v) = %s%s().value(); break;\n",
-                            propindex, p.type.constData(), prefix.constData(), p.bind.constData());
+                    fprintf(out, "        case %d: *reinterpret_cast<%s%s*>(_v) = %s%s().value(); break;\n",
+                            propindex, cxxTypeTag(p.typeTag), p.type.constData(),
+                            prefix.constData(), p.bind.constData());
                 else if (!p.read.isEmpty())
-                    fprintf(out, "        case %d: *reinterpret_cast< %s*>(_v) = %s%s(); break;\n",
-                            propindex, p.type.constData(), prefix.constData(), p.read.constData());
+                    fprintf(out, "        case %d: *reinterpret_cast<%s%s*>(_v) = %s%s(); break;\n",
+                            propindex, cxxTypeTag(p.typeTag), p.type.constData(),
+                            prefix.constData(), p.read.constData());
                 else
-                    fprintf(out, "        case %d: *reinterpret_cast< %s*>(_v) = %s%s; break;\n",
-                            propindex, p.type.constData(), prefix.constData(), p.member.constData());
+                    fprintf(out, "        case %d: *reinterpret_cast<%s%s*>(_v) = %s%s; break;\n",
+                            propindex, cxxTypeTag(p.typeTag), p.type.constData(),
+                            prefix.constData(), p.member.constData());
             }
             fprintf(out, "        default: break;\n");
             fprintf(out, "        }\n");
@@ -1187,21 +1205,22 @@ void Generator::generateStaticMetacall()
                 }
                 if (p.write == "default") {
                     fprintf(out, "        case %d: {\n", propindex);
-                    fprintf(out, "            %s%s().setValue(*reinterpret_cast< %s*>(_v));\n",
-                            prefix.constData(), p.bind.constData(), p.type.constData());
+                    fprintf(out, "            %s%s().setValue(*reinterpret_cast<%s%s*>(_v));\n",
+                            prefix.constData(), p.bind.constData(), cxxTypeTag(p.typeTag), p.type.constData());
                     fprintf(out, "            break;\n");
                     fprintf(out, "        }\n");
                 } else if (!p.write.isEmpty()) {
-                    fprintf(out, "        case %d: %s%s(*reinterpret_cast< %s*>(_v)); break;\n",
-                            propindex, prefix.constData(), p.write.constData(), p.type.constData());
+                    fprintf(out, "        case %d: %s%s(*reinterpret_cast<%s%s*>(_v)); break;\n",
+                            propindex, prefix.constData(), p.write.constData(),
+                            cxxTypeTag(p.typeTag), p.type.constData());
                 } else {
                     fprintf(out, "        case %d:", propindex);
                     if (p.notify.isEmpty()) {
-                        fprintf(out, " QtMocHelpers::setProperty(%s%s, *reinterpret_cast<%s*>(_v)); break;\n",
-                                prefix.constData(), p.member.constData(), p.type.constData());
+                        fprintf(out, " QtMocHelpers::setProperty(%s%s, *reinterpret_cast<%s%s*>(_v)); break;\n",
+                                prefix.constData(), p.member.constData(), cxxTypeTag(p.typeTag), p.type.constData());
                     } else {
-                        fprintf(out, "\n            if (QtMocHelpers::setProperty(%s%s, *reinterpret_cast<%s*>(_v)))\n",
-                                prefix.constData(), p.member.constData(), p.type.constData());
+                        fprintf(out, "\n            if (QtMocHelpers::setProperty(%s%s, *reinterpret_cast<%s%s*>(_v)))\n",
+                                prefix.constData(), p.member.constData(), cxxTypeTag(p.typeTag), p.type.constData());
                         fprintf(out, "                Q_EMIT _t->%s(", p.notify.constData());
                         if (p.notifyId > -1) {
                             const FunctionDef &f = cdef->signalList.at(p.notifyId);
