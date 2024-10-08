@@ -109,9 +109,9 @@ void tst_MocHelpers::classinfoDataGroup()
 
 template <typename MetaTypeHolder> constexpr auto getMetaTypes(MetaTypeHolder)
 {
-    QtMocHelpers::UintAndMetaTypeData<0, MetaTypeHolder::count(), void> r = {};
+    QtMocHelpers::UintAndMetaTypeData<0, MetaTypeHolder::count()> r = {};
     uint metatypeoffset = 0;
-    MetaTypeHolder::copyTo(r, metatypeoffset);
+    MetaTypeHolder::template copyTo<void>(r, metatypeoffset);
 
     std::array<QMetaType, MetaTypeHolder::count()> result;
     for (uint i = 0; i < result.size(); ++i)

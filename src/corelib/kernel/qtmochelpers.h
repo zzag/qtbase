@@ -146,11 +146,11 @@ struct TryMetaTypeInterfaceForType<Unique, ForceCompleteMetaTypes<T>, RequireCom
 template <typename... T> struct MetaTypeList
 {
     static constexpr int count() { return sizeof...(T); }
-    template <typename Result> static constexpr void copyTo(Result &result, uint &metatypeoffset)
+    template <typename Unique, typename Result> static constexpr void
+    copyTo(Result &result, uint &metatypeoffset)
     {
         if constexpr (count()) {
             using namespace QtPrivate;
-            using Unique = typename Result::UniqueType;
             const QMetaTypeInterface *metaTypes[] = {
                 TryMetaTypeInterfaceForType<Unique, T>::type()...
             };
@@ -232,8 +232,8 @@ template <typename... Block> struct UintData
         return total;
     }
 
-    template <typename Result>
-    constexpr void copyTo(Result &result, size_t dataoffset, uint &metatypeoffset) const
+    template <typename Unique, typename Result> constexpr void
+    copyTo(Result &result, size_t dataoffset, uint &metatypeoffset) const
     {
         uint *ptr = result.data.data();
         size_t payloadoffset = dataoffset + headerSize();
@@ -244,7 +244,7 @@ template <typename... Block> struct UintData
             input.adjustOffsets(ptr, uint(dataoffset), uint(payloadoffset), metatypeoffset);
 
             // copy the metatypes
-            decltype(input.metaTypes())::copyTo(result, metatypeoffset);
+            decltype(input.metaTypes())::template copyTo<Unique>(result, metatypeoffset);
 
             dataoffset += input.headerSize();
             payloadoffset += input.payloadSize();
@@ -492,11 +492,10 @@ template <typename F> struct RevisionedConstructorData :
 };
 
 
-template <uint N, uint M, typename Unique = void> struct UintAndMetaTypeData
+template <uint N, uint M> struct UintAndMetaTypeData
 {
     std::array<uint, N> data;
     std::array<const QtPrivate::QMetaTypeInterface *, M> metaTypes;
-    using UniqueType = Unique;
 };
 
 template <typename ObjectType, typename Unique,
@@ -520,7 +519,7 @@ constexpr auto metaObjectData(uint flags, const Methods &methods, const Properti
             + Constructors::dataSize()
             + ClassInfo::headerSize() // + ClassInfo::payloadSize()
             + 1;    // empty EOD
-    UintAndMetaTypeData<TotalSize, MetaTypeCount, Unique> result = {};
+    UintAndMetaTypeData<TotalSize, MetaTypeCount> result = {};
     uint dataoffset = HeaderSize;
     uint metatypeoffset = 0;
 
@@ -534,12 +533,12 @@ constexpr auto metaObjectData(uint flags, const Methods &methods, const Properti
 
     result.data[6] = properties.count();
     result.data[7] = properties.count() ? dataoffset : 0;
-    properties.copyTo(result, dataoffset, metatypeoffset);
+    properties.template copyTo<Unique>(result, dataoffset, metatypeoffset);
     dataoffset += properties.dataSize();
 
     result.data[8] = enums.count();
     result.data[9] = enums.count() ? dataoffset : 0;
-    enums.copyTo(result, dataoffset, metatypeoffset);
+    enums.template copyTo<Unique>(result, dataoffset, metatypeoffset);
     dataoffset += enums.dataSize();
 
     // the meta type referring to the object itself
@@ -549,12 +548,12 @@ constexpr auto metaObjectData(uint flags, const Methods &methods, const Properti
 
     result.data[4] = methods.count();
     result.data[5] = methods.count() ? dataoffset : 0;
-    methods.copyTo(result, dataoffset, metatypeoffset);
+    methods.template copyTo<Unique>(result, dataoffset, metatypeoffset);
     dataoffset += methods.dataSize();
 
     result.data[10] = constructors.count();
     result.data[11] = constructors.count() ? dataoffset : 0;
-    constructors.copyTo(result, dataoffset, metatypeoffset);
+    constructors.template copyTo<Unique>(result, dataoffset, metatypeoffset);
     dataoffset += constructors.dataSize();
 
     result.data[12] = flags;
