@@ -57,6 +57,9 @@ QT_WARNING_DISABLE_GCC("-Wfree-nonheap-object") // false positive tracking
 
 #include "private/qcalendarbackend_p.h"
 #include "private/qgregoriancalendar_p.h"
+#if QT_CONFIG(timezone) && QT_CONFIG(timezone_locale) && !QT_CONFIG(icu)
+#   include "private/qtimezonelocale_p.h"
+#endif
 
 #include <q20iterator.h>
 
@@ -3601,10 +3604,20 @@ static QString offsetFromAbbreviation(QString &&text)
                : std::move(text).right(tail.size())));
 }
 
-static QString zoneOffsetFormat([[maybe_unused]] const QLocale &locale,
-                                const QDateTime &when,
-                                int offsetSeconds)
+// For the benefit of QCalendar, below, when not provided by QTZL.
+#if QT_CONFIG(icu) || !(QT_CONFIG(timezone) && QT_CONFIG(timezone_locale))
+namespace QtTimeZoneLocale {
+
+// TODO: is there a way to get this non-kludgily from ICU ?
+// If so, that version goes in QTZL.cpp's relevant #if-ery branch.
+QString zoneOffsetFormat([[maybe_unused]] const QLocale &locale,
+                         qsizetype,
+                         [[maybe_unused]] QLocale::FormatType width,
+                         const QDateTime &when,
+                         int offsetSeconds)
 {
+    // Only the non-ICU TZ-locale code uses the other two widths:
+    Q_ASSERT(width == QLocale::ShortFormat); //
     QString text =
 #if QT_CONFIG(timezone)
         locale != QLocale::system()
@@ -3618,6 +3631,9 @@ static QString zoneOffsetFormat([[maybe_unused]] const QLocale &locale,
     // else: no suitable representation of the zone.
     return text;
 }
+
+} // QtTimeZoneLocale
+#endif // ICU or no TZ L10n
 
 // Another intrusion from QCalendar, using some of the tools above:
 
@@ -3794,7 +3810,9 @@ QString QCalendarBackend::dateTimeToString(QStringView format, const QDateTime &
                 const auto tzAbbr = [locale](const QDateTime &when, AbbrType type) {
                     QString text;
                     if (type == Offset) {
-                        text = zoneOffsetFormat(locale, when, when.offsetFromUtc());
+                        text = QtTimeZoneLocale::zoneOffsetFormat(locale, locale.d->m_index,
+                                                                  QLocale::ShortFormat,
+                                                                  when, when.offsetFromUtc());
                         // When using timezone_locale data, this should always succeed:
                         if (!text.isEmpty())
                             return text;
