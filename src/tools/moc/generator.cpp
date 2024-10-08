@@ -239,9 +239,11 @@ void Generator::generateCode()
     registerEnumStrings();
 
     const bool requireCompleteness = requireCompleteTypes || cdef->requireCompleteMethodTypes;
-    const bool hasStaticMetaCall =
+    bool hasStaticMetaCall =
             (cdef->hasQObject || !cdef->methodList.isEmpty()
              || !cdef->propertyList.isEmpty() || !cdef->constructorList.isEmpty());
+    if (parser->activeQtMode)
+        hasStaticMetaCall = false;
 
     const QByteArray qualifiedClassNameIdentifier = generateQualifiedClassNameIdentifier(cdef->qualified);
 
@@ -471,9 +473,10 @@ static constexpr auto qt_staticMetaObjectRelocatingContent%s =
     if (!cdef->hasQObject)
         return;
 
-    fprintf(out, "\nconst QMetaObject *%s::metaObject() const\n{\n    return QObject::d_ptr->metaObject ? QObject::d_ptr->dynamicMetaObject() : &staticMetaObject;\n}\n",
+    fprintf(out, "\nconst QMetaObject *%s::metaObject() const\n{\n"
+                 "    return QObject::d_ptr->metaObject ? QObject::d_ptr->dynamicMetaObject() : &staticMetaObject;\n"
+                 "}\n",
             cdef->qualified.constData());
-
 
 //
 // Generate smart cast function
@@ -512,6 +515,9 @@ static constexpr auto qt_staticMetaObjectRelocatingContent%s =
         fprintf(out, "    return nullptr;\n");
     }
     fprintf(out, "}\n");
+
+    if (parser->activeQtMode)
+        return;
 
 //
 // Generate internal qt_metacall()  function
