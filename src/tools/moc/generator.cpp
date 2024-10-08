@@ -115,7 +115,7 @@ static inline qsizetype lengthOfEscapeSequence(const QByteArray &s, qsizetype i)
 // opening and closing quotes are NOT included (it's up to the caller).
 static void printStringWithIndentation(FILE *out, const QByteArray &s)
 {
-    static constexpr int ColumnWidth = 72;
+    static constexpr int ColumnWidth = 68;
     const qsizetype len = s.size();
     qsizetype idx = 0;
 
@@ -127,7 +127,7 @@ static void printStringWithIndentation(FILE *out, const QByteArray &s)
             const qsizetype escapeLen = lengthOfEscapeSequence(s, backSlashPos);
             spanLen = qBound(spanLen, backSlashPos + escapeLen - idx, len - idx);
         }
-        fprintf(out, "\n    \"%.*s\"", int(spanLen), s.constData() + idx);
+        fprintf(out, "\n        \"%.*s\"", int(spanLen), s.constData() + idx);
         idx += spanLen;
     } while (idx < len);
 }
@@ -271,24 +271,7 @@ void Generator::generateCode()
             qualifiedClassNameIdentifier.constData());
 
 //
-// Build the strings using QtMocHelpers::stringData
-//
-
-    fprintf(out, "static constexpr auto qt_meta_stringdata_%s = QtMocHelpers::stringData(",
-            qualifiedClassNameIdentifier.constData());
-    {
-        char comma = 0;
-        for (const QByteArray &str : strings) {
-            if (comma)
-                fputc(comma, out);
-            printStringWithIndentation(out, str);
-            comma = ',';
-        }
-    }
-    fprintf(out, "\n);\n\n");
-
-//
-// build the data array
+// build the strings, data, and metatype arrays
 //
 
     // We define a method inside the context of the class or namespace we're
@@ -297,9 +280,14 @@ void Generator::generateCode()
     // types).
     fprintf(out, "template <> constexpr inline auto %s::qt_create_metaobjectdata<qt_meta_tag_%s_t>()\n"
                  "{\n"
-                 "    namespace QMC = QtMocConstants;\n"
-                 "    QtMocHelpers::UintData qt_methods {\n",
+                 "    namespace QMC = QtMocConstants;\n",
             cdef->qualified.constData(), qualifiedClassNameIdentifier.constData());
+
+    fprintf(out, "    QtMocHelpers::StringRefStorage qt_stringData {");
+    addStrings(strings);
+    fprintf(out, "\n    };\n\n");
+
+    fprintf(out, "    QtMocHelpers::UintData qt_methods {\n");
 
     // Build signals array first, otherwise the signal indices would be wrong
     addFunctions(cdef->signalList, "Signal");
@@ -344,7 +332,7 @@ void Generator::generateCode()
         QByteArray tagType = "qt_meta_tag_" + qualifiedClassNameIdentifier +  "_t";
         if (requireCompleteness)
             tagType = "QtMocHelpers::ForceCompleteMetaTypes<" + tagType + '>';
-        fprintf(out, "    return QtMocHelpers::metaObjectData<%s, %s>(%s,\n"
+        fprintf(out, "    return QtMocHelpers::metaObjectData<%s, %s>(%s, qt_stringData,\n"
                      "            qt_methods, qt_properties, qt_enums%s);\n"
                      "}\n",
                 ownType, tagType.constData(), metaObjectFlags, uintDataParams);
@@ -360,9 +348,9 @@ void Generator::generateCode()
 static constexpr auto qt_staticMetaObjectContent%s =
     %s::qt_create_metaobjectdata<qt_meta_tag%s_t>();
 static constexpr auto qt_staticMetaObjectStaticContent%s =
-    qt_staticMetaObjectContent%s.data;
+    qt_staticMetaObjectContent%s.staticData;
 static constexpr auto qt_staticMetaObjectRelocatingContent%s =
-    qt_staticMetaObjectContent%s.metaTypes;
+    qt_staticMetaObjectContent%s.relocatingData;
 
 )",
                 n, cdef->qualified.constData(), n,
@@ -459,9 +447,9 @@ static constexpr auto qt_staticMetaObjectRelocatingContent%s =
         fprintf(out, "    QtPrivate::MetaObjectForType<%s>::value,\n", purestSuperClass.constData());
     else
         fprintf(out, "    nullptr,\n");
-    fprintf(out, "    qt_meta_stringdata_%s.offsetsAndSizes,\n"
-            "    qt_staticMetaObjectStaticContent%s.data(),\n",
-            qualifiedClassNameIdentifier.constData(),
+    fprintf(out, "    qt_staticMetaObjectStaticContent%s.stringdata,\n"
+            "    qt_staticMetaObjectStaticContent%s.data,\n",
+            metaVarNameSuffix.constData(),
             metaVarNameSuffix.constData());
     if (hasStaticMetaCall)
         fprintf(out, "    qt_static_metacall,\n");
@@ -473,7 +461,7 @@ static constexpr auto qt_staticMetaObjectRelocatingContent%s =
     else
         fprintf(out, "    qt_meta_extradata_%s,\n", qualifiedClassNameIdentifier.constData());
 
-    fprintf(out, "    qt_staticMetaObjectRelocatingContent%s.data(),\n",
+    fprintf(out, "    qt_staticMetaObjectRelocatingContent%s.metaTypes,\n",
             metaVarNameSuffix.constData());
 
     fprintf(out, "    nullptr\n} };\n\n");
@@ -497,7 +485,7 @@ static constexpr auto qt_staticMetaObjectRelocatingContent%s =
 //
     fprintf(out, "\nvoid *%s::qt_metacast(const char *_clname)\n{\n", cdef->qualified.constData());
     fprintf(out, "    if (!_clname) return nullptr;\n");
-    fprintf(out, "    if (!strcmp(_clname, qt_meta_stringdata_%s.stringdata0))\n"
+    fprintf(out, "    if (!strcmp(_clname, qt_staticMetaObjectStaticContent<qt_meta_tag_%s_t>.strings))\n"
                   "        return static_cast<void*>(this);\n",
             qualifiedClassNameIdentifier.constData());
 
@@ -615,6 +603,17 @@ void Generator::registerByteArrayVector(const QList<QByteArray> &list)
 {
     for (const QByteArray &ba : list)
         strreg(ba);
+}
+
+void Generator::addStrings(const QByteArrayList &strings)
+{
+    char comma = 0;
+    for (const QByteArray &str : strings) {
+        if (comma)
+            fputc(comma, out);
+        printStringWithIndentation(out, str);
+        comma = ',';
+    }
 }
 
 void Generator::addFunctions(const QList<FunctionDef> &list, const char *functype)

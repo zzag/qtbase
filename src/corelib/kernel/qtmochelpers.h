@@ -34,6 +34,18 @@ static constexpr size_t MaxStringSize =
         (std::min)(size_t((std::numeric_limits<uint>::max)()),
                    size_t((std::numeric_limits<qsizetype>::max)()));
 
+template <uint UCount, uint SCount, size_t SSize, uint MCount> struct MetaObjectContents
+{
+    struct StaticContent {
+        uint data[UCount];
+        uint stringdata[SCount];
+        char strings[SSize];
+    } staticData = {};
+    struct RelocatingContent {
+        const QtPrivate::QMetaTypeInterface *metaTypes[MCount];
+    } relocatingData = {};
+};
+
 template <int Count, size_t StringSize> struct StringData
 {
     static_assert(StringSize <= MaxStringSize, "Meta Object data is too big");
@@ -192,7 +204,7 @@ template <typename... T> struct MetaTypeList
                 TryMetaTypeInterfaceForType<Unique, T>::type()...
             };
             for (const QMetaTypeInterface *mt : metaTypes)
-                result.metaTypes[metatypeoffset++] = mt;
+                result.relocatingData.metaTypes[metatypeoffset++] = mt;
         }
     }
 };
@@ -272,7 +284,7 @@ template <typename... Block> struct UintData
     template <typename Unique, typename Result> constexpr void
     copyTo(Result &result, size_t dataoffset, uint &metatypeoffset) const
     {
-        uint *ptr = result.data.data();
+        uint *ptr = result.staticData.data;
         size_t payloadoffset = dataoffset + headerSize();
         data.forEach([&](const auto &input) {
             // copy the uint data
@@ -528,17 +540,11 @@ template <typename F> struct RevisionedConstructorData :
     {}
 };
 
-
-template <uint N, uint M> struct UintAndMetaTypeData
-{
-    std::array<uint, N> data;
-    std::array<const QtPrivate::QMetaTypeInterface *, M> metaTypes;
-};
-
-template <typename ObjectType, typename Unique,
+template <typename ObjectType, typename Unique, typename Strings,
           typename Methods, typename Properties, typename Enums,
           typename Constructors = UintData<>, typename ClassInfo = detail::UintDataBlock<0, 0>>
-constexpr auto metaObjectData(uint flags, const Methods &methods, const Properties &properties,
+constexpr auto metaObjectData(uint flags, const Strings &strings,
+                              const Methods &methods, const Properties &properties,
                               const Enums &enums, const Constructors &constructors = {},
                               const ClassInfo &classInfo = {})
 {
@@ -556,54 +562,59 @@ constexpr auto metaObjectData(uint flags, const Methods &methods, const Properti
             + Constructors::dataSize()
             + ClassInfo::headerSize() // + ClassInfo::payloadSize()
             + 1;    // empty EOD
-    UintAndMetaTypeData<TotalSize, MetaTypeCount> result = {};
+
+    MetaObjectContents<TotalSize, 2 * Strings::StringCount, Strings::StringSize,
+            MetaTypeCount> result = {};
+    strings.writeTo(result.staticData.stringdata, result.staticData.strings);
+
     uint dataoffset = HeaderSize;
     uint metatypeoffset = 0;
+    uint *data = result.staticData.data;
 
-    result.data[0] = QtMocConstants::OutputRevision;
-    result.data[1] = 0;     // class name index (it's always 0)
+    data[0] = QtMocConstants::OutputRevision;
+    data[1] = 0;     // class name index (it's always 0)
 
-    result.data[2] = ClassInfo::headerSize() / 2;
-    result.data[3] = ClassInfo::headerSize() ? dataoffset : 0;
-    q20::copy_n(classInfo.header, classInfo.headerSize(), result.data.data() + dataoffset);
+    data[2] = ClassInfo::headerSize() / 2;
+    data[3] = ClassInfo::headerSize() ? dataoffset : 0;
+    q20::copy_n(classInfo.header, classInfo.headerSize(), data + dataoffset);
     dataoffset += ClassInfo::headerSize();
 
-    result.data[6] = properties.count();
-    result.data[7] = properties.count() ? dataoffset : 0;
+    data[6] = properties.count();
+    data[7] = properties.count() ? dataoffset : 0;
     properties.template copyTo<Unique>(result, dataoffset, metatypeoffset);
     dataoffset += properties.dataSize();
 
-    result.data[8] = enums.count();
-    result.data[9] = enums.count() ? dataoffset : 0;
+    data[8] = enums.count();
+    data[9] = enums.count() ? dataoffset : 0;
     enums.template copyTo<Unique>(result, dataoffset, metatypeoffset);
     dataoffset += enums.dataSize();
 
     // the meta type referring to the object itself
-    result.metaTypes[metatypeoffset++] =
+    result.relocatingData.metaTypes[metatypeoffset++] =
             QtPrivate::qTryMetaTypeInterfaceForType<void,
                 QtPrivate::TypeAndForceComplete<ObjectType, std::true_type>>();
 
-    result.data[4] = methods.count();
-    result.data[5] = methods.count() ? dataoffset : 0;
+    data[4] = methods.count();
+    data[5] = methods.count() ? dataoffset : 0;
     methods.template copyTo<Unique>(result, dataoffset, metatypeoffset);
     dataoffset += methods.dataSize();
 
-    result.data[10] = constructors.count();
-    result.data[11] = constructors.count() ? dataoffset : 0;
+    data[10] = constructors.count();
+    data[11] = constructors.count() ? dataoffset : 0;
     constructors.template copyTo<Unique>(result, dataoffset, metatypeoffset);
     dataoffset += constructors.dataSize();
 
-    result.data[12] = flags;
+    data[12] = flags;
 
     // count the number of signals
     if constexpr (Methods::count()) {
         constexpr uint MethodHeaderSize = Methods::headerSize() / Methods::count();
-        const uint *ptr = &result.data[result.data[5]];
-        const uint *end = &result.data[result.data[5] + MethodHeaderSize * Methods::count()];
+        const uint *ptr = &data[data[5]];
+        const uint *end = &data[data[5] + MethodHeaderSize * Methods::count()];
         for ( ; ptr < end; ptr += MethodHeaderSize) {
             if ((ptr[4] & QtMocConstants::MethodSignal) == 0)
                 break;
-            ++result.data[13];
+            ++data[13];
         }
     }
 

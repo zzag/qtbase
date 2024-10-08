@@ -122,9 +122,9 @@ QT_BEGIN_NAMESPACE
     template <typename MetaObjectTagType> static constexpr inline auto          \
     qt_staticMetaObjectContent = qt_create_metaobjectdata<MetaObjectTagType>(); \
     template <typename MetaObjectTagType> static constexpr inline auto          \
-    qt_staticMetaObjectStaticContent = qt_staticMetaObjectContent<MetaObjectTagType>.data;      \
+    qt_staticMetaObjectStaticContent = qt_staticMetaObjectContent<MetaObjectTagType>.staticData;\
     template <typename MetaObjectTagType> static constexpr inline auto          \
-    qt_staticMetaObjectRelocatingContent = qt_staticMetaObjectContent<MetaObjectTagType>.metaTypes;
+    qt_staticMetaObjectRelocatingContent = qt_staticMetaObjectContent<MetaObjectTagType>.relocatingData;
 
 #define QT_OBJECT_GADGET_COMMON  \
     QT_META_OBJECT_VARS \
