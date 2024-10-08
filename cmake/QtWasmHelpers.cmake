@@ -90,9 +90,6 @@ function (qt_internal_setup_wasm_target_properties wasmTarget)
         target_compile_definitions("${wasmTarget}" INTERFACE QT_HAVE_EMSCRIPTEN_ASYNCIFY)
     endif()
 
-    #  Set ASYNCIFY_IMPORTS unconditionally in order to support enabling asyncify at link time.
-    target_link_options("${wasmTarget}" INTERFACE "SHELL:-sASYNCIFY_IMPORTS=qt_asyncify_suspend_js,qt_asyncify_resume_js")
-
     if(QT_FEATURE_shared)
 
         set_property(GLOBAL PROPERTY TARGET_SUPPORTS_SHARED_LIBS TRUE)

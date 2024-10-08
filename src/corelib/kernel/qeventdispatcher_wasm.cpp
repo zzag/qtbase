@@ -44,58 +44,14 @@ static bool useAsyncify()
     return qstdweb::haveAsyncify();
 }
 
-static bool useJspi()
-{
-    return qstdweb::haveJspi();
-}
-
 // clang-format off
-EM_ASYNC_JS(void, qt_jspi_suspend_js, (), {
-    ++Module.qtJspiSuspensionCounter;
-
-    await new Promise(resolve => {
-        Module.qtAsyncifyWakeUp.push(resolve);
-    });
-});
-
-EM_JS(bool, qt_jspi_resume_js, (), {
-    if (!Module.qtJspiSuspensionCounter)
-        return false;
-
-    --Module.qtJspiSuspensionCounter;
-
-    setTimeout(() => {
-        const wakeUp = (Module.qtAsyncifyWakeUp ?? []).pop();
-        if (wakeUp) wakeUp();
-    });
-    return true;
-});
-
-EM_JS(bool, qt_jspi_can_resume_js, (), {
-    return Module.qtJspiSuspensionCounter > 0;
-});
-
-EM_JS(void, init_jspi_support_js, (), {
-    Module.qtAsyncifyWakeUp = [];
-    Module.qtJspiSuspensionCounter = 0;
-});
-// clang-format on
-
-void initJspiSupport() {
-    init_jspi_support_js();
-}
-
-Q_CONSTRUCTOR_FUNCTION(initJspiSupport);
-
-// clang-format off
-EM_JS(void, qt_asyncify_suspend_js, (), {
+EM_ASYNC_JS(void, qt_asyncify_suspend_js, (), {
     if (Module.qtSuspendId === undefined)
         Module.qtSuspendId = 0;
-    let sleepFn = (wakeUp) => {
-        Module.qtAsyncifyWakeUp = wakeUp;
-    };
     ++Module.qtSuspendId;
-    return Asyncify.handleSleep(sleepFn);
+    await new Promise(resolve => {
+        Module.qtAsyncifyWakeUp = resolve;
+    });
 });
 
 EM_JS(void, qt_asyncify_resume_js, (), {
@@ -122,28 +78,6 @@ EM_JS(void, qt_asyncify_resume_js, (), {
 
 static bool useAsyncify()
 {
-    return false;
-}
-
-static bool useJspi()
-{
-    return false;
-}
-
-void qt_jspi_suspend_js()
-{
-    Q_UNREACHABLE();
-}
-
-bool qt_jspi_resume_js()
-{
-    Q_UNREACHABLE();
-    return false;
-}
-
-bool qt_jspi_can_resume_js()
-{
-    Q_UNREACHABLE();
     return false;
 }
 
@@ -453,9 +387,8 @@ void QEventDispatcherWasm::wakeUp()
     // event loop. Make sure the thread is unblocked or make it
     // process events.
     bool wasBlocked = wakeEventDispatcherThread();
-    // JSPI does not need a scheduled call to processPostedEvents, as the stack is not unwound
-    // at startup.
-    if (!qstdweb::haveJspi() && !wasBlocked && isMainThreadEventDispatcher()) {
+
+    if (!wasBlocked && isMainThreadEventDispatcher()) {
         {
             LOCK_GUARD(m_mutex);
             if (m_pendingProcessEvents)
@@ -480,12 +413,10 @@ void QEventDispatcherWasm::handleApplicationExec()
     // using it for the one qApp exec().
     // When JSPI is used, awaited async calls are allowed to be nested, so we
     // proceed normally.
-    if (!qstdweb::haveJspi()) {
-        const bool simulateInfiniteLoop = true;
-        emscripten_set_main_loop([](){
-            emscripten_pause_main_loop();
-        }, 0, simulateInfiniteLoop);
-    }
+    const bool simulateInfiniteLoop = true;
+    emscripten_set_main_loop([](){
+        emscripten_pause_main_loop();
+    }, 0, simulateInfiniteLoop);
 }
 
 void QEventDispatcherWasm::handleDialogExec()
@@ -528,15 +459,12 @@ bool QEventDispatcherWasm::wait(int timeout)
         if (timeout > 0)
             qWarning() << "QEventDispatcherWasm asyncify wait with timeout is not supported; timeout will be ignored"; // FIXME
 
-        if (useJspi()) {
-            qt_jspi_suspend_js();
-        } else {
-            bool didSuspend = qt_asyncify_suspend();
-            if (!didSuspend) {
-                qWarning("QEventDispatcherWasm: current thread is already suspended; could not asyncify wait for events");
-                return false;
-            }
+        bool didSuspend = qt_asyncify_suspend();
+        if (!didSuspend) {
+            qWarning("QEventDispatcherWasm: current thread is already suspended; could not asyncify wait for events");
+            return false;
         }
+
         return true;
     } else {
         qWarning("QEventLoop::WaitForMoreEvents is not supported on the main thread without asyncify");
@@ -559,21 +487,9 @@ bool QEventDispatcherWasm::wakeEventDispatcherThread()
     }
 #endif
     Q_ASSERT(isMainThreadEventDispatcher());
-    if (useJspi()) {
-
-#if QT_CONFIG(thread)
-        return qstdweb::runTaskOnMainThread<bool>(
-                []() { return qt_jspi_can_resume_js() && qt_jspi_resume_js(); }, &g_proxyingQueue);
-#else
-        return qstdweb::runTaskOnMainThread<bool>(
-                []() { return qt_jspi_can_resume_js() && qt_jspi_resume_js(); });
-#endif
-
-    } else {
-        if (!g_is_asyncify_suspended)
-            return false;
-        runOnMainThread([]() { qt_asyncify_resume(); });
-    }
+    if (!g_is_asyncify_suspended)
+        return false;
+    runOnMainThread([]() { qt_asyncify_resume(); });
     return true;
 }
 
