@@ -378,9 +378,11 @@ QString zoneOffsetFormat(const QLocale &locale, qsizetype locInd, QLocale::Forma
     Q_ASSERT(!hourFormat.isEmpty());
     // Sign is already handled by choice of the hourFormat:
     offsetSeconds = qAbs(offsetSeconds);
+    // Offsets are only displayed in minutes - round seconds (if any) to nearest
+    // minute (prefering an even minute when rounding an exact half):
+    const int offsetMinutes = (offsetSeconds + 29 + (1 & (offsetSeconds / 60))) / 60;
 
-    // Offsets are only displayed in minutes, any seconds are discarded.
-    const QString hourOffset = formatOffset(hourFormat, offsetSeconds / 60, locale, width);
+    const QString hourOffset = formatOffset(hourFormat, offsetMinutes, locale, width);
     if (width == QLocale::ShortFormat)
         return hourOffset;
 
