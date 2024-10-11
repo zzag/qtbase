@@ -34,18 +34,6 @@ static constexpr size_t MaxStringSize =
         (std::min)(size_t((std::numeric_limits<uint>::max)()),
                    size_t((std::numeric_limits<qsizetype>::max)()));
 
-template <uint... Nx> constexpr size_t stringDataSizeHelper(std::integer_sequence<uint, Nx...>)
-{
-    // same as:
-    //   return (0 + ... + Nx);
-    // but not using the fold expression to avoid exceeding compiler limits
-    size_t total = 0;
-    uint sizes[] = { Nx... };
-    for (uint n : sizes)
-        total += n;
-    return total;
-}
-
 template <int Count, size_t StringSize> struct StringData
 {
     static_assert(StringSize <= MaxStringSize, "Meta Object data is too big");
@@ -54,28 +42,77 @@ template <int Count, size_t StringSize> struct StringData
     constexpr StringData() = default;
 };
 
-template <uint... Nx> constexpr auto stringData(const char (&...strings)[Nx])
+namespace detail {
+template <uint Idx, typename String> struct StringRefEntry;
+template <uint Idx, uint N> struct StringRefEntry<Idx, char[N]>
 {
-    constexpr size_t StringSize = stringDataSizeHelper<Nx...>({});
-    constexpr size_t Count = 2 * sizeof...(Nx);
+    static constexpr uint index() noexcept { return Idx; }
+    static constexpr uint size() noexcept { return N; }
+    const char *string;
+};
+} // namespace detail
 
-    StringData<Count, StringSize> result;
-    const char *inputs[] = { strings... };
-    uint sizes[] = { Nx... };
-
-    uint offset = 0;
-    char *output = result.stringdata0;
-    for (size_t i = 0; i < sizeof...(Nx); ++i) {
-        // copy the input string, including the terminating null
-        uint len = sizes[i];
-        for (uint j = 0; j < len; ++j)
-            output[offset + j] = inputs[i][j];
-        result.offsetsAndSizes[2 * i] = offset + sizeof(result.offsetsAndSizes);
-        result.offsetsAndSizes[2 * i + 1] = len - 1;
-        offset += len;
+template <typename Seq, typename... Strings> struct StringRefStorage;
+template <uint... Idx, typename... Strings>
+struct StringRefStorage<std::integer_sequence<uint, Idx...>, Strings...> :
+        detail::StringRefEntry<Idx, Strings>...
+{
+    static constexpr size_t stringSizeHelper() noexcept
+    {
+        // same as:
+        //   return (0 + ... + std::extent_v<Strings>);
+        // but not using the fold expression to avoid exceeding compiler limits
+        size_t total = 0;
+        uint sizes[] = { std::extent_v<Strings>... };
+        for (uint n : sizes)
+            total += n;
+        return total;
     }
 
-    return result;
+    static constexpr int StringCount = sizeof...(Strings);
+    static constexpr size_t StringSize = stringSizeHelper();
+    static_assert(StringSize <= MaxStringSize, "Meta Object data is too big");
+
+    constexpr StringRefStorage(const Strings &... strings) noexcept
+        : detail::StringRefEntry<Idx, Strings>{strings}...
+    {}
+
+    constexpr void
+    writeTo(uint (&offsets)[2 * StringCount], char (&data)[StringSize]) const noexcept
+    {
+        const char *inputs[] = {
+            (static_cast<const detail::StringRefEntry<Idx, Strings> *>(this)->string)...
+        };
+        uint sizes[] = { std::extent_v<Strings>... };
+
+        uint offset = 0;
+        char *output = data;
+        for (size_t i = 0; i < sizeof...(Strings); ++i) {
+            // copy the input string, including the terminating null
+            uint len = sizes[i];
+            for (uint j = 0; j < len; ++j)
+                output[offset + j] = inputs[i][j];
+            offsets[2 * i] = offset + sizeof(offsets);
+            offsets[2 * i + 1] = len - 1;
+            offset += len;
+        }
+    }
+
+    constexpr auto create() const noexcept
+    {
+        StringData<2 * StringCount, StringSize>  result;
+        writeTo(result.offsetsAndSizes, result.stringdata0);
+        return result;
+    }
+};
+
+// CTAD deduction guide to provide the std::integer_sequence
+template <typename... Strings> StringRefStorage(const Strings &...) ->
+    StringRefStorage<std::make_integer_sequence<uint, sizeof...(Strings)>, Strings...>;
+
+template <uint... Nx> constexpr auto stringData(const char (&...strings)[Nx])
+{
+    return StringRefStorage(strings...).create();
 }
 
 template <typename FuncType> inline bool indexOfMethod(void **_a, FuncType f, int index) noexcept
