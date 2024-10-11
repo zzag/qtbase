@@ -14,6 +14,7 @@
 #include <qhash.h>
 #include <qdebug.h>
 #include "qdatastream.h"
+#include "qjsonparser_p.h"
 
 #include <private/qnumeric_p.h>
 #include <private/qcborvalue_p.h>
@@ -592,6 +593,28 @@ QVariant QJsonValue::toVariant() const
                     in an array or a non existent key in an object.
 */
 #endif // !QT_NO_VARIANT
+
+/*!
+    \since 6.9
+    Parses \a json as a UTF-8 encoded JSON value, and creates a QJsonValue
+    from it.
+
+    Returns a valid QJsonValue if the parsing succeeds. If it fails, the
+    returned value will be \l {QJsonValue::isUndefined} {undefined}, and
+    the optional \a error variable will contain further details about the
+    error.
+
+    Currently, only objects/maps and arrays/lists can be parsed.
+
+    \sa QJsonParseError, isUndefined()
+ */
+QJsonValue QJsonValue::fromJson(QByteArrayView json, QJsonParseError *error)
+{
+    QJsonPrivate::Parser parser(json.constData(), json.size());
+    QJsonValue result;
+    result.value = parser.parse(error);
+    return result;
+}
 
 /*!
     Returns the type of the value.

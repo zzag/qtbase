@@ -7,6 +7,7 @@
 #include <QtCore/qcborvalue.h>
 #include <QtCore/qcompare.h>
 #include <QtCore/qglobal.h>
+#include <QtCore/qjsonparseerror.h>
 #include <QtCore/qstring.h>
 #include <QtCore/qshareddata.h>
 
@@ -67,6 +68,8 @@ public:
 
     static QJsonValue fromVariant(const QVariant &variant);
     QVariant toVariant() const;
+
+    static QJsonValue fromJson(QByteArrayView json, QJsonParseError *error = nullptr);
 
     Type type() const;
     inline bool isNull() const { return type() == Null; }

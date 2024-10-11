@@ -207,6 +207,7 @@ qt_internal_add_module(Core
         serialization/qjsoncbor.cpp
         serialization/qjsondocument.cpp serialization/qjsondocument.h
         serialization/qjsonobject.cpp serialization/qjsonobject.h
+        serialization/qjsonparseerror.h
         serialization/qjsonparser.cpp serialization/qjsonparser_p.h
         serialization/qjsonvalue.cpp serialization/qjsonvalue.h
         serialization/qjsonwriter.cpp serialization/qjsonwriter_p.h
