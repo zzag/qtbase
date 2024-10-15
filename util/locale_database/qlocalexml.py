@@ -19,8 +19,9 @@ You can download jing from https://relaxng.org/jclark/jing.html if your
 package manager lacks the jing package.
 """
 
-from typing import Iterator
+from typing import Callable, Iterable, Iterator
 from xml.sax.saxutils import escape
+from xml.dom import minidom
 
 from localetools import Error, qtVersion
 
@@ -46,15 +47,17 @@ def startCount(c, text): # strspn
         return len(text)
 
 class QLocaleXmlReader (object):
-    def __init__(self, filename):
-        self.root = self.__parse(filename)
+    def __init__(self, filename: str) -> None:
+        self.root: minidom.Element = self.__parse(filename)
 
         from enumdata import language_map, script_map, territory_map
-        # Lists of (id, enum name, code, en.xml name) tuples:
+        # Tuples  of (id, enum name, code, en.xml name) tuples:
         languages = tuple(self.__loadMap('language', language_map))
         scripts = tuple(self.__loadMap('script', script_map))
         territories = tuple(self.__loadMap('territory', territory_map))
-        self.__likely = tuple(self.__likelySubtagsMap()) # as enum numeric values
+
+        # as enum numeric values, tuple[tuple[int, int, int], tuple[int, int, int]]
+        self.__likely = tuple(self.__likelySubtagsMap())
 
         # Mappings {ID: (enum name, code, en.xml name)}
         self.languages = {v[0]: v[1:] for v in languages}
@@ -69,13 +72,14 @@ class QLocaleXmlReader (object):
         self.__dupes = set(v[1] for v in languages) & set(v[1] for v in territories)
 
         self.cldrVersion = self.root.attributes['versionCldr'].nodeValue
-        self.qtVersion = self.root.attributes['versionQt'].nodeValue
+        self.qtVersion: str = self.root.attributes['versionQt'].nodeValue
         assert self.qtVersion == qtVersion, (
             'Using QLocaleXml file from incompatible Qt version',
             self.qtVersion, qtVersion
         )
 
-    def loadLocaleMap(self, calendars, grumble = lambda text: None):
+    def loadLocaleMap(self, calendars: Iterable[str], grumble = lambda text: None
+                     ) -> Iterator[tuple[tuple[int, int, int], "Locale"]]:
         """Yields id-triplet and locale object for each locale read.
 
         The id-triplet gives the (language, script, territory) numeric
@@ -83,18 +87,20 @@ class QLocaleXmlReader (object):
         locale. Where the relevant enum value is zero (an Any* member
         of the enum), likely subtag rules are used to fill in the
         script or territory, if missing, in this triplet."""
-        kid = self.__firstChildText
-        likely = dict(self.__likely)
+        kid: Callable[[minidom.Element, str], str] = self.__firstChildText
+        likely: dict[tuple[int, int, int], tuple[int, int, int]] = dict(self.__likely)
         for elt in self.__eachEltInGroup(self.root, 'localeList', 'locale'):
-            locale = Locale.fromXmlData(lambda k: kid(elt, k), calendars)
+            locale: Locale = Locale.fromXmlData(lambda k: kid(elt, k), calendars)
+            # region is tuple[str|None, ...]
+            # zone and meta are dict[str, dict[str, str | tuple[str | None, ...]]]
             region, zone, meta = self.__zoneData(elt)
             locale.update(regionFormats = region,
                           zoneNaming = zone,
                           metaNaming = meta)
 
-            language = self.__langByName[locale.language][0]
-            script = self.__textByName[locale.script][0]
-            territory = self.__landByName[locale.territory][0]
+            language: int = self.__langByName[locale.language][0]
+            script: int = self.__textByName[locale.script][0]
+            territory: int = self.__landByName[locale.territory][0]
 
             if language != 1: # C
                 if territory == 0:
@@ -105,7 +111,7 @@ class QLocaleXmlReader (object):
                     # http://www.unicode.org/reports/tr35/#Likely_Subtags
                     try:
                         try:
-                            to = likely[(language, 0, territory)]
+                            to: tuple[int, int, int] = likely[(language, 0, territory)]
                         except KeyError:
                             to = likely[(language, 0, 0)]
                     except KeyError:
@@ -116,7 +122,8 @@ class QLocaleXmlReader (object):
 
             yield (language, script, territory), locale
 
-    def pruneZoneNaming(self, locmap, report=lambda *x: None):
+    def pruneZoneNaming(self, locmap: dict[tuple[int, int, int], "Locale"],
+                        report=lambda *x: 0) -> None:
         """Deduplicate zoneNaming and metaNaming mapings.
 
         Where one locale would fall back to another via likely subtag
@@ -125,13 +132,15 @@ class QLocaleXmlReader (object):
 
         This prunes over half of the (locale, zone) table and nearly two
         thirds of the (locale, meta) table."""
-        likely = tuple((has, got) for have, has, give, got in self.likelyMap())
-        def fallbacks(key):
+        likely: tuple[tuple[tuple[int, int, int], tuple[int, int, int]], ...
+                     ] = tuple((has, got) for have, has, give, got in self.likelyMap())
+        def fallbacks(key) -> Iterator[Locale]:
             # Should match QtTimeZoneLocale::fallbackLocalesFor() in qlocale.cpp
-            tried, head = { key }, 2
+            tried: set[tuple[int, int, int]] = { key }
+            head =  2
             while head > 0:
                 # Retain [:head] of key but use 0 (i.e. Any) for the rest:
-                it = self.__fillLikely(key[:head] + (0,) * (3 - head), likely)
+                it: tuple[int, int, int] = self.__fillLikely(key[:head] + (0,) * (3 - head), likely)
                 if it not in tried:
                     tried.add(it)
                     if it in locmap:
@@ -178,51 +187,52 @@ class QLocaleXmlReader (object):
                f'and {metaCount} (of {metaPrior}) metazone '
                f'entries from {locCount} (of {len(locmap)}) locales.\n')
 
-    def aliasToIana(self):
-        def attr(elt, key):
+    def aliasToIana(self) -> Iterator[tuple[str, str]]:
+        def attr(elt: minidom.Element, key: str) -> str:
             return elt.attributes[key].nodeValue
         for elt in self.__eachEltInGroup(self.root, 'zoneAliases', 'zoneAlias'):
             yield attr(elt, 'alias'), attr(elt, 'iana')
 
-    def msToIana(self):
-        kid = self.__firstChildText
+    def msToIana(self) -> Iterator[tuple[str, str]]:
+        kid: Callable[[minidom.Element, str], str] = self.__firstChildText
         for elt in self.__eachEltInGroup(self.root, 'windowsZone', 'msZoneIana'):
             yield kid(elt, 'msid'), elt.attributes['iana'].nodeValue
 
-    def msLandIanas(self):
-        kid = self.__firstChildText
+    def msLandIanas(self) -> Iterator[tuple[str, str, str]]:
+        kid: Callable[[minidom.Element, str], str] = self.__firstChildText
         for elt in self.__eachEltInGroup(self.root, 'windowsZone', 'msLandZones'):
-            land = elt.attributes['territory'].nodeValue
+            land: str = elt.attributes['territory'].nodeValue
             yield kid(elt, 'msid'), land, kid(elt, 'ianaids')
 
-    def territoryZone(self):
+    def territoryZone(self) -> Iterator[tuple[str, str]]:
         for elt in self.__eachEltInGroup(self.root, 'landZones', 'landZone'):
             iana, land = self.__textThenAttrs(elt, 'territory')
             yield land, iana
 
-    def metaLandZone(self):
-        kid = self.__firstChildText
+    def metaLandZone(self) -> Iterator[tuple[str, int, str, str]]:
+        kid: Callable[[minidom.Element, str], str] = self.__firstChildText
         for elt in self.__eachEltInGroup(self.root, 'metaZones', 'metaZone'):
-            meta, mkey = kid(elt, 'metaname'), int(elt.attributes['metakey'].nodeValue)
-            node = self.__firstChildElt(elt, 'landZone')
+            meta: str = kid(elt, 'metaname')
+            mkey: int = int(elt.attributes['metakey'].nodeValue)
+            node: minidom.Element = self.__firstChildElt(elt, 'landZone')
             while node:
                 if self.__isNodeNamed(node, 'landZone'):
                     iana, land = self.__textThenAttrs(node, 'territory')
                     yield meta, mkey, land, iana
                 node = node.nextSibling
 
-    def zoneMetaStory(self):
+    def zoneMetaStory(self) -> Iterator[tuple[str, int, int, int]]:
         kid = lambda n, k: int(n.attributes[k].nodeValue)
         for elt in self.__eachEltInGroup(self.root, 'zoneStories', 'zoneStory'):
-            iana = elt.attributes['iana'].nodeValue
-            node = self.__firstChildElt(elt, 'metaInterval')
+            iana: str = elt.attributes['iana'].nodeValue
+            node: minidom.Element = self.__firstChildElt(elt, 'metaInterval')
             while node:
                 if self.__isNodeNamed(node, 'metaInterval'):
-                    meta = kid(node, 'metakey')
+                    meta: int = kid(node, 'metakey')
                     yield iana, kid(node, 'start'), kid(node, 'stop'), meta
                 node = node.nextSibling
 
-    def languageIndices(self, locales):
+    def languageIndices(self, locales: tuple[int, ...]) -> Iterator[tuple[int, str]]:
         index = 0
         for key, value in self.languages.items():
             i, count = 0, locales.count(key)
@@ -231,17 +241,20 @@ class QLocaleXmlReader (object):
                 index += count
             yield i, value[0]
 
-    def likelyMap(self):
-        def tag(t):
+    def likelyMap(self) -> Iterator[tuple[str, tuple[int, int, int], str, tuple[int, int, int]]]:
+        def tag(t: tuple[tuple[int, str], tuple[int, str], tuple[int, str]]) -> Iterator[str]:
             lang, script, land = t
             yield lang[1] if lang[0] else 'und'
             if script[0]: yield script[1]
             if land[0]: yield land[1]
 
-        def ids(t):
+        def ids(t: tuple[tuple[int, str], tuple[int, str], tuple[int, str]]
+                ) -> tuple[int, int, int]:
             return tuple(x[0] for x in t)
 
-        def keyLikely(pair, kl=self.__keyLikely):
+        def keyLikely(pair: tuple[tuple[tuple[int, str], tuple[int, str], tuple[int, str]],
+                                  tuple[tuple[int, str], tuple[int, str], tuple[int, str]]],
+                      kl=self.__keyLikely) -> tuple[int, int, int]:
             """Sort by IDs from first entry in pair
 
             We're passed a pair (h, g) of triplets (lang, script, territory) of
@@ -272,7 +285,7 @@ class QLocaleXmlReader (object):
                 assert have[0] == give[0], (have, give)
                 yield (give[:2], give[2])
 
-    def enumify(self, name, suffix):
+    def enumify(self, name: str, suffix: str) -> str:
         """Stick together the parts of an enumdata.py name.
 
         Names given in enumdata.py include spaces and hyphens that we
@@ -299,7 +312,8 @@ class QLocaleXmlReader (object):
         return name
 
     # Implementation details:
-    def __loadMap(self, category, enum):
+    def __loadMap(self, category: str, enum: dict[int, tuple[str, str]]
+                 ) -> Iterator[tuple[int, str, str, str]]:
         """Load the language-, script- or territory-map.
 
         First parameter, category, names the map to load, second is the
@@ -312,23 +326,26 @@ class QLocaleXmlReader (object):
             key = int(key)
             yield key, enum[key][0], code, name
 
-    def __fromIds(self, ids):
+    def __fromIds(self, ids: tuple[int, int, int]
+                  ) -> tuple[tuple[int, str], tuple[int, str], tuple[int, str]]:
         # Three (ID, code) pairs:
         return ((ids[0], self.languages[ids[0]][1]),
                 (ids[1], self.scripts[ids[1]][1]),
                 (ids[2], self.territories[ids[2]][1]))
 
     # Likely subtag management:
-    def __likelySubtagsMap(self):
-        def triplet(element, keys=('language', 'script', 'territory')):
+    def __likelySubtagsMap(self) -> Iterator[tuple[tuple[int, int, int], tuple[int, int, int]]]:
+        def triplet(element: minidom.Element,
+                    keys: tuple[str, str, str]=('language', 'script', 'territory')
+                    ) -> tuple[int, int, int]:
             return tuple(int(element.attributes[key].nodeValue) for key in keys)
 
-        kid = self.__firstChildElt
+        kid: Callable[[minidom.Element, str], minidom.Element] = self.__firstChildElt
         for elt in self.__eachEltInGroup(self.root, 'likelySubtags', 'likelySubtag'):
             yield triplet(kid(elt, "from")), triplet(kid(elt, "to"))
 
     @staticmethod
-    def __keyLikely(key, huge=0x10000):
+    def __keyLikely(key: tuple[int, int, int], huge: int=0x10000) -> tuple[int, int, int]:
         """Sort order key for a likely subtag key
 
         Although the entries are (lang, script, region), sort by (lang, region,
@@ -344,16 +361,18 @@ class QLocaleXmlReader (object):
         return have[0], have[2], have[1]
 
     @classmethod
-    def __lowerLikely(cls, key, likely):
+    def __lowerLikely(cls, key: tuple[int, int, int],
+                      likely: tuple[tuple[tuple[int, int, int], tuple[int, int, int]], ...]
+                     ) -> int:
         """Lower-bound index for key in the likely subtag table
 
         Equivalent to the std::lower_bound() calls in
         QLocaleId::withLikelySubtagsAdded()."""
         lo, hi = 0, len(likely)
-        key = cls.__keyLikely(key)
+        key: tuple[int, int, int] = cls.__keyLikely(key)
         while lo + 1 < hi:
             mid, rem = divmod(lo + hi, 2)
-            has = cls.__keyLikely(likely[mid][0])
+            has: tuple[int, int, int] = cls.__keyLikely(likely[mid][0])
             if has < key:
                 lo = mid
             elif has > key:
@@ -363,7 +382,9 @@ class QLocaleXmlReader (object):
         return hi
 
     @classmethod
-    def __fillLikely(cls, key, likely):
+    def __fillLikely(cls, key: tuple[int, int, int],
+                     likely: tuple[tuple[tuple[int, int, int], tuple[int, int, int]], ...]
+                     ) -> tuple[int, int, int]:
         """Equivalent to QLocaleId::withLikelySubtagsAdded()
 
         Takes one (language, script, territory) triple, key, of QLocale enum
@@ -371,7 +392,8 @@ class QLocaleXmlReader (object):
         on the likely subtag data supplied as likely."""
         lang, script, land = key
         if lang and likely:
-            likely = likely[cls.__lowerLikely(key, likely):]
+            likely: tuple[tuple[tuple[int, int, int], tuple[int, int, int]], ...
+                          ] = likely[cls.__lowerLikely(key, likely):]
             for entry in likely:
                 vox, txt, ter = entry[0]
                 if vox != lang:
@@ -420,17 +442,18 @@ class QLocaleXmlReader (object):
     # DOM access:
     from xml.dom import minidom
     @staticmethod
-    def __parse(filename, read = minidom.parse):
+    def __parse(filename: str, read = minidom.parse) -> minidom.Element:
         return read(filename).documentElement
 
     @staticmethod
-    def __isNodeNamed(elt, name, TYPE=minidom.Node.ELEMENT_NODE):
+    def __isNodeNamed(elt: minidom.Element|minidom.Text, name: str,
+                      TYPE: int = minidom.Node.ELEMENT_NODE) -> bool:
         return elt.nodeType == TYPE and elt.nodeName == name
     del minidom
 
     @staticmethod
-    def __eltWords(elt):
-        child = elt.firstChild
+    def __eltWords(elt: minidom.Element) -> Iterator[str]:
+        child: minidom.Text|minidom.CDATASection|None = elt.firstChild
         while child:
             if child.nodeType in (elt.TEXT_NODE, elt.CDATA_SECTION_NODE):
                 # Note: do not strip(), as some group separators are
@@ -439,8 +462,8 @@ class QLocaleXmlReader (object):
             child = child.nextSibling
 
     @classmethod
-    def __firstChildElt(cls, parent, name):
-        child = parent.firstChild
+    def __firstChildElt(cls, parent: minidom.Element, name: str) -> minidom.Element:
+        child: minidom.Text|minidom.Element = parent.firstChild
         while child:
             if cls.__isNodeNamed(child, name):
                 return child
@@ -449,12 +472,12 @@ class QLocaleXmlReader (object):
         raise Error(f'No {name} child found')
 
     @classmethod
-    def __firstChildText(cls, elt, key):
+    def __firstChildText(cls, elt: minidom.Element, key: str) -> str:
         return ' '.join(cls.__eltWords(cls.__firstChildElt(elt, key)))
 
     @classmethod
-    def __textThenAttrs(cls, elt, *names):
-        """Read an element's text, then a sequence of its attributes.
+    def __textThenAttrs(cls, elt: minidom.Element, *names: str) -> Iterator[str]:
+        """Read an elements text than a sequence of its attributes.
 
         First parameter is the XML element, subsequent parameters name
         attributes of it. Yields the text of the element, followed by the text
@@ -464,42 +487,46 @@ class QLocaleXmlReader (object):
             yield elt.attributes[name].nodeValue
 
     @classmethod
-    def __zoneData(cls, elt):
+    def __zoneData(cls, elt: minidom.Element
+                   ) -> tuple[tuple[str | None, ...],
+                              dict[str, dict[str, str | tuple[str | None, ...]]],
+                              dict[str, dict[str, str | tuple[str | None, ...]]]]:
         # Inverse of writer's __writeLocaleZones()
-        region = cls.__readZoneForms(elt, 'regionZoneFormats')
+        region: tuple[str | None, ...] = cls.__readZoneForms(elt, 'regionZoneFormats')
         try:
-            zone = cls.__firstChildElt(elt, 'zoneNaming')
+            zone: minidom.Element = cls.__firstChildElt(elt, 'zoneNaming')
         except Error as what:
             if what.message != 'No zoneNaming child found':
                 raise
-            zone = {}
+            zone: dict[str, dict[str, str|tuple[str|None, ...]]] = {}
         else:
             zone = dict(cls.__readZoneNaming(zone))
         try:
-            meta = cls.__firstChildElt(elt, 'metaZoneNaming')
+            meta: minidom.Element = cls.__firstChildElt(elt, 'metaZoneNaming')
         except Error as what:
             if what.message != 'No metaZoneNaming child found':
                 raise
-            meta = {}
+            meta: dict[str, dict[str, str|tuple[str|None, ...]]] = {}
         else:
             meta = dict(cls.__readZoneNaming(meta))
             assert not any('exemplarCity' in v for v in meta.values())
         return region, zone, meta
 
     @classmethod
-    def __readZoneNaming(cls, elt):
+    def __readZoneNaming(cls, elt: minidom.Element
+                         ) -> Iterator[tuple[str, dict[str, str|tuple[str|None, ...]]]]:
         # Inverse of writer's __writeZoneNaming()
-        child = elt.firstChild
+        child: minidom.Element = elt.firstChild
         while child:
             if cls.__isNodeNamed(child, 'zoneNames'):
-                iana = child.attributes['name'].nodeValue
+                iana: str = child.attributes['name'].nodeValue
                 try:
-                    city = cls.__firstChildText(child, 'exemplar')
+                    city: str = cls.__firstChildText(child, 'exemplar')
                 except Error:
-                    data = {}
+                    data: dict[str, tuple[str|None, str|None, str|None]] = {}
                 else:
                     assert city is not None
-                    data = { 'exemplarCity': city }
+                    data: dict[str, str|tuple[str|None, ...]] = { 'exemplarCity': city }
                 for form in ('short', 'long'):
                     data[form] = cls.__readZoneForms(child, form)
                 yield iana, data
@@ -507,9 +534,10 @@ class QLocaleXmlReader (object):
             child = child.nextSibling
 
     @classmethod
-    def __readZoneForms(cls, elt, name):
+    def __readZoneForms(cls, elt: minidom.Element, name: str
+                        ) -> tuple[str | None, ...]:
         # Inverse of writer's __writeZoneForms()
-        child = elt.firstChild
+        child: minidom.Element = elt.firstChild
         while child:
             if (cls.__isNodeNamed(child, 'zoneForms')
                 and child.attributes['name'].nodeValue == name):
@@ -518,20 +546,21 @@ class QLocaleXmlReader (object):
         return (None, None, None)
 
     @classmethod
-    def __scanZoneForms(cls, elt):
+    def __scanZoneForms(cls, elt: minidom.Element) -> Iterator[str|None]:
         # Read each entry in a zoneForms element, yield three forms:
         for tag in ('generic', 'standard', 'daylightSaving'):
             try:
-                node = cls.__firstChildElt(elt, tag)
+                node: minidom.Element = cls.__firstChildElt(elt, tag)
             except Error:
                 yield None
             else:
                 yield ' '.join(cls.__eltWords(node))
 
     @classmethod
-    def __eachEltInGroup(cls, parent, group, key):
+    def __eachEltInGroup(cls, parent: minidom.Element, group: str, key: str
+                         ) -> Iterator[minidom.Element]:
         try:
-            element = cls.__firstChildElt(parent, group).firstChild
+            element: minidom.Element = cls.__firstChildElt(parent, group).firstChild
         except Error:
             element = None
 
