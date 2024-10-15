@@ -196,7 +196,6 @@ class QLocaleXmlReader (object):
             yield kid(elt, 'msid'), land, kid(elt, 'ianaids')
 
     def territoryZone(self):
-        kid = self.__firstChildText
         for elt in self.__eachEltInGroup(self.root, 'landZones', 'landZone'):
             iana, land = self.__textThenAttrs(elt, 'territory')
             yield land, iana
@@ -308,7 +307,6 @@ class QLocaleXmlReader (object):
         code, name) where id and enum are the enumdata numeric index and name
         (on which the QLocale enums are based), code is the ISO code and name
         is CLDR's en.xml name for the language, script or territory."""
-        kid = self.__firstChildText
         for element in self.__eachEltInGroup(self.root, f'{category}List', 'naming'):
             name, key, code = self.__textThenAttrs(element, 'id', 'code')
             key = int(key)
