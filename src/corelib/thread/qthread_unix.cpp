@@ -3,32 +3,24 @@
 // SPDX-License-Identifier: LicenseRef-Qt-Commercial OR LGPL-3.0-only OR GPL-2.0-only OR GPL-3.0-only
 
 #include "qthread.h"
-
-#include "qplatformdefs.h"
+#include "qthread_p.h"
 
 #include <private/qcoreapplication_p.h>
 #include <private/qcore_unix_p.h>
+#include "qdebug.h"
+#include "qthreadstorage.h"
 #include <private/qtools_p.h>
 
-#if defined(Q_OS_DARWIN)
-#  include <private/qeventdispatcher_cf_p.h>
-#elif defined(Q_OS_WASM)
-#    include <private/qeventdispatcher_wasm_p.h>
+#if defined(Q_OS_WASM)
+#  include <private/qeventdispatcher_wasm_p.h>
 #else
-#  if !defined(QT_NO_GLIB)
-#    include "../kernel/qeventdispatcher_glib_p.h"
+#  include <private/qeventdispatcher_unix_p.h>
+#  if defined(Q_OS_DARWIN)
+#    include <private/qeventdispatcher_cf_p.h>
+#  elif !defined(QT_NO_GLIB)
+#    include <private/qeventdispatcher_glib_p.h>
 #  endif
 #endif
-
-#if !defined(Q_OS_WASM)
-#  include <private/qeventdispatcher_unix_p.h>
-#endif
-
-#include "qthreadstorage.h"
-
-#include "qthread_p.h"
-
-#include "qdebug.h"
 
 #ifdef __GLIBCXX__
 #include <cxxabi.h>

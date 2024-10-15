@@ -3,18 +3,13 @@
 // SPDX-License-Identifier: LicenseRef-Qt-Commercial OR LGPL-3.0-only OR GPL-2.0-only OR GPL-3.0-only
 
 #include "qthread.h"
-#include "qthreadstorage.h"
-#include "qmutex.h"
-#include "qreadwritelock.h"
+#include "qthread_p.h"
+
 #include "qabstracteventdispatcher.h"
 #include "qbindingstorage.h"
-
-#include <qeventloop.h>
-
-#include "qthread_p.h"
 #include "private/qcoreapplication_p.h"
-
-#include <limits>
+#include "qeventloop.h"
+#include "qmutex.h"
 
 QT_BEGIN_NAMESPACE
 

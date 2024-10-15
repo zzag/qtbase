@@ -3,14 +3,12 @@
 
 #include "qthread.h"
 #include "qthread_p.h"
-#include "qthreadstorage.h"
-#include "qmutex.h"
 
-#include <qcoreapplication.h>
-#include <qpointer.h>
-
+#include "qcoreapplication.h"
 #include <private/qcoreapplication_p.h>
 #include <private/qeventdispatcher_win_p.h>
+#include "qmutex.h"
+#include "qthreadstorage.h"
 
 #include <qt_windows.h>
 
