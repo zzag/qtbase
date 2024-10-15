@@ -189,7 +189,7 @@ public:
         NotStarted = 0,     // before start() or if failed to start
         Running = 1,        // in run()
         Finishing = 2,      // in QThreadPrivate::finish()
-        Finished = 3,       // QThreadPrivate::finish() is done
+        Finished = 3,       // QThreadPrivate::finish() or cleanup() is done
     };
 
     State threadState = NotStarted;
@@ -208,8 +208,8 @@ public:
     QWaitCondition thread_done;
 
     static void *start(void *arg);
-    static void finish(void *);
-
+    static void finish(void *);     // happens early (before thread-local dtors)
+    static void cleanup(void *);    // happens late (as a thread-local dtor, if possible)
 #endif // Q_OS_UNIX
 
 #ifdef Q_OS_WIN
