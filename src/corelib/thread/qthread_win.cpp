@@ -207,9 +207,8 @@ DWORD WINAPI qt_adopted_thread_watcher_function(LPVOID)
             QThread *thread = data->thread;
             Q_ASSERT(thread);
             auto thread_p = static_cast<QThreadPrivate *>(QObjectPrivate::get(thread));
-            Q_UNUSED(thread_p);
             Q_ASSERT(thread_p->threadState == QThreadPrivate::Running);
-            QThreadPrivate::finish(thread);
+            thread_p->finish();
         }
         data->deref();
 
@@ -269,7 +268,7 @@ unsigned int __stdcall QT_ENSURE_STACK_ALIGNED_FOR_SSE QThreadPrivate::start(voi
     QThread::setTerminationEnabled(true);
     thr->run();
 
-    finish(arg);
+    thr->d_func()->finish();
     return 0;
 }
 
@@ -284,10 +283,10 @@ unsigned int __stdcall QT_ENSURE_STACK_ALIGNED_FOR_SSE QThreadPrivate::start(voi
 
     In those cases, \a arg will not be the current thread.
 */
-void QThreadPrivate::finish(void *arg, bool lockAnyway) noexcept
+void QThreadPrivate::finish(bool lockAnyway) noexcept
 {
-    QThread *thr = reinterpret_cast<QThread *>(arg);
-    QThreadPrivate *d = thr->d_func();
+    QThreadPrivate *d = this;
+    QThread *thr = q_func();
 
     QMutexLocker locker(lockAnyway ? &d->mutex : nullptr);
     d->threadState = QThreadPrivate::Finishing;
@@ -477,7 +476,7 @@ void QThread::terminate()
     }
 
     TerminateThread(d->handle, 0);
-    QThreadPrivate::finish(this, false);
+    d->finish(false);
 }
 
 bool QThread::wait(QDeadlineTimer deadline)
@@ -515,7 +514,7 @@ bool QThread::wait(QDeadlineTimer deadline)
     if (ret && d->threadState < QThreadPrivate::Finished) {
         // thread was terminated by someone else
 
-        QThreadPrivate::finish(this, false);
+        d->finish(false);
     }
 
     if (d->threadState == QThreadPrivate::Finished && !d->waiters) {
@@ -535,7 +534,7 @@ void QThread::setTerminationEnabled(bool enabled)
     QMutexLocker locker(&d->mutex);
     d->terminationEnabled = enabled;
     if (enabled && d->terminatePending) {
-        QThreadPrivate::finish(thr, false);
+        d->finish(false);
         locker.unlock(); // don't leave the mutex locked!
         _endthreadex(0);
     }
