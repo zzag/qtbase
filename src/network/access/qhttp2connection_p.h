@@ -393,6 +393,8 @@ private:
     bool pushPromiseEnabled = false;
     quint32 m_lastIncomingStreamID = Http2::connectionStreamID;
 
+    bool m_prefaceSent = false;
+
     // Server-side only:
     bool m_waitingForClientPreface = false;
 
