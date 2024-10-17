@@ -264,6 +264,27 @@ public abstract class QtAbstractItemModel
         jni_dataChanged(topLeft, bottomRight, roles);
     }
     /**
+     * Interface for a callback to be invoked when the data in an existing item changes.
+     */
+    public interface OnDataChangedListener {
+        /**
+         * Called when the data in an existing item changes.
+         *
+         * @param topLeft The top-left index of changed items
+         * @param bottomRight The bottom-right index of changed items
+         * @param roles Changed roles; Empty array indicates all roles
+         */
+        void onDataChanged(QtModelIndex topLeft, QtModelIndex bottomRight, int[] roles);
+    }
+    /**
+     * Register a callback to be invoked when the data in an existing item changes.
+     *
+     * @param listener The data change listener
+     */
+    public void setOnDataChangedListener(OnDataChangedListener listener) {
+        m_OnDataChangedListener = listener;
+    }
+    /**
      * Begins a column insertion operation.
 
      * The parent index corresponds to the parent into which the new columns
@@ -503,6 +524,15 @@ public abstract class QtAbstractItemModel
     */
     protected final void endResetModel() { jni_endResetModel(); }
 
+    private void handleDataChanged(QtModelIndex topLeft, QtModelIndex bottomRight, int[] roles)
+    {
+        if (m_OnDataChangedListener != null) {
+            QtNative.runAction(() -> {
+                if (m_OnDataChangedListener != null)
+                    m_OnDataChangedListener.onDataChanged(topLeft, bottomRight, roles);
+            });
+        }
+    }
     private native void jni_beginInsertColumns(QtModelIndex parent, int first, int last);
     private native void jni_beginInsertRows(QtModelIndex parent, int first, int last);
     private native boolean jni_beginMoveColumns(QtModelIndex sourceParent, int sourceFirst,
@@ -529,6 +559,7 @@ public abstract class QtAbstractItemModel
                                         int[] roles);
 
     private long m_nativeReference = 0;
+    private OnDataChangedListener m_OnDataChangedListener;
     private QtAbstractItemModel(long nativeReference) { m_nativeReference = nativeReference; }
     private void detachFromNative() { m_nativeReference = 0; }
 

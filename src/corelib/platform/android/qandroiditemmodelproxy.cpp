@@ -160,6 +160,19 @@ QAndroidItemModelProxy::createNativeProxy(QJniObject itemModel)
             if (proxy)
                 proxy->jInstance.callMethod<void>("detachFromNative");
         });
+
+        connect(nativeProxy, &QAndroidItemModelProxy::dataChanged, nativeProxy,
+                [nativeProxy](const QModelIndex &topLeft, const QModelIndex &bottomRight,
+                              const QList<int> &roles) {
+                    auto proxy = qobject_cast<QAndroidItemModelProxy *>(nativeProxy);
+                    if (proxy) {
+                        QJniObject jInstance = proxy->jInstance;
+                        jInstance.callMethod<void>("handleDataChanged",
+                                                    QAndroidModelIndexProxy::jInstance(topLeft),
+                                                    QAndroidModelIndexProxy::jInstance(bottomRight),
+                                                    QJniArray<jint>(roles));
+                    }
+                });
     }
     return nativeProxy;
 }
