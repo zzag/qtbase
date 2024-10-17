@@ -222,6 +222,48 @@ public abstract class QtAbstractItemModel
         return (QtModelIndex)jni_sibling(row, column, parent);
     }
     /**
+     * Sets the role data for the item at {@code index} to value.
+     *
+     * Returns {@code true} if successful; otherwise returns false.
+     *
+     * The {@link #dataChanged(QtModelIndex, QtModelIndex, int[])} method should be called
+     * if the data was successfully set.
+     *
+     * The base class implementation returns {@code false}. This method and
+     * {@link #data(QtModelIndex, int)} must be reimplemented for editable models.
+     *
+     * @param index The index of the item
+     * @param value The data value
+     * @param role The role
+     * @return True if successful, otherwise return false.
+     */
+    public boolean setData(QtModelIndex index, Object value, int role) {
+        return jni_setData(index, value, role);
+    }
+    /**
+     * This method must be called whenever the data in an existing item changes.
+     *
+     * If the items have the same parent, the affected ones are inclusively those between
+     * {@code topLeft} and {@code bottomRight}. If the items do not have the same
+     * parent, the behavior is undefined.
+     *
+     * When reimplementing the {@link #setData(QtModelIndex, Object, int)} method, this method
+     * must be called explicitly.
+     *
+     * The {@code roles} argument specifies which data roles have actually
+     * been modified. An empty array in the roles argument means that all roles should be
+     * considered modified. The order of elements in the {@cpde roles} argument does not have any
+     * relevance.
+     *
+     * @param topLeft The top-left index of changed items
+     * @param bottomRight The bottom-right index of changed items
+     * @param roles Changed roles; Empty array indicates all roles
+     * @see #setData(QtModelIndex index, Object value, int role)
+     */
+    public void dataChanged(QtModelIndex topLeft, QtModelIndex bottomRight, int[] roles) {
+        jni_dataChanged(topLeft, bottomRight, roles);
+    }
+    /**
      * Begins a column insertion operation.
 
      * The parent index corresponds to the parent into which the new columns
@@ -482,6 +524,9 @@ public abstract class QtAbstractItemModel
     private native void jni_endResetModel();
     private native Object jni_roleNames();
     private native Object jni_sibling(int row, int column, QtModelIndex parent);
+    private native boolean jni_setData(QtModelIndex index, Object value, int role);
+    private native void jni_dataChanged(QtModelIndex topLeft, QtModelIndex bottomRight,
+                                        int[] roles);
 
     private long m_nativeReference = 0;
     private QtAbstractItemModel(long nativeReference) { m_nativeReference = nativeReference; }
