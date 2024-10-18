@@ -26,6 +26,7 @@ namespace pmr = std::pmr;
 namespace pmr = std;
 #endif
 #include <tuple>
+#include <unordered_map>
 
 using namespace std::chrono;
 using namespace q20::chrono;
@@ -36,6 +37,7 @@ static_assert(QTypeTraits::has_ostream_operator_v<QDebug, QMetaType>);
 static_assert(QTypeTraits::has_ostream_operator_v<QDebug, QList<int>>);
 static_assert(QTypeTraits::has_ostream_operator_v<QDebug, QMap<int, QString>>);
 static_assert(QTypeTraits::has_ostream_operator_v<QDebug, std::tuple<int, QString, QMap<int, QString>>>);
+static_assert(QTypeTraits::has_ostream_operator_v<QDebug, std::unordered_map<int, QString>>);
 struct NonStreamable {};
 static_assert(!QTypeTraits::has_ostream_operator_v<QDebug, NonStreamable>);
 static_assert(!QTypeTraits::has_ostream_operator_v<QDebug, QList<NonStreamable>>);
@@ -84,6 +86,7 @@ private slots:
     void qDebugQLatin1String() const;
     void qDebugStdPair() const;
     void qDebugStdTuple() const;
+    void qDebugStdUnorderedMap() const;
     void qDebugStdString() const;
     void qDebugStdStringView() const;
     void qDebugStdWString() const;
@@ -768,6 +771,46 @@ void tst_QDebug::qDebugStdTuple() const
         qDebug() << std::forward_as_tuple(std::move(d), std::move(i), std::as_const(s));
         QCOMPARE(s_msg, R"(std::tuple(4.2, 42, "foo"))"_L1);
     }
+}
+
+void tst_QDebug::qDebugStdUnorderedMap() const
+{
+    QByteArray file, function;
+    int line = 0;
+    MessageHandlerSetter mhs(myMessageHandler);
+
+    {
+        QDebug d = qDebug();
+        std::unordered_map<int, QString> unorderedMap{{1, "One"}, {2, "Two"}, {3, "Three"}};
+        d.nospace().noquote() << unorderedMap;
+    }
+#ifndef QT_NO_MESSAGELOGCONTEXT
+    file = __FILE__; line = __LINE__ - 5; function = Q_FUNC_INFO;
+#endif
+    QCOMPARE(s_msgType, QtDebugMsg);
+
+    QStringList expectedValues = {"std::unordered_map","std::pair(1, One)","std::pair(2, Two)","std::pair(3, Three)"};
+    for (const QString &expextedValue : expectedValues) {
+        QVERIFY(s_msg.contains(expextedValue));
+    }
+    QCOMPARE(s_file, file);
+    QCOMPARE(s_line, line);
+    QCOMPARE(s_function, function);
+
+    {
+        qDebug() << std::unordered_map<std::string, float>{{"quarter", 0.25f}, {"half", 0.5f}};
+    }
+
+    expectedValues= {"std::unordered_map","std::pair(\"quarter\", 0.25)","std::pair(\"half\", 0.5)"};
+    for (const QString &expextedValue : expectedValues) {
+        QVERIFY(s_msg.contains(expextedValue));
+    }
+
+    {
+        qDebug()<< std::unordered_map<int, QString> {};
+    }
+
+    QCOMPARE(s_msg, "std::unordered_map()"_L1);
 }
 
 void tst_QDebug::qDebugStdString() const
