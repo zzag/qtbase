@@ -1087,6 +1087,33 @@ QByteArray QDebug::toBytesImpl(StreamTypeErased s, const void *obj)
 }
 
 /*!
+    \internal
+    \since 6.9
+
+    Outputs a heterogeneous product type (pair, tuple, or anything that
+    implements the Tuple Protocol). The class name is described by "\a ns
+    \c{::} \a what", while the addresses of the \a n elements are stored in the
+    array \a data. The formatters are stored in the array \a ops.
+
+    If \a ns is empty, only \a what is used.
+*/
+QDebug &QDebug::putTupleLikeImplImpl(const char *ns, const char *what,
+                                     size_t n, StreamTypeErased *ops, const void **data)
+{
+    const QDebugStateSaver saver(*this);
+    nospace();
+    if (ns && *ns)
+        *this << ns << "::";
+    *this << what << '(';
+    while (n--) {
+        (*ops++)(*this, *data++);
+        if (n)
+            *this << ", ";
+    }
+    return *this << ')';
+}
+
+/*!
     \fn template <class T> QDebug operator<<(QDebug debug, const QList<T> &list)
     \relates QDebug
 
@@ -1177,6 +1204,14 @@ QByteArray QDebug::toBytesImpl(StreamTypeErased s, const void *obj)
 
     Writes the contents of \a hash to \a debug. Both \c Key and
     \c T need to support streaming into QDebug.
+*/
+
+/*!
+    \fn template <class...Ts, QDebug::if_streamable<Ts...>> QDebug &QDebug::operator<<(const std::tuple<Ts...> &tuple)
+    \since 6.9
+
+    Writes the contents of \a tuple to the stream. All \c Ts... need to support
+    streaming into QDebug.
 */
 
 /*!
