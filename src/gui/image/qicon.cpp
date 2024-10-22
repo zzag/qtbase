@@ -93,8 +93,8 @@ private:
   This enum describes the state for which a pixmap is intended to be
   used. The \e state can be:
 
-  \value Off  Display the pixmap when the widget is in an "off" state
   \value On  Display the pixmap when the widget is in an "on" state
+  \value Off  Display the pixmap when the widget is in an "off" state
 */
 
 static int nextSerialNumCounter()
