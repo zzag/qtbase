@@ -35,6 +35,7 @@ function(qt_internal_add_executable name)
     set_target_properties(${name} PROPERTIES
         _qt_is_test_executable ${arg_QT_TEST}
         _qt_is_manual_test ${arg_QT_MANUAL_TEST}
+        _qt_is_benchmark_test ${arg_QT_BENCHMARK_TEST}
     )
 
     if(ANDROID)
