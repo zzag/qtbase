@@ -1715,6 +1715,7 @@ function(_qt_internal_android_create_runner_wrapper target)
         set(wrapper_path "${target_binary_dir}/${target}")
     endif()
 
+    get_property(__qt_core_macros_module_base_dir GLOBAL PROPERTY __qt_core_macros_module_base_dir)
     set(template_file "${__qt_core_macros_module_base_dir}/Qt6CoreConfigureFileTemplate.in")
     set(qt_core_configure_file_contents "${script_content}")
     configure_file("${template_file}" "${wrapper_path}")
