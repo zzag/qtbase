@@ -432,6 +432,20 @@ poll(&pfd, 1, 0);
 }
 ")
 
+# pthread_clockjoin
+qt_config_compile_test(pthread_clockjoin
+    LABEL "pthread_clockjoin()"
+    LIBRARIES Threads::Threads
+    CODE
+"#include <pthread.h>
+int main()
+{
+    void *ret;
+    const struct timespec ts = {};
+    return pthread_clockjoin_np(pthread_self(), &ret, CLOCK_MONOTONIC, &ts);
+}
+")
+
 # renameat2
 qt_config_compile_test(renameat2
     LABEL "renameat2()"
@@ -693,6 +707,11 @@ qt_feature("posix_sem" PRIVATE
 qt_feature("posix_shm" PRIVATE
     LABEL "POSIX shared memory"
     CONDITION TEST_posix_shm AND UNIX
+)
+qt_feature("pthread_clockjoin" PRIVATE
+    LABEL "pthread_clockjoin() function"
+    AUTODETECT UNIX
+    CONDITION UNIX AND QT_FEATURE_thread AND TEST_pthread_clockjoin
 )
 qt_feature("qqnx_pps" PRIVATE
     LABEL "PPS"

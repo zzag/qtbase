@@ -73,6 +73,30 @@ static_assert(sizeof(pthread_t) <= sizeof(Qt::HANDLE));
 
 enum { ThreadPriorityResetFlag = 0x80000000 };
 
+#if QT_CONFIG(pthread_clockjoin)
+// If we have a way to perform a timed pthread_join(), we will do it. This
+// ensures that QThread::wait() only returns after pthread_join() or equivalent
+// has returned, ensuring that the thread has definitely exited.
+//
+// Because only one thread can call this family of functions at a time, we
+// count how many threads are waiting and all but one of them wait on a
+// QWaitCondition, with the joining thread having the responsibility for waking
+// up all others when the joining concludes. If the joining times out, the
+// thread in charge wakes up one of the other waiters (if there's any) to
+// assume responsibility for joining.
+//
+// We don't bother with pthread_timedjoin() implementations that take a
+// CLOCK_REALTIME timeout.
+#else
+// If we don't have a way to perform timed pthread_join(), then we don't try
+// joining a all. All waiting threads will wait for the launched thread to
+// call QWaitCondition::wakeAll(). Note in this case it is possible for the
+// waiting threads to conclude the launched thread has exited before it has.
+//
+// To support this scenario, we start the thread in detached state.
+int pthread_clockjoin_np(...) { return ENOSYS; }    // pretend
+#endif
+
 #if QT_CONFIG(broken_threadlocal_dtors)
 // On most modern platforms, the C runtime has a helper function that helps the
 // C++ runtime run the thread_local non-trivial destructors when threads exit
@@ -411,12 +435,9 @@ void QThreadPrivate::cleanup()
             locker.relock();
         }
 
-        d->threadState = QThreadPrivate::Finished;
         d->interruptionRequested.store(false, std::memory_order_relaxed);
 
-        d->data->threadId.storeRelaxed(nullptr);
-
-        d->thread_done.wakeAll();
+        d->wakeAll();
     });
 }
 
@@ -673,7 +694,7 @@ void QThread::start(Priority priority)
     QMutexLocker locker(&d->mutex);
 
     if (d->threadState == QThreadPrivate::Finishing)
-        d->thread_done.wait(locker.mutex());
+        d->wait(locker, QDeadlineTimer::Forever);
 
     if (d->threadState == QThreadPrivate::Running)
         return;
@@ -686,7 +707,8 @@ void QThread::start(Priority priority)
 
     pthread_attr_t attr;
     pthread_attr_init(&attr);
-    pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
+    if constexpr (!QT_CONFIG(pthread_clockjoin))
+        pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
 #ifdef Q_OS_DARWIN
     if (d->serviceLevel != QThread::QualityOfService::Auto)
         pthread_attr_set_qos_class_np(&attr, d->nativeQualityOfServiceClass(), 0);
@@ -820,6 +842,20 @@ void QThread::terminate()
 #endif
 }
 
+static void wakeAllInternal(QThreadPrivate *d)
+{
+    d->threadState = QThreadPrivate::Finished;
+    d->data->threadId.storeRelaxed(nullptr);
+    if (d->waiters)
+        d->thread_done.wakeAll();
+}
+
+inline void QThreadPrivate::wakeAll()
+{
+    if (data->isAdopted || !QT_CONFIG(pthread_clockjoin))
+        wakeAllInternal(this);
+}
+
 bool QThread::wait(QDeadlineTimer deadline)
 {
     Q_D(QThread);
@@ -840,17 +876,72 @@ bool QThread::wait(QDeadlineTimer deadline)
 
 bool QThreadPrivate::wait(QMutexLocker<QMutex> &locker, QDeadlineTimer deadline)
 {
+    constexpr int HasJoinerBit = int(0x8000'0000);  // a.k.a. sign bit
+    struct timespec ts, *pts = nullptr;
+    if (!deadline.isForever()) {
+        ts = deadlineToAbstime(deadline);
+        pts = &ts;
+    }
+
+    auto doJoin = [&] {
+        // pthread_join() & family are cancellation points
+        struct CancelState {
+            QThreadPrivate *d;
+            QMutexLocker<QMutex> *locker;
+            int joinResult = ETIMEDOUT;
+            static void run(void *arg) { static_cast<CancelState *>(arg)->run(); }
+            void run()
+            {
+                locker->relock();
+                if (joinResult == ETIMEDOUT && d->waiters)
+                    d->thread_done.wakeOne();
+                else if (joinResult == 0)
+                    wakeAllInternal(d);
+                d->waiters &= ~HasJoinerBit;
+            }
+        } nocancel = { this, &locker };
+        int &r = nocancel.joinResult;
+
+        // we're going to perform the join, so don't let other threads do it
+        waiters |= HasJoinerBit;
+        locker.unlock();
+
+        pthread_cleanup_push(&CancelState::run, &nocancel);
+        pthread_t thrId = from_HANDLE<pthread_t>(data->threadId.loadRelaxed());
+        r = pthread_clockjoin_np(thrId, nullptr, SteadyClockClockId, pts);
+        Q_ASSERT(r == 0 || r == ETIMEDOUT);
+        pthread_cleanup_pop(1);
+
+        Q_ASSERT(waiters >= 0);
+        return r != ETIMEDOUT;
+    };
     Q_ASSERT(threadState != QThreadPrivate::Finished);
     Q_ASSERT(locker.isLocked());
-    QThreadPrivate *d = this;
 
-    while (d->threadState != QThreadPrivate::Finished) {
-        if (!d->thread_done.wait(locker.mutex(), deadline))
-            return false;
+    bool result = false;
+
+    // both branches call cancellation points
+    ++waiters;
+    bool mustJoin = (waiters & HasJoinerBit) == 0;
+    pthread_cleanup_push([](void *ptr) {
+        --(*static_cast<decltype(waiters) *>(ptr));
+    }, &waiters);
+    for (;;) {
+        if (QT_CONFIG(pthread_clockjoin) && mustJoin && !data->isAdopted) {
+            result = doJoin();
+            break;
+        }
+        if (!thread_done.wait(locker.mutex(), deadline))
+            break;      // timed out
+        result = threadState == QThreadPrivate::Finished;
+        if (result)
+            break;      // success
+        mustJoin = (waiters & HasJoinerBit) == 0;
     }
-    Q_ASSERT(d->data->threadId.loadRelaxed() == nullptr);
+    pthread_cleanup_pop(1);
 
-    return true;
+    Q_ASSERT(!result || data->threadId.loadRelaxed() == nullptr);
+    return result;
 }
 
 void QThread::setTerminationEnabled(bool enabled)

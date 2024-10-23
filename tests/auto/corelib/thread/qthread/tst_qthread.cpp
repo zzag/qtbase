@@ -1220,6 +1220,12 @@ void tst_QThread::multiThreadWait_data()
         QTest::newRow(name.join('-').constData()) << deadlines;
     };
 
+    // control
+    addRow(-1);
+    addRow(0);
+    addRow(25);
+    addRow(250);
+
     addRow(0, 0);
     addRow(0, 0, 0, 0, 0);
     addRow(-1, -1);

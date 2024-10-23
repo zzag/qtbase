@@ -190,6 +190,7 @@ public:
         Running = 1,        // in run()
         Finishing = 2,      // in QThreadPrivate::finish()
         Finished = 3,       // QThreadPrivate::finish() or cleanup() is done
+                            //    or, if using pthread_join, joining is done
     };
 
     State threadState = NotStarted;
@@ -199,6 +200,7 @@ public:
     bool terminated = false; // when (the first) terminate has been called
 #endif
 
+    int waiters = 0;
     int returnCode = -1;
 
     uint stackSize = 0;
@@ -215,6 +217,7 @@ public:
 #ifdef Q_OS_UNIX
     QWaitCondition thread_done;
 
+    void wakeAll();
     static void *start(void *arg);
     void finish();          // happens early (before thread-local dtors)
     void cleanup();         // happens late (as a thread-local dtor, if possible)
@@ -226,7 +229,6 @@ public:
 
     Qt::HANDLE handle;
     unsigned int id;
-    int waiters;
     bool terminationEnabled, terminatePending;
 #endif // Q_OS_WIN
 #ifdef Q_OS_WASM
