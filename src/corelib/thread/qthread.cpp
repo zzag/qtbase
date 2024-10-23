@@ -483,11 +483,8 @@ QThread::~QThread()
     Q_D(QThread);
     {
         QMutexLocker locker(&d->mutex);
-        if (d->threadState == QThreadPrivate::Finishing) {
-            locker.unlock();
-            wait();
-            locker.relock();
-        }
+        if (d->threadState == QThreadPrivate::Finishing)
+            d->wait(locker, QDeadlineTimer::Forever);
         if (d->threadState == QThreadPrivate::Running && !d->data->isAdopted)
             qFatal("QThread: Destroyed while thread '%ls' is still running", qUtf16Printable(objectName()));
 

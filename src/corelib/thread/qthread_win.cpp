@@ -488,6 +488,14 @@ bool QThread::wait(QDeadlineTimer deadline)
     }
     if (d->threadState == QThreadPrivate::NotStarted || d->threadState == QThreadPrivate::Finished)
         return true;
+    return d->wait(locker, deadline);
+}
+
+bool QThreadPrivate::wait(QMutexLocker<QMutex> &locker, QDeadlineTimer deadline)
+{
+    Q_ASSERT(threadState != QThreadPrivate::Finished);
+    Q_ASSERT(locker.isLocked());
+    QThreadPrivate *d = this;
 
     ++d->waiters;
     locker.mutex()->unlock();
