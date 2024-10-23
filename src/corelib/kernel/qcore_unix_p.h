@@ -65,6 +65,31 @@ QT_BEGIN_NAMESPACE
 
 Q_DECLARE_TYPEINFO(pollfd, Q_PRIMITIVE_TYPE);
 
+static inline constexpr clockid_t SteadyClockClockId =
+#if !defined(CLOCK_MONOTONIC)
+        // we don't know how to set the monotonic clock
+        CLOCK_REALTIME
+#elif defined(_LIBCPP_VERSION) && defined(_LIBCPP_HAS_NO_MONOTONIC_CLOCK)
+        // libc++ falling back to system_clock
+        CLOCK_REALTIME
+#elif defined(__GLIBCXX__) && !defined(_GLIBCXX_USE_CLOCK_MONOTONIC)
+        // libstdc++ falling back to system_clock
+        CLOCK_REALTIME
+#elif defined(Q_OS_DARWIN)
+        // Darwin lacks pthread_condattr_setclock()
+        CLOCK_REALTIME
+#elif defined(Q_OS_QNX)
+        // unknown why
+        CLOCK_REALTIME
+#elif defined(__GLIBCXX__) || defined(_LIBCPP_VERSION)
+        // both libstdc++ and libc++ do use CLOCK_MONOTONIC
+        CLOCK_MONOTONIC
+#else
+#  warning "Unknown C++ Standard Library implementation - code may be sub-optimal"
+        CLOCK_REALTIME
+#endif
+        ;
+
 static constexpr auto OneSecAsNsecs = std::chrono::nanoseconds(std::chrono::seconds{ 1 }).count();
 
 inline timespec durationToTimespec(std::chrono::nanoseconds timeout) noexcept
@@ -178,6 +203,17 @@ inline timespec qAbsTimespec(timespec ts)
         ts.tv_nsec = -ts.tv_nsec;
     }
     return normalizedTimespec(ts);
+}
+
+inline timespec deadlineToAbstime(QDeadlineTimer deadline)
+{
+    using namespace std::chrono;
+    using Clock =
+        std::conditional_t<SteadyClockClockId == CLOCK_REALTIME, system_clock, steady_clock>;
+    auto timePoint = deadline.deadline<Clock>();
+    if (timePoint < Clock::time_point{})
+        return {};
+    return durationToTimespec(timePoint.time_since_epoch());
 }
 
 Q_CORE_EXPORT void qt_ignore_sigpipe() noexcept;
