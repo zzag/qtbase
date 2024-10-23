@@ -1675,6 +1675,14 @@ function(_qt_internal_android_executable_finalizer target)
     _qt_internal_android_create_runner_wrapper("${target}")
 endfunction()
 
+# Helper to add the android executable finalizer.
+function(_qt_internal_add_android_executable_finalizer target)
+    set_property(TARGET ${target} APPEND PROPERTY
+        INTERFACE_QT_EXECUTABLE_FINALIZERS
+        _qt_internal_android_executable_finalizer
+    )
+endfunction()
+
 # Generates an Android app runner script for target
 function(_qt_internal_android_create_runner_wrapper target)
     get_target_property(is_test ${target} _qt_is_test_executable)
