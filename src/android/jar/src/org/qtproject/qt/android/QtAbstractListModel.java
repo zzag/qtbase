@@ -3,8 +3,6 @@
 
 package org.qtproject.qt.android;
 
-import java.util.HashMap;
-
 public abstract class QtAbstractListModel extends QtAbstractItemModel
 {
     public QtAbstractListModel(){}

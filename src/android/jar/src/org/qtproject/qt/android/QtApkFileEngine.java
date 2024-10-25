@@ -12,13 +12,11 @@ import java.io.FileInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 
-import java.util.NoSuchElementException;
 import java.util.zip.ZipFile;
 import java.util.Enumeration;
 import java.util.zip.ZipEntry;
 import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.Collections;
 import java.util.Comparator;
 
 import android.util.Log;

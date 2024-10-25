@@ -6,11 +6,9 @@ package org.qtproject.qt.android;
 import static org.qtproject.qt.android.QtNative.ApplicationState.ApplicationSuspended;
 
 import android.app.Service;
-import android.content.Context;
 import android.content.res.Resources;
 import android.hardware.display.DisplayManager;
 import android.view.Display;
-import android.view.View;
 import android.util.DisplayMetrics;
 
 import java.util.HashSet;

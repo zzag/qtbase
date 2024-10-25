@@ -3,11 +3,7 @@
 
 package org.qtproject.qt.android;
 
-import android.app.Activity;
 import android.content.Context;
-import android.content.ContextWrapper;
-import android.content.pm.PackageManager.NameNotFoundException;
-import android.content.res.Resources;
 import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
@@ -15,7 +11,6 @@ import android.view.View;
 import android.view.ViewGroup;
 
 import java.security.InvalidParameterException;
-import java.util.ArrayList;
 import java.util.Objects;
 
 // Base class for embedding QWindow into native Android view hierarchy. Extend to implement

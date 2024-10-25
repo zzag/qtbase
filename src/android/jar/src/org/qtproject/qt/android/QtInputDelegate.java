@@ -19,9 +19,6 @@ import android.view.MotionEvent;
 import android.view.WindowManager;
 import android.view.inputmethod.InputMethodManager;
 
-import org.qtproject.qt.android.QtInputConnection.QtInputConnectionListener;
-
-/** @noinspection FieldCanBeLocal*/
 class QtInputDelegate implements QtInputConnection.QtInputConnectionListener, QtInputInterface
 {
 

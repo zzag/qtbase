@@ -7,20 +7,13 @@ import static org.qtproject.qt.android.QtNative.ApplicationState.*;
 
 import android.app.Activity;
 import android.app.Application;
-import android.content.Context;
 import android.content.res.Resources;
 import android.os.Build;
 import android.os.Bundle;
-import android.os.Handler;
-import android.os.Looper;
 import android.util.DisplayMetrics;
 import android.util.Log;
-import android.view.Menu;
-import android.view.View;
-import android.view.ViewGroup;
 import android.widget.PopupMenu;
 
-import java.util.HashMap;
 import java.util.HashSet;
 
 class QtEmbeddedDelegate extends QtActivityDelegateBase
