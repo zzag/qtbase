@@ -47,7 +47,7 @@ abstract class QtLoader {
     protected String m_mainLibPath;
     protected String m_mainLibName;
     protected String m_applicationParameters = "";
-    protected HashMap<String, String> m_environmentVariables = new HashMap<>();
+    protected final HashMap<String, String> m_environmentVariables = new HashMap<>();
 
     protected static QtLoader m_instance = null;
     protected boolean m_librariesLoaded;

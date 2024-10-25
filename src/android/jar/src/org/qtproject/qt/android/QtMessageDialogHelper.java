@@ -39,9 +39,9 @@ class ButtonStruct implements View.OnClickListener
         m_id = id;
         m_text = Html.fromHtml(text);
     }
-    QtMessageDialogHelper m_dialog;
+    final QtMessageDialogHelper m_dialog;
     private final int m_id;
-    Spanned m_text;
+    final Spanned m_text;
 
     @Override
     public void onClick(View view) {

@@ -32,7 +32,7 @@ abstract class QtView extends ViewGroup {
     protected long m_windowReference;
     protected long m_parentWindowReference;
     protected QtWindowListener m_windowListener;
-    protected QtEmbeddedViewInterface m_viewInterface;
+    protected final QtEmbeddedViewInterface m_viewInterface;
     // Implement in subclass to handle the creation of the QWindow and its parent container.
     // TODO could we take care of the parent window creation and parenting outside of the
     // window creation method to simplify things if user would extend this? Preferably without

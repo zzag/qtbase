@@ -22,7 +22,7 @@ import java.util.HashSet;
 class QtServiceEmbeddedDelegate implements QtEmbeddedViewInterface, QtNative.AppStateDetailsListener
 {
     private final Service m_service;
-    private HashSet<QtView> m_views = new HashSet<QtView>();
+    private final HashSet<QtView> m_views = new HashSet<>();
 
     QtServiceEmbeddedDelegate(Service service)
     {

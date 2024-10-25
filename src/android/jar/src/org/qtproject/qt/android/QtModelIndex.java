@@ -52,7 +52,7 @@ public class QtModelIndex
      */
     public int row() { return (int)m_privateData[0]; }
 
-    private long[] m_privateData = { -1 /*row*/, -1 /*column*/, 0 /*internalId*/,
+    private final long[] m_privateData = { -1 /*row*/, -1 /*column*/, 0 /*internalId*/,
                                      0 /*modelReference*/ };
     private QtModelIndex m_parent = null;
     private QtModelIndex(int row, int column, long internalId, long modelReference)

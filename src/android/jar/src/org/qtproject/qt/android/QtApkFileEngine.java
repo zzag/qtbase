@@ -34,7 +34,7 @@ class QtApkFileEngine {
     private static String m_appApkPath;
 
     private AssetFileDescriptor m_assetFd;
-    private AssetManager m_assetManager;
+    private final AssetManager m_assetManager;
     private FileInputStream m_assetInputStream;
     private long m_pos = -1;
 
