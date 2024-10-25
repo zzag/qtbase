@@ -76,7 +76,8 @@ public abstract class QtAbstractItemModel
     /**
      * Constructs a new QtAbstractItemModel.
      */
-    public QtAbstractItemModel(){};
+    public QtAbstractItemModel(){}
+
     /**
      * Returns the number of columns for the children of the given parent.
      * In most subclasses, the number of columns is independent of the parent.
@@ -484,7 +485,8 @@ public abstract class QtAbstractItemModel
 
     private long m_nativeReference = 0;
     private QtAbstractItemModel(long nativeReference) { m_nativeReference = nativeReference; }
-    private void detachFromNative() { m_nativeReference = 0; };
+    private void detachFromNative() { m_nativeReference = 0; }
+
     private long nativeReference() { return m_nativeReference; }
     private void setNativeReference(long nativeReference) { m_nativeReference = nativeReference; }
     private static boolean instanceOf(Object obj) { return (obj instanceof QtAbstractItemModel); }

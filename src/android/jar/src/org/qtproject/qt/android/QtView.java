@@ -142,7 +142,7 @@ abstract class QtView extends ViewGroup {
     }
 
     void loadQtLibraries(String appLibName) {
-        QtEmbeddedLoader loader = null;
+        QtEmbeddedLoader loader;
         try {
             loader = QtEmbeddedLoader.getEmbeddedLoader(getContext());
         } catch (IllegalArgumentException e) {

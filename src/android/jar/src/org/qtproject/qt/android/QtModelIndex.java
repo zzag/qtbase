@@ -77,5 +77,5 @@ public class QtModelIndex
         m_privateData[1] = -1;
         m_privateData[2] = 0;
         m_privateData[3] = 0;
-    };
+    }
 }

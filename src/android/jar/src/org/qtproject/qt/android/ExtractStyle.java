@@ -602,7 +602,7 @@ class ExtractStyle {
         try {
             Class<?> rippleDrawableClass = Class.forName("android.graphics.drawable.RippleDrawable");
             final Object mState = getAccessibleField(rippleDrawableClass, "mState").get(drawable);
-            ripple.put("mask", getDrawable((Drawable) getAccessibleField(rippleDrawableClass, "mMask").get(drawable), filename, padding));
+            ripple.put("mask", getDrawable(getAccessibleField(rippleDrawableClass, "mMask").get(drawable), filename, padding));
             if (mState != null) {
                 ripple.put("maxRadius", getAccessibleField(mState.getClass(), "mMaxRadius").getInt(mState));
                 ColorStateList color = (ColorStateList) getAccessibleField(mState.getClass(), "mColor").get(mState);
@@ -695,7 +695,7 @@ class ExtractStyle {
             }
             json.put("nodes", nodes);
         }
-        json.put("isClip", (Boolean) pathClass.getMethod("isClipPath").invoke(path));
+        json.put("isClip", pathClass.getMethod("isClipPath").invoke(path));
 
         if (tryGetAccessibleField(pathClass, "mStrokeColor") == null)
             return json; // not VFullPath
@@ -709,8 +709,8 @@ class ExtractStyle {
         json.put("trimPathStart", getAccessibleField(pathClass, "mTrimPathStart").getFloat(path));
         json.put("trimPathEnd", getAccessibleField(pathClass, "mTrimPathEnd").getFloat(path));
         json.put("trimPathOffset", getAccessibleField(pathClass, "mTrimPathOffset").getFloat(path));
-        json.put("strokeLineCap", (Paint.Cap) getAccessibleField(pathClass, "mStrokeLineCap").get(path));
-        json.put("strokeLineJoin", (Paint.Join) getAccessibleField(pathClass, "mStrokeLineJoin").get(path));
+        json.put("strokeLineCap", getAccessibleField(pathClass, "mStrokeLineCap").get(path));
+        json.put("strokeLineJoin", getAccessibleField(pathClass, "mStrokeLineJoin").get(path));
         json.put("strokeMiterlimit", getAccessibleField(pathClass, "mStrokeMiterlimit").getFloat(path));
         return json;
     }
@@ -753,7 +753,7 @@ class ExtractStyle {
             final ColorStateList mTint = (ColorStateList) getAccessibleField(stateClass, "mTint").get(state);
             if (mTint != null) {
                 json.put("tintList", getColorStateList(mTint));
-                json.put("tintMode", (PorterDuff.Mode) getAccessibleField(stateClass, "mTintMode").get(state));
+                json.put("tintMode", getAccessibleField(stateClass, "mTintMode").get(state));
             }
             final Object mVPathRenderer = getAccessibleField(stateClass, "mVPathRenderer").get(state);
             final Class<?> VPathRendererClass = Objects.requireNonNull(mVPathRenderer).getClass();
@@ -793,9 +793,9 @@ class ExtractStyle {
                     json.put("gravity", bitmapDrawable.getGravity());
                     json.put("tileModeX", bitmapDrawable.getTileModeX());
                     json.put("tileModeY", bitmapDrawable.getTileModeY());
-                    json.put("antialias", (Boolean) BitmapDrawable.class.getMethod("hasAntiAlias").invoke(bitmapDrawable));
-                    json.put("mipMap", (Boolean) BitmapDrawable.class.getMethod("hasMipMap").invoke(bitmapDrawable));
-                    json.put("tintMode", (PorterDuff.Mode) BitmapDrawable.class.getMethod("getTintMode").invoke(bitmapDrawable));
+                    json.put("antialias", BitmapDrawable.class.getMethod("hasAntiAlias").invoke(bitmapDrawable));
+                    json.put("mipMap", BitmapDrawable.class.getMethod("hasMipMap").invoke(bitmapDrawable));
+                    json.put("tintMode", BitmapDrawable.class.getMethod("getTintMode").invoke(bitmapDrawable));
                     ColorStateList tintList = (ColorStateList) BitmapDrawable.class.getMethod("getTint").invoke(bitmapDrawable);
                     if (tintList != null)
                         json.put("tintList", getColorStateList(tintList));

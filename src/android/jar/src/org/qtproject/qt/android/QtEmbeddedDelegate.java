@@ -96,8 +96,8 @@ class QtEmbeddedDelegate extends QtActivityDelegateBase
             m_stateDetails = details;
             if (details.isStarted && !m_backendsRegistered) {
                 m_backendsRegistered = true;
-                BackendRegister.registerBackend(QtWindowInterface.class, (QtWindowInterface)this);
-                BackendRegister.registerBackend(QtMenuInterface.class, (QtMenuInterface)this);
+                BackendRegister.registerBackend(QtWindowInterface.class, this);
+                BackendRegister.registerBackend(QtMenuInterface.class, this);
                 BackendRegister.registerBackend(QtInputInterface.class, m_inputDelegate);
             } else if (!details.isStarted && m_backendsRegistered) {
                 m_backendsRegistered = false;

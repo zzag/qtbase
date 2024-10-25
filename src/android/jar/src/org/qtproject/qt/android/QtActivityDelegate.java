@@ -59,28 +59,25 @@ class QtActivityDelegate extends QtActivityDelegateBase
 
     void registerBackends()
     {
-        if (!m_backendsRegistered) {
-            m_backendsRegistered = true;
-            BackendRegister.registerBackend(QtWindowInterface.class,
-                                            (QtWindowInterface)QtActivityDelegate.this);
-            BackendRegister.registerBackend(QtAccessibilityInterface.class,
-                                            (QtAccessibilityInterface)QtActivityDelegate.this);
-            BackendRegister.registerBackend(QtMenuInterface.class,
-                                            (QtMenuInterface)QtActivityDelegate.this);
-            BackendRegister.registerBackend(QtInputInterface.class,
-                                            (QtInputInterface)m_inputDelegate);
-        }
+        if (m_backendsRegistered)
+            return;
+        m_backendsRegistered = true;
+        BackendRegister.registerBackend(QtWindowInterface.class, QtActivityDelegate.this);
+        BackendRegister.registerBackend(QtAccessibilityInterface.class, QtActivityDelegate.this);
+        BackendRegister.registerBackend(QtMenuInterface.class, QtActivityDelegate.this);
+        BackendRegister.registerBackend(QtInputInterface.class, m_inputDelegate);
     }
 
     void unregisterBackends()
     {
-        if (m_backendsRegistered) {
-            m_backendsRegistered = false;
-            BackendRegister.unregisterBackend(QtWindowInterface.class);
-            BackendRegister.unregisterBackend(QtAccessibilityInterface.class);
-            BackendRegister.unregisterBackend(QtMenuInterface.class);
-            BackendRegister.unregisterBackend(QtInputInterface.class);
-        }
+        if (!m_backendsRegistered)
+            return;
+
+        m_backendsRegistered = false;
+        BackendRegister.unregisterBackend(QtWindowInterface.class);
+        BackendRegister.unregisterBackend(QtAccessibilityInterface.class);
+        BackendRegister.unregisterBackend(QtMenuInterface.class);
+        BackendRegister.unregisterBackend(QtInputInterface.class);
     }
 
     @Override
