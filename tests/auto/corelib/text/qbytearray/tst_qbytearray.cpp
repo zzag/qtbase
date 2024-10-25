@@ -60,6 +60,7 @@ private slots:
     void appendFromRawData();
     void appendExtended_data();
     void appendExtended();
+    void nullTerminated();
     void appendEmptyNull();
     void assign();
     void assignShared();
@@ -981,6 +982,42 @@ void tst_QByteArray::appendExtended()
     QCOMPARE(array.append("\0"), QByteArray("data123xxx"));
     QCOMPARE(array.append("\0", 1), QByteArray::fromRawData("data123xxx\0", 11));
     QCOMPARE(array.size(), 11);
+}
+
+void tst_QByteArray::nullTerminated()
+{
+    const char ptr[] = {'A', 'B', 'C'};
+
+    QTest::ThrowOnFailEnabler throwOnFail;
+
+    auto check = [&ptr](const QByteArray &ba) {
+        QCOMPARE_NE(reinterpret_cast<const void *>(ba.constData()), ptr);
+        QCOMPARE(ba.constData()[0], ptr[0]);
+        QCOMPARE(ba.constData()[1], ptr[1]);
+        QCOMPARE(ba.constData()[2], '\0');
+        QCOMPARE(ba.size(), 2);
+    };
+
+    {
+        auto ba = QByteArray::fromRawData(ptr, 2);
+        QCOMPARE_EQ(reinterpret_cast<const void *>(ba.constData()), ptr);
+        QCOMPARE(ba.constData()[0], ptr[0]);
+        QCOMPARE(ba.constData()[1], ptr[1]);
+        QCOMPARE(ba.size(), 2);
+
+        check(ba.nullTerminated());
+        check(QByteArray::fromRawData(ptr, 2).nullTerminated()); // rvalue
+    }
+
+    {
+        auto ba = QByteArray::fromRawData(ptr, 2);
+        QCOMPARE_EQ(reinterpret_cast<const void *>(ba.constData()), ptr);
+        QCOMPARE(ba.constData()[0], ptr[0]);
+        QCOMPARE(ba.constData()[1], ptr[1]);
+        QCOMPARE(ba.size(), 2);
+
+        check(ba.nullTerminate());
+    }
 }
 
 void tst_QByteArray::appendEmptyNull()

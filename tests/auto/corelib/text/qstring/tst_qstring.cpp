@@ -370,6 +370,7 @@ private slots:
     void check_QDataStream();
     void fromRawData();
     void setRawData();
+    void nullTerminated();
     void setUnicode();
     void endsWith();
     void startsWith();
@@ -5932,6 +5933,42 @@ void tst_QString::setRawData()
     QVERIFY(cstr.constData() == ptr2);
     QVERIFY(cstr == QString(ptr2, 1));
     QVERIFY(cstr.data_ptr() != csd);
+}
+
+void tst_QString::nullTerminated()
+{
+    const QChar ptr[] = { u'ሴ', u'ʎ', u'\0' };
+
+    QTest::ThrowOnFailEnabler thrower;
+
+    auto check = [ptr] (const QString &r) {
+        QVERIFY(r.constData() != ptr);
+        QCOMPARE(r.constData()[0], ptr[0]);
+        QCOMPARE(r.constData()[1], ptr[1]);
+        QCOMPARE(r.constData()[2], u'\0');
+        QCOMPARE(r.size(), 2);
+    };
+
+    {
+        QString str = QString::fromRawData(ptr, 2);
+        QCOMPARE(str.constData(), ptr);
+        QCOMPARE(str.constData()[0], ptr[0]);
+        QCOMPARE(str.constData()[1], ptr[1]);
+        QCOMPARE(str.size(), 2);
+
+        check(str.nullTerminated());
+        check(QString::fromRawData(ptr, 2).nullTerminated()); // rvalue
+    }
+
+    {
+        QString str = QString::fromRawData(ptr, 2);
+        QCOMPARE(str.constData(), ptr);
+        QCOMPARE(str.constData()[0], ptr[0]);
+        QCOMPARE(str.constData()[1], ptr[1]);
+        QCOMPARE(str.size(), 2);
+
+        check(str.nullTerminate());
+    }
 }
 
 void tst_QString::setUnicode()

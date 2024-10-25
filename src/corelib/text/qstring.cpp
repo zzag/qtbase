@@ -7064,6 +7064,31 @@ const ushort *QString::utf16() const
 }
 
 /*!
+    \fn QString nullTerminate() const
+    \since 6.9
+
+    If this string data isn't null-terminated, this method will make a deep
+    copy of the data and make it null-terminated().
+
+    A QString is null-terminated by default, however in some cases (e.g.
+    when using fromRawData()), the string data doesn't necessarily end
+    with a \c {\0} character, which could be a problem when calling methods
+    that expect a null-terminated string.
+
+    \sa nullTerminated(), fromRawData(), setRawData()
+*/
+
+/*!
+    \fn QString nullTerminated() const
+    \since 6.9
+
+    Returns a copy of this string that is always null-terminated.
+    See nullTerminate().
+
+    \sa nullTerminated(), fromRawData(), setRawData()
+*/
+
+/*!
     Returns a string of size \a width that contains this string
     padded by the \a fill character.
 
@@ -9375,7 +9400,8 @@ QString::iterator QString::erase(QString::const_iterator first, QString::const_i
     '\\0'-terminated string (although utf16() does, at the cost of
     copying the raw data).
 
-    \sa fromUtf16(), setRawData()
+    \sa fromUtf16(), setRawData(), data(), constData(),
+    nullTerminate(), nullTerminated()
 */
 QString QString::fromRawData(const QChar *unicode, qsizetype size)
 {
@@ -9394,7 +9420,7 @@ QString QString::fromRawData(const QChar *unicode, qsizetype size)
     This function can be used instead of fromRawData() to re-use
     existings QString objects to save memory re-allocations.
 
-    \sa fromRawData()
+    \sa fromRawData(), nullTerminate(), nullTerminated()
 */
 QString &QString::setRawData(const QChar *unicode, qsizetype size)
 {

@@ -2012,6 +2012,31 @@ void QByteArray::expand(qsizetype i)
 }
 
 /*!
+    \fn QByteArray &QByteArray::nullTerminate() const
+    \since 6.9
+
+    If this byte array's data isn't null-terminated, this method will make
+    a deep-copy of the data and make it null-terminated.
+
+    A QByteArray is null-terminated by default, however in some cases
+    (e.g. when using fromRawData()), the data doesn't necessarily end with
+    a \c {\0} character, which could be a problem when calling methods that
+    expect a null-terminated string (for example, C API).
+
+    \sa nullTerminated(), fromRawData(), setRawData()
+*/
+
+/*!
+    \fn QByteArray QByteArray::nullTerminated() const
+    \since 6.9
+
+    Returns a copy of this byte array that is always null-terminated.
+    See nullTerminate().
+
+    \sa nullTerminate(), fromRawData(), setRawData()
+*/
+
+/*!
     \fn QByteArray &QByteArray::prepend(QByteArrayView ba)
 
     Prepends the byte array view \a ba to this byte array and returns a
@@ -4419,7 +4444,7 @@ QByteArray QByteArray::number(double n, char format, int precision)
     byte array to a function accepting a \c{const char *} expected to be
     '\\0'-terminated will fail.
 
-    \sa setRawData(), data(), constData()
+    \sa setRawData(), data(), constData(), nullTerminate(), nullTerminated()
 */
 
 /*!
@@ -4434,7 +4459,7 @@ QByteArray QByteArray::number(double n, char format, int precision)
     This function can be used instead of fromRawData() to re-use
     existing QByteArray objects to save memory re-allocations.
 
-    \sa fromRawData(), data(), constData()
+    \sa fromRawData(), data(), constData(), nullTermiante(), nullTerminated()
 */
 QByteArray &QByteArray::setRawData(const char *data, qsizetype size)
 {
