@@ -40,6 +40,7 @@ abstract class QtLoader {
     private final String m_packageName;
     private String m_preferredAbi = null;
     private String m_extractedNativeLibsDir = null;
+    /** @noinspection FieldCanBeLocal*/
     private ClassLoader m_classLoader;
 
     protected ComponentInfo m_contextInfo;
