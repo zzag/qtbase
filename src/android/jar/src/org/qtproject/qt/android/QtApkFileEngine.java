@@ -198,7 +198,7 @@ class QtApkFileEngine {
             }
 
             // sort alphabetically based on the file path
-            Collections.sort(fileInfos, new Comparator<JFileInfo>() {
+            fileInfos.sort(new Comparator<JFileInfo>() {
                 @Override
                 public int compare(JFileInfo info1, JFileInfo info2) {
                     return info1.relativePath.compareTo(info2.relativePath);
