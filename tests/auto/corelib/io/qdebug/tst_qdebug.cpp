@@ -27,6 +27,7 @@ namespace pmr = std;
 #endif
 #include <tuple>
 #include <unordered_map>
+#include <unordered_set>
 
 using namespace std::chrono;
 using namespace q20::chrono;
@@ -38,6 +39,7 @@ static_assert(QTypeTraits::has_ostream_operator_v<QDebug, QList<int>>);
 static_assert(QTypeTraits::has_ostream_operator_v<QDebug, QMap<int, QString>>);
 static_assert(QTypeTraits::has_ostream_operator_v<QDebug, std::tuple<int, QString, QMap<int, QString>>>);
 static_assert(QTypeTraits::has_ostream_operator_v<QDebug, std::unordered_map<int, QString>>);
+static_assert(QTypeTraits::has_ostream_operator_v<QDebug, std::unordered_set<int>>);
 struct NonStreamable {};
 static_assert(!QTypeTraits::has_ostream_operator_v<QDebug, NonStreamable>);
 static_assert(!QTypeTraits::has_ostream_operator_v<QDebug, QList<NonStreamable>>);
@@ -87,6 +89,7 @@ private slots:
     void qDebugStdPair() const;
     void qDebugStdTuple() const;
     void qDebugStdUnorderedMap() const;
+    void qDebugStdUnorderedSet() const;
     void qDebugStdString() const;
     void qDebugStdStringView() const;
     void qDebugStdWString() const;
@@ -811,6 +814,46 @@ void tst_QDebug::qDebugStdUnorderedMap() const
     }
 
     QCOMPARE(s_msg, "std::unordered_map()"_L1);
+}
+
+void tst_QDebug::qDebugStdUnorderedSet() const
+{
+    QByteArray file, function;
+    int line = 0;
+    MessageHandlerSetter mhs(myMessageHandler);
+
+    {
+        QDebug d = qDebug();
+        std::unordered_set<int> unorderedSet{1, 2, 3, 2, 1};
+        d.nospace().noquote() << unorderedSet;
+    }
+#ifndef QT_NO_MESSAGELOGCONTEXT
+    file = __FILE__; line = __LINE__ - 5; function = Q_FUNC_INFO;
+#endif
+    QCOMPARE(s_msgType, QtDebugMsg);
+
+    QStringList expectedValues = {"std::unordered_set", "1", "2", "3"};
+    for (const QString &expectedValue : expectedValues) {
+        QVERIFY(s_msg.contains(expectedValue));
+    }
+    QCOMPARE(s_file, file);
+    QCOMPARE(s_line, line);
+    QCOMPARE(s_function, function);
+
+    {
+        qDebug() << std::unordered_set<std::string>{"apple", "banana", "cherry", "banana", "apple"};
+    }
+
+    expectedValues = {"std::unordered_set", "\"apple\"", "\"banana\"", "\"cherry\""};
+    for (const QString &expectedValue : expectedValues) {
+        QVERIFY(s_msg.contains(expectedValue));
+    }
+
+    {
+        qDebug() << std::unordered_set<int>{}; // Empty set
+    }
+
+    QCOMPARE(s_msg, "std::unordered_set()"_L1);
 }
 
 void tst_QDebug::qDebugStdString() const
