@@ -16,6 +16,7 @@ import android.view.ViewGroup;
 
 import java.security.InvalidParameterException;
 import java.util.ArrayList;
+import java.util.Objects;
 
 // Base class for embedding QWindow into native Android view hierarchy. Extend to implement
 // the creation of appropriate window to embed.
@@ -148,7 +149,7 @@ abstract class QtView extends ViewGroup {
         try {
             loader = QtEmbeddedLoader.getEmbeddedLoader(getContext());
         } catch (IllegalArgumentException e) {
-            Log.e(TAG, e.getMessage());
+            Log.e(TAG, Objects.requireNonNull(e.getMessage()));
             QtEmbeddedViewInterfaceFactory.remove(getContext());
             return;
         }
