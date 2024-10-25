@@ -47,11 +47,9 @@ class QtWindow extends QtLayout implements QtSurfaceInterface {
             // TODO QTBUG-122552 - Service keyboard input not implemented
             m_editText = new QtEditText(context, listener);
             m_editText.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO);
-            QtNative.runAction(() -> {
-                addView(m_editText,
-                        new QtLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT,
-                                                  ViewGroup.LayoutParams.WRAP_CONTENT));
-            });
+            LayoutParams layoutParams = new LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT,
+                    ViewGroup.LayoutParams.WRAP_CONTENT);
+            QtNative.runAction(() -> addView(m_editText, layoutParams));
         } else {
             m_editText = null;
         }

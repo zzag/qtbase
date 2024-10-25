@@ -138,7 +138,7 @@ class QtEmbeddedDelegate extends QtActivityDelegateBase
     public void addView(QtView view)
     {
         if (m_views.add(view)) {
-            QtNative.runAction(() -> { createRootWindow(view); });
+            QtNative.runAction(() -> createRootWindow(view));
         }
     }
 

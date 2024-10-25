@@ -55,19 +55,16 @@ abstract class QtView extends ViewGroup {
         super(context);
 
         m_viewInterface = QtEmbeddedViewInterfaceFactory.create(context);
-        addOnLayoutChangeListener(new View.OnLayoutChangeListener() {
-            @Override
-            public void onLayoutChange(View v, int left, int top, int right, int bottom,
-                                       int oldLeft, int oldTop, int oldRight, int oldBottom)  {
-                if (m_windowReference != 0L) {
-                    final int oldWidth = oldRight - oldLeft;
-                    final int oldHeight = oldBottom - oldTop;
-                    final int newWidth = right - left;
-                    final int newHeight = bottom - top;
-                    if (oldWidth != newWidth || oldHeight != newHeight || left != oldLeft ||
-                        top != oldTop) {
-                            resizeWindow(m_windowReference, left, top, newWidth, newHeight);
-                    }
+        addOnLayoutChangeListener(
+                (v, left, top, right, bottom, oldLeft, oldTop, oldRight, oldBottom) -> {
+            if (m_windowReference != 0L) {
+                final int oldWidth = oldRight - oldLeft;
+                final int oldHeight = oldBottom - oldTop;
+                final int newWidth = right - left;
+                final int newHeight = bottom - top;
+                if (oldWidth != newWidth || oldHeight != newHeight || left != oldLeft ||
+                    top != oldTop) {
+                        resizeWindow(m_windowReference, left, top, newWidth, newHeight);
                 }
             }
         });
@@ -189,19 +186,16 @@ abstract class QtView extends ViewGroup {
         setWindowReference(viewReference);
         m_parentWindowReference = parentWindowRef;
         final Handler handler = new Handler(Looper.getMainLooper());
-        handler.post(new Runnable() {
-            @Override
-            public void run() {
-                m_window = window;
-                m_window.setLayoutParams(new ViewGroup.LayoutParams(
-                                            ViewGroup.LayoutParams.MATCH_PARENT,
-                                            ViewGroup.LayoutParams.MATCH_PARENT));
-                addView(m_window, 0);
-                // Call show window + parent
-                setWindowVisible(true);
-                if (m_windowListener != null)
-                    m_windowListener.onQtWindowLoaded();
-            }
+        handler.post(() -> {
+            m_window = window;
+            m_window.setLayoutParams(new LayoutParams(
+                                        LayoutParams.MATCH_PARENT,
+                                        LayoutParams.MATCH_PARENT));
+            addView(m_window, 0);
+            // Call show window + parent
+            setWindowVisible(true);
+            if (m_windowListener != null)
+                m_windowListener.onQtWindowLoaded();
         });
     }
 

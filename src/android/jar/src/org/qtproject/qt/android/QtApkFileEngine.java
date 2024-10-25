@@ -198,12 +198,7 @@ class QtApkFileEngine {
             }
 
             // sort alphabetically based on the file path
-            fileInfos.sort(new Comparator<JFileInfo>() {
-                @Override
-                public int compare(JFileInfo info1, JFileInfo info2) {
-                    return info1.relativePath.compareTo(info2.relativePath);
-                }
-            });
+            fileInfos.sort(Comparator.comparing(info -> info.relativePath));
         } catch (Exception e) {
             Log.e(QtTAG, "Failed to list App's APK files with " + e.toString());
         }
