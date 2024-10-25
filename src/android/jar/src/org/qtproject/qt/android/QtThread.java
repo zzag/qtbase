@@ -44,7 +44,7 @@ class QtThread {
 
     void sleep(int milliseconds) {
         try {
-            m_qtThread.sleep(milliseconds);
+            Thread.sleep(milliseconds);
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
