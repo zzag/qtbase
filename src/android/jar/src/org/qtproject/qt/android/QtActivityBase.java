@@ -128,18 +128,6 @@ public class QtActivityBase extends Activity
     }
 
     @Override
-    protected void onStart()
-    {
-        super.onStart();
-    }
-
-    @Override
-    protected void onRestart()
-    {
-        super.onRestart();
-    }
-
-    @Override
     protected void onPause()
     {
         super.onPause();
