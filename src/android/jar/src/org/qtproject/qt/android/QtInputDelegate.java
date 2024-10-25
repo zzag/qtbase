@@ -115,6 +115,7 @@ class QtInputDelegate implements QtInputConnection.QtInputConnectionListener, Qt
                     return;
                 m_imm.showSoftInput(m_currentEditText, 0, new ResultReceiver(new Handler()) {
                     @Override
+                    @SuppressWarnings("fallthrough")
                     protected void onReceiveResult(int resultCode, Bundle resultData) {
                         switch (resultCode) {
                             case InputMethodManager.RESULT_SHOWN:
