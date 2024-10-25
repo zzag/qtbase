@@ -25,6 +25,7 @@ namespace pmr = std::pmr;
 #else
 namespace pmr = std;
 #endif
+#include <set>
 #include <tuple>
 #include <unordered_map>
 #include <unordered_set>
@@ -37,6 +38,7 @@ static_assert(QTypeTraits::has_ostream_operator_v<QDebug, int>);
 static_assert(QTypeTraits::has_ostream_operator_v<QDebug, QMetaType>);
 static_assert(QTypeTraits::has_ostream_operator_v<QDebug, QList<int>>);
 static_assert(QTypeTraits::has_ostream_operator_v<QDebug, QMap<int, QString>>);
+static_assert(QTypeTraits::has_ostream_operator_v<QDebug, std::set<int>>);
 static_assert(QTypeTraits::has_ostream_operator_v<QDebug, std::tuple<int, QString, QMap<int, QString>>>);
 static_assert(QTypeTraits::has_ostream_operator_v<QDebug, std::unordered_map<int, QString>>);
 static_assert(QTypeTraits::has_ostream_operator_v<QDebug, std::unordered_set<int>>);
@@ -87,6 +89,7 @@ private slots:
     void qDebugQUtf8StringView() const;
     void qDebugQLatin1String() const;
     void qDebugStdPair() const;
+    void qDebugStdSet() const;
     void qDebugStdTuple() const;
     void qDebugStdUnorderedMap() const;
     void qDebugStdUnorderedSet() const;
@@ -731,6 +734,39 @@ void tst_QDebug::qDebugStdPair() const
         qDebug() << std::pair<const double &&, int &&>(std::move(d), std::move(i));
         QCOMPARE(s_msg, R"(std::pair(4.2, 42))"_L1);
     }
+}
+
+void tst_QDebug::qDebugStdSet() const
+{
+    QByteArray file, function;
+    int line = 0;
+    MessageHandlerSetter mhs(myMessageHandler);
+
+    {
+        QDebug d = qDebug();
+        std::set<int> Set{1, 2, 3, 2, 1};
+        d.nospace().noquote() << Set;
+    }
+#ifndef QT_NO_MESSAGELOGCONTEXT
+    file = __FILE__; line = __LINE__ - 5; function = Q_FUNC_INFO;
+#endif
+    QCOMPARE(s_msgType, QtDebugMsg);
+    QCOMPARE(s_msg, "std::set(1, 2, 3)"_L1);
+    QCOMPARE(s_file, file);
+    QCOMPARE(s_line, line);
+    QCOMPARE(s_function, function);
+
+    {
+        qDebug() << std::set<std::string>{"apple", "banana", "cherry", "banana", "apple"};
+    }
+
+    QCOMPARE(s_msg, "std::set(\"apple\", \"banana\", \"cherry\")"_L1);
+
+    {
+        qDebug() << std::set<int>{};
+    }
+
+    QCOMPARE(s_msg, "std::set()"_L1);
 }
 
 void tst_QDebug::qDebugStdTuple() const

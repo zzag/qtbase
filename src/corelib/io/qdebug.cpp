@@ -1189,6 +1189,15 @@ QDebug &QDebug::putTupleLikeImplImpl(const char *ns, const char *what,
 */
 
 /*!
+    \fn template <typename Key, typename Compare, typename Alloc> QDebug operator<<(QDebug debug, const std::set<Key, Compare, Alloc> &set)
+    \relates QDebug
+    \since 6.9
+
+    Writes the contents of \a set to \a debug. The \c Key type
+    needs to support streaming into QDebug.
+*/
+
+/*!
     \fn template <typename Key, typename T, typename Hash, typename KeyEqual, typename Alloc> QDebug operator<<(QDebug debug, const std::unordered_map<Key, T, Compare, Alloc> &unordered_map)
     \relates QDebug
     \since 6.9
