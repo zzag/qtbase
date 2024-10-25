@@ -412,7 +412,7 @@ public class QtNative
             if (list != null) {
                 for (String file : list) {
                     try {
-                        String[] isDir = asset.list(path.length() > 0 ? path + "/" + file : file);
+                        String[] isDir = asset.list(!path.isEmpty() ? path + "/" + file : file);
                         if (isDir != null && isDir.length > 0)
                             file += "/";
                         res.add(file);

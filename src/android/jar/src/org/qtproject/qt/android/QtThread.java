@@ -16,7 +16,7 @@ class QtThread {
                 try {
                     ArrayList<Runnable> pendingRunnables;
                     synchronized (m_qtThread) {
-                        if (m_pendingRunnables.size() == 0)
+                        if (m_pendingRunnables.isEmpty())
                             m_qtThread.wait();
                         pendingRunnables = new ArrayList<>(m_pendingRunnables);
                         m_pendingRunnables.clear();

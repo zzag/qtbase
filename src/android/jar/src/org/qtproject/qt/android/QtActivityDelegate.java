@@ -390,7 +390,7 @@ class QtActivityDelegate extends QtActivityDelegateBase
             if (m_layout == null)
                 return;
 
-            if (m_topLevelWindows.size() == 0) {
+            if (m_topLevelWindows.isEmpty()) {
                 if (m_dummyView != null) {
                     m_layout.removeView(m_dummyView);
                     m_dummyView = null;
