@@ -160,13 +160,13 @@ class QtEmbeddedDelegate extends QtActivityDelegateBase
 
     // QtMenuInterface implementation begin
     @Override
-    public void resetOptionsMenu() { QtNative.runAction(() -> m_activity.invalidateOptionsMenu()); }
+    public void resetOptionsMenu() { QtNative.runAction(m_activity::invalidateOptionsMenu); }
 
     @Override
-    public void openOptionsMenu() { QtNative.runAction(() -> m_activity.openOptionsMenu()); }
+    public void openOptionsMenu() { QtNative.runAction(m_activity::openOptionsMenu); }
 
     @Override
-    public void closeContextMenu() { QtNative.runAction(() -> m_activity.closeContextMenu()); }
+    public void closeContextMenu() { QtNative.runAction(m_activity::closeContextMenu); }
 
     @Override
     public void openContextMenu(final int x, final int y, final int w, final int h)
@@ -179,8 +179,7 @@ class QtEmbeddedDelegate extends QtActivityDelegateBase
         focusedEditText.postDelayed(() -> {
             PopupMenu popup = new PopupMenu(m_activity, focusedEditText);
             QtNative.fillContextMenu(popup.getMenu());
-            popup.setOnMenuItemClickListener(menuItem ->
-                    m_activity.onContextItemSelected(menuItem));
+            popup.setOnMenuItemClickListener(m_activity::onContextItemSelected);
             popup.setOnDismissListener(popupMenu ->
                     m_activity.onContextMenuClosed(popupMenu.getMenu()));
             popup.show();

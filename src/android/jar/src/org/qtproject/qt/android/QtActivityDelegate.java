@@ -293,19 +293,19 @@ class QtActivityDelegate extends QtActivityDelegateBase
     @Override
     public void resetOptionsMenu()
     {
-        QtNative.runAction(() -> m_activity.invalidateOptionsMenu());
+        QtNative.runAction(m_activity::invalidateOptionsMenu);
     }
 
     @Override
     public void openOptionsMenu()
     {
-        QtNative.runAction(() -> m_activity.openOptionsMenu());
+        QtNative.runAction(m_activity::openOptionsMenu);
     }
 
     @Override
     public void closeContextMenu()
     {
-        QtNative.runAction(() -> m_activity.closeContextMenu());
+        QtNative.runAction(m_activity::closeContextMenu);
     }
 
     @Override
@@ -335,8 +335,7 @@ class QtActivityDelegate extends QtActivityDelegateBase
                         focusedEditText.getViewTreeObserver().removeOnGlobalLayoutListener(this);
                         PopupMenu popup = new PopupMenu(m_activity, focusedEditText);
                         QtActivityDelegate.this.onCreatePopupMenu(popup.getMenu());
-                        popup.setOnMenuItemClickListener(menuItem ->
-                                m_activity.onContextItemSelected(menuItem));
+                        popup.setOnMenuItemClickListener(m_activity::onContextItemSelected);
                         popup.setOnDismissListener(popupMenu ->
                                 m_activity.onContextMenuClosed(popupMenu.getMenu()));
                         popup.show();
