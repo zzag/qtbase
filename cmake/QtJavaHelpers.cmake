@@ -20,7 +20,8 @@ function(qt_internal_add_jar target)
     endif()
 
     set(CMAKE_JAVA_COMPILE_FLAGS -source "${javac_source_version}" -target "${javac_target_version}"
-        -Xlint:unchecked,cast,divzero,fallthrough,overrides,path -classpath "${QT_ANDROID_JAR}")
+        -Xlint:all -classpath "${QT_ANDROID_JAR}"
+    )
     add_jar(${ARGV})
 
     foreach(f IN LISTS arg_SOURCES)
