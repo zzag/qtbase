@@ -896,18 +896,19 @@ class Locale (object):
     same signatures as those of a dict, acting on the instance's
     __dict__, so the results are accessed as attributes rather than
     mapping keys."""
-    def __init__(self, data=None, **kw):
+    def __init__(self, data: dict[str, Any]|None = None, **kw: Any) -> None:
         self.update(data, **kw)
 
-    def update(self, data=None, **kw):
+    def update(self, data: dict[str, Any]|None = None, **kw: Any) -> None:
         if data: self.__dict__.update(data)
         if kw: self.__dict__.update(kw)
 
-    def __len__(self): # Used when testing as a boolean
+    def __len__(self) -> int: # Used when testing as a boolean
         return len(self.__dict__)
 
     @staticmethod
-    def propsMonthDay(scale, lengths=('long', 'short', 'narrow')):
+    def propsMonthDay(scale: str, lengths: tuple[str, str, str] = ('long', 'short', 'narrow')
+                      ) -> Iterator[str]:
         for L in lengths:
             yield camelCase((L, scale))
             yield camelCase(('standalone', L, scale))
@@ -940,7 +941,8 @@ class Locale (object):
     __qDoW = {"mon": 1, "tue": 2, "wed": 3, "thu": 4, "fri": 5, "sat": 6, "sun": 7}
 
     @classmethod
-    def fromXmlData(cls, lookup, calendars=('gregorian',)):
+    def fromXmlData(cls, lookup: Callable[[str], str], calendars: Iterable[str]=('gregorian',)
+                    ) -> "Locale":
         """Constructor from the contents of XML elements.
 
         First parameter, lookup, is called with the names of XML elements that
@@ -952,7 +954,7 @@ class Locale (object):
 
         Optional second parameter, calendars, is a sequence of calendars for
         which data is to be retrieved."""
-        data = {}
+        data: dict[str, int|str|dict[str, str]] = {}
         for k in cls.__asint:
             data[k] = int(lookup(k))
 
@@ -973,8 +975,8 @@ class Locale (object):
         return cls(data)
 
     # NOTE: any change to the XML must be reflected in qlocalexml.rnc
-
-    def toXml(self, write, calendars=('gregorian',)):
+    def toXml(self, write: Callable[[str, str], None], calendars: Iterable[str]=('gregorian',)
+              ) -> None:
         """Writes its data as QLocale XML.
 
         First argument, write, is a callable taking the name and
@@ -984,7 +986,7 @@ class Locale (object):
         Optional second argument is a list of calendar names, in the
         form used by CLDR; its default is ('gregorian',).
         """
-        get = lambda k: getattr(self, k)
+        get: Callable[[str], str | Iterable[int]] = lambda k: getattr(self, k)
         for key in ('language', 'script', 'territory',
                     'decimal', 'group', 'zero', 'list',
                     'percent', 'minus', 'plus', 'exp'):
@@ -1019,7 +1021,7 @@ class Locale (object):
             write(key, get(key))
 
     @classmethod
-    def C(cls, en_US):
+    def C(cls, en_US: "Locale") -> "Locale":  # return type should be Self from Python 3.11
         """Returns an object representing the C locale.
 
         Required argument, en_US, is the corresponding object for the
