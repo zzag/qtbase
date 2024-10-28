@@ -840,10 +840,8 @@ class QLocaleXmlWriter (object):
         self.__closeTag('zoneForms')
 
     def __openTag(self, tag, **attrs):
-        if attrs:
-            text = ' '.join(f'{k}="{v}"' for k, v in attrs.items())
-            tag = f'{tag} {text}'
-        self.__write(f'<{tag}>')
+        self.__write(f'<{self.__attrJoin(tag, attrs)}>')
+
     def __closeTag(self, tag):
         self.__write(f'</{tag}>')
 
