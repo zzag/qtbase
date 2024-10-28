@@ -723,9 +723,8 @@ void QWidgetWindow::handleScreenChange()
     // Send an event recursively to the widget and its children.
     sendChangeRecursively(m_widget, QEvent::ScreenChangeInternal);
 
-    // Invalidate the backing store buffer and repaint immediately.
-    if (screen())
-        repaintWindow();
+    // Invalidate the backing store buffer and schedule repaint
+    scheduleRepaint();
 }
 
 void QWidgetWindow::handleDevicePixelRatioChange()
@@ -733,20 +732,35 @@ void QWidgetWindow::handleDevicePixelRatioChange()
     // Send an event recursively to the widget and its children.
     sendChangeRecursively(m_widget, QEvent::DevicePixelRatioChange);
 
-    // Invalidate the backing store buffer and repaint immediately.
-    if (screen())
-        repaintWindow();
+    // Invalidate the backing store buffer and schedule repaint
+    scheduleRepaint();
 }
 
-void QWidgetWindow::repaintWindow()
+/*
+    Schedules a repaint in response to screen or DPR changes
+
+    Normally these changes will come with a corresponding expose
+    event following the change, but to guarantee that we refresh
+    the widget based on the new properties we also schedule our
+    own repaint.
+
+    Note that we do not do a synchronous repaint here, as the system
+    hasn't asked us to repaint just yet, it just informed us about
+    the new window state.
+*/
+void QWidgetWindow::scheduleRepaint()
 {
+    if (!screen())
+        return;
+
     if (!m_widget->isVisible() || !m_widget->updatesEnabled() || !m_widget->rect().isValid())
         return;
 
     QTLWExtra *tlwExtra = m_widget->window()->d_func()->maybeTopData();
-    if (tlwExtra && tlwExtra->backingStore)
+    if (tlwExtra && tlwExtra->backingStore) {
         tlwExtra->repaintManager->markDirty(m_widget->rect(), m_widget,
-                                                 QWidgetRepaintManager::UpdateNow, QWidgetRepaintManager::BufferInvalid);
+            QWidgetRepaintManager::UpdateLater, QWidgetRepaintManager::BufferInvalid);
+    }
 }
 
 // Store normal geometry used for saving application settings.
