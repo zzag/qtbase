@@ -24,26 +24,6 @@
 
 QT_BEGIN_NAMESPACE
 
-/* This part of the file isn't generated, but written by hand. Unicode CLDR's
-   information about measurement systems doesn't say which to use by default in
-   each locale. Even if it did, adding another entry in every locale's row of
-   locale_data[] would take up much more memory than the small table below.
-*/
-struct TerritoryLanguage
-{
-    quint16 languageId;
-    quint16 territoryId;
-    QLocale::MeasurementSystem system;
-};
-
-static inline constexpr TerritoryLanguage ImperialMeasurementSystems[] = {
-    { QLocale::English, QLocale::UnitedStates, QLocale::ImperialUSSystem },
-    { QLocale::English, QLocale::UnitedStatesMinorOutlyingIslands, QLocale::ImperialUSSystem },
-    { QLocale::Spanish, QLocale::UnitedStates, QLocale::ImperialUSSystem },
-    { QLocale::Hawaiian, QLocale::UnitedStates, QLocale::ImperialUSSystem },
-    { QLocale::English, QLocale::UnitedKingdom, QLocale::ImperialUKSystem }
-};
-
 /*
   Storage for alpha codes with length of up to 4 allowing efficient comparison.
 */
