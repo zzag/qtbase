@@ -10,16 +10,12 @@
 //  W A R N I N G
 //  -------------
 //
-// This file is not part of the Qt API.  It exists for the convenience
-// of internal files.  This header file may change from version to version
-// without notice, or even be removed.
+// This file is not a normal header file.
+// It defines data tables for internal use by QTimeZone's L10n code.
+// It may change incompatibly between versions, or even be removed.
 //
 // We mean it.
 //
-
-#include <QtCore/private/qglobal_p.h>
-#include "qbytearrayview.h"
-#include "qstring.h"
 
 QT_REQUIRE_CONFIG(timezone);
 QT_BEGIN_NAMESPACE

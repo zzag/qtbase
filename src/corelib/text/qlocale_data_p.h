@@ -9,14 +9,13 @@
 //  W A R N I N G
 //  -------------
 //
-// This file is not part of the Qt API.  It exists for the convenience
-// of qapplication_*.cpp, qwidget*.cpp and qfiledialog.cpp.  This header
-// file may change from version to version without notice, or even be removed.
+// This file is not a normal header file.
+// It defines data tables for internal use by QLocale and related classes.
+// It may change incompatibly between versions, or even be removed.
 //
 // We mean it.
 //
 
-#include <QtCore/qendian.h>
 #include <QtCore/private/qlocale_p.h>
 
 #include <array>
@@ -8493,4 +8492,4 @@ static inline constexpr unsigned char territory_code_list[] =
 
 QT_END_NAMESPACE
 
-#endif
+#endif // QLOCALE_DATA_P_H

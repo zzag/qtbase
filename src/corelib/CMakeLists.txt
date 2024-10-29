@@ -224,7 +224,6 @@ qt_internal_add_module(Core
         text/qlatin1stringmatcher.cpp text/qlatin1stringmatcher.h
         text/qlatin1stringview.h
         text/qlocale.cpp text/qlocale.h text/qlocale_p.h
-        text/qlocale_data_p.h
         text/qlocale_tools.cpp text/qlocale_tools_p.h
         text/qstaticlatin1stringmatcher.h
         text/qstring.cpp text/qstring.h
@@ -267,7 +266,6 @@ qt_internal_add_module(Core
         time/qlocaltime.cpp time/qlocaltime_p.h
         time/qmilankoviccalendar.cpp time/qmilankoviccalendar_p.h
         time/qromancalendar.cpp time/qromancalendar_p.h
-        time/qromancalendar_data_p.h
         time/qtimezone.cpp time/qtimezone.h
         tools/qalgorithms.h
         tools/qarraydata.cpp tools/qarraydata.h
@@ -905,7 +903,6 @@ qt_internal_extend_target(Core CONDITION QT_FEATURE_openssl_hash
 qt_internal_extend_target(Core CONDITION QT_FEATURE_hijricalendar
     SOURCES
         time/qhijricalendar.cpp time/qhijricalendar_p.h
-        time/qhijricalendar_data_p.h
 )
 
 qt_internal_extend_target(Core CONDITION QT_FEATURE_islamiccivilcalendar
@@ -916,13 +913,11 @@ qt_internal_extend_target(Core CONDITION QT_FEATURE_islamiccivilcalendar
 qt_internal_extend_target(Core CONDITION QT_FEATURE_jalalicalendar
     SOURCES
         time/qjalalicalendar.cpp time/qjalalicalendar_p.h
-        time/qjalalicalendar_data_p.h
 )
 
 qt_internal_extend_target(Core CONDITION QT_FEATURE_timezone
     SOURCES
         time/qtimezoneprivate.cpp time/qtimezoneprivate_p.h
-        time/qtimezoneprivate_data_p.h
 )
 
 qt_internal_extend_target(Core
@@ -977,13 +972,6 @@ qt_internal_extend_target(Core
         QT_FEATURE_timezone_locale
     SOURCES
         time/qtimezonelocale.cpp time/qtimezonelocale_p.h
-)
-
-qt_internal_extend_target(Core
-    CONDITION
-        QT_FEATURE_timezone_locale AND NOT QT_FEATURE_icu
-    SOURCES
-        time/qtimezonelocale_data_p.h
 )
 
 qt_internal_extend_target(Core CONDITION QT_FEATURE_datetimeparser
