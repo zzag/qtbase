@@ -1512,6 +1512,7 @@ static QList<QByteArray> set_union(const QList<QByteArray> &l1, const QList<QByt
 
 QList<QByteArray> QTimeZone::availableTimeZoneIds()
 {
+    // Backends MUST implement availableTimeZoneIds().
     return set_union(QUtcTimeZonePrivate().availableTimeZoneIds(),
                      global_tz->backend->availableTimeZoneIds());
 }

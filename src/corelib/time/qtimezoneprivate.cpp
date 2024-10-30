@@ -601,17 +601,12 @@ QByteArray QTimeZonePrivate::systemTimeZoneId() const
     return QByteArray();
 }
 
-bool QTimeZonePrivate::isTimeZoneIdAvailable(const QByteArray& ianaId) const
+bool QTimeZonePrivate::isTimeZoneIdAvailable(const QByteArray &ianaId) const
 {
     // Fall-back implementation, can be made faster in subclasses.
     // Backends that don't cache the available list SHOULD override this.
     const QList<QByteArray> tzIds = availableTimeZoneIds();
     return std::binary_search(tzIds.begin(), tzIds.end(), ianaId);
-}
-
-QList<QByteArray> QTimeZonePrivate::availableTimeZoneIds() const
-{
-    return QList<QByteArray>();
 }
 
 static QList<QByteArray> selectAvailable(QList<QByteArrayView> &&desired,

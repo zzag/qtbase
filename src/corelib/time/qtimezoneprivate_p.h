@@ -120,7 +120,7 @@ public:
     virtual QByteArray systemTimeZoneId() const;
 
     virtual bool isTimeZoneIdAvailable(const QByteArray &ianaId) const;
-    virtual QList<QByteArray> availableTimeZoneIds() const;
+    virtual QList<QByteArray> availableTimeZoneIds() const = 0;
     virtual QList<QByteArray> availableTimeZoneIds(QLocale::Territory territory) const;
     virtual QList<QByteArray> availableTimeZoneIds(int utcOffset) const;
 
@@ -255,6 +255,10 @@ public:
     int offsetFromUtc(qint64 atMSecsSinceEpoch) const override;
     int standardTimeOffset(qint64 atMSecsSinceEpoch) const override;
     int daylightTimeOffset(qint64 atMSecsSinceEpoch) const override;
+
+    bool isTimeZoneIdAvailable(const QByteArray &ianaId) const override;
+    QList<QByteArray> availableTimeZoneIds() const override;
+    QList<QByteArray> availableTimeZoneIds(int utcOffset) const override;
 
     bool hasDaylightTime() const override;
     bool isDaylightTime(qint64 atMSecsSinceEpoch) const override;
