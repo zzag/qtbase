@@ -15,12 +15,14 @@
  * Supported instruction set extensions are:
  *   Flag      | Arch
  *  neon       | ARM
+ *  sve        | ARM
  *  mips_dsp   | mips
  *  mips_dspr2 | mips
  *  sse2       | x86
  *  sse4_1     | x86
  *  sse4_2     | x86
  *  avx        | x86
+ *  avx2       | x86
  *  lsx        | loongarch
  *  lasx       | loongarch
  *
@@ -41,6 +43,15 @@
 #  define QT_COMPILER_USES_neon 1
 #else
 #  define QT_COMPILER_USES_neon -1
+#endif
+
+// To avoid to many untestable fringe cases we so far only support 64bit LE in SVE code
+// The test for QT_COMPILER_SUPPORTS_SVE ensures the intrinsics exists
+#if defined(Q_PROCESSOR_ARM_64) && defined(__ARM_FEATURE_SVE) && defined(Q_LITTLE_ENDIAN) && defined(QT_COMPILER_SUPPORTS_SVE)
+#  include <arm_sve.h>
+#  define QT_COMPILER_USES_sve 1
+#else
+#  define QT_COMPILER_USES_sve -1
 #endif
 
 #if defined(Q_PROCESSOR_MIPS) && (defined(__MIPS_DSP__) || (defined(__mips_dsp) && defined(Q_PROCESSOR_MIPS_32)))
@@ -138,6 +149,12 @@
 #  define QT_COMPILER_USES_avx 1
 #else
 #  define QT_COMPILER_USES_avx -1
+#endif
+
+#if defined(Q_PROCESSOR_X86) && defined(__AVX2__)
+#  define QT_COMPILER_USES_avx2 1
+#else
+#  define QT_COMPILER_USES_avx2 -1
 #endif
 
 #ifndef QT_VECTORCALL
