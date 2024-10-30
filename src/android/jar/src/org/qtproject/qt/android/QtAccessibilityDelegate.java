@@ -87,8 +87,13 @@ class QtAccessibilityDelegate extends View.AccessibilityDelegate
         @Override
         public void onAccessibilityStateChanged(boolean enabled)
         {
-            if (m_layout == null || Os.getenv("QT_ANDROID_DISABLE_ACCESSIBILITY") != null)
+            if (m_layout == null)
                 return;
+
+            final String isA11yOff = Os.getenv("QT_ANDROID_DISABLE_ACCESSIBILITY");
+            if (isA11yOff != null && (isA11yOff.equalsIgnoreCase("true") || isA11yOff.equals("1")))
+                return;
+
             if (!enabled) {
                 if (m_view != null) {
                     m_layout.removeView(m_view);
