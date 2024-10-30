@@ -1486,8 +1486,18 @@ bool QTimeZone::isTimeZoneIdAvailable(const QByteArray &ianaId)
         || global_tz->backend->isTimeZoneIdAvailable(ianaId);
 }
 
+[[maybe_unused]] static bool isUniqueSorted(const QList<QByteArray> &seq)
+{
+    // Since [..., b, a, ...] isn't unique-sorted if a <= b, at least the
+    // suggested implementations of is_sorted() and is_sorted_until() imply a
+    // non-unique sorted list will fail is_sorted() with <= comparison.
+    return std::is_sorted(seq.begin(), seq.end(), std::less_equal<QByteArray>());
+}
+
 static QList<QByteArray> set_union(const QList<QByteArray> &l1, const QList<QByteArray> &l2)
 {
+    Q_ASSERT(isUniqueSorted(l1));
+    Q_ASSERT(isUniqueSorted(l2));
     QList<QByteArray> result;
     result.reserve(l1.size() + l2.size());
     std::set_union(l1.begin(), l1.end(),
@@ -1511,6 +1521,7 @@ static QList<QByteArray> set_union(const QList<QByteArray> &l1, const QList<QByt
 QList<QByteArray> QTimeZone::availableTimeZoneIds()
 {
     // Backends MUST implement availableTimeZoneIds().
+    // The return from each backend MUST be sorted and unique.
     return set_union(QUtcTimeZonePrivate().availableTimeZoneIds(),
                      global_tz->backend->availableTimeZoneIds());
 }
