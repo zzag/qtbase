@@ -333,12 +333,6 @@ public class QtActivityBase extends Activity
         m_delegate.hideSplashScreen(duration);
     }
 
-    @UsedFromNativeCode
-    QtActivityDelegateBase getActivityDelegate()
-    {
-        return m_delegate;
-    }
-
     private void showErrorDialog() {
         Resources resources = getResources();
         String packageName = getPackageName();
