@@ -252,7 +252,7 @@ static inline quint64 detectProcessorFeatures()
 # define X86_BASELINE   "no-sse"
 #endif
 
-#if defined(Q_CC_GNU)
+#if defined(Q_CC_GNU) || defined(Q_CC_CLANG)
 // lower the target for functions in this file
 #  undef QT_FUNCTION_TARGET_BASELINE
 #  define QT_FUNCTION_TARGET_BASELINE               __attribute__((target(X86_BASELINE)))

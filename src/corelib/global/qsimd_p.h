@@ -101,7 +101,7 @@ QT_WARNING_DISABLE_INTEL(103)
 
 #if defined(Q_PROCESSOR_ARM_64)
 #  define QT_COMPILER_SUPPORTS_HERE(x)    ((__ARM_FEATURE_ ## x) || (__ ## x ## __) || QT_COMPILER_SUPPORTS(x))
-#  if defined(Q_CC_GNU)
+#  if defined(Q_CC_GNU) || defined(Q_CC_CLANG)
      /* GCC requires attributes for a function */
 #    define QT_FUNCTION_TARGET(x)  __attribute__((__target__(QT_FUNCTION_TARGET_STRING_ ## x)))
 #  else
@@ -124,12 +124,12 @@ QT_WARNING_DISABLE_INTEL(103)
 #  define QT_COMPILER_SUPPORTS_HERE(x)    QT_COMPILER_SUPPORTS(x)
 #  define QT_FUNCTION_TARGET(x)
 #elif defined(Q_PROCESSOR_X86)
-#  if defined(Q_CC_CLANG) && defined(Q_CC_MSVC)
+#  if defined(Q_CC_CLANG) && defined(Q_CC_MSVC) && (Q_CC_CLANG < 1900)
 #    define QT_COMPILER_SUPPORTS_HERE(x)    (__ ## x ## __)
 #  else
 #    define QT_COMPILER_SUPPORTS_HERE(x)    ((__ ## x ## __) || QT_COMPILER_SUPPORTS(x))
 #  endif
-#  if defined(Q_CC_GNU)
+#  if defined(Q_CC_GNU) || defined(Q_CC_CLANG)
      /* GCC requires attributes for a function */
 #    define QT_FUNCTION_TARGET(x)  __attribute__((__target__(QT_FUNCTION_TARGET_STRING_ ## x)))
 #  else
