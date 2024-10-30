@@ -499,6 +499,9 @@ function(qt_internal_add_module target)
         # Plugin types associated to a module
         if(NOT "x${arg_PLUGIN_TYPES}" STREQUAL "x")
             qt_internal_add_plugin_types("${target}" "${arg_PLUGIN_TYPES}")
+            # Ensure that QT_PLUGIN_TARGETS is a known transitive compile property. Works with CMake
+            # versions >= 3.30.
+            _qt_internal_add_transitive_property(${target} COMPILE QT_PLUGIN_TARGETS)
         endif()
     endif()
 
