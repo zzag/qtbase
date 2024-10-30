@@ -238,6 +238,8 @@ private slots:
     void storeRestoreLowMemoryMode();
     void setSectionResizeModeWithSectionWillTakeMemory();
 
+    void setDefaultSectionSizeRespectsColumnWidth();
+
 protected:
     void setupTestData(bool use_reset_model = false);
     void additionalInit();
@@ -3821,6 +3823,33 @@ void tst_QHeaderView::setSectionResizeModeWithSectionWillTakeMemory()
     TableViewWithBasicModel tv2;
     tv2.header->setSectionResizeMode(500, QHeaderView::Interactive);
     QVERIFY(!tv2.hasLowMemoryUsage());
+}
+
+void tst_QHeaderView::setDefaultSectionSizeRespectsColumnWidth()
+{
+    QTreeWidget tree;
+    tree.setHeaderItem(new QTreeWidgetItem({"Col 0", "Col 1", "Col 2"}));
+    tree.header()->setStretchLastSection(false);
+
+    int columnWidths[3] = {};
+    for (int c = tree.columnCount() - 1; c >= 0; --c) {
+        columnWidths[c] = tree.columnWidth(c) * 2;
+        tree.setColumnWidth(c, columnWidths[c]);
+    }
+    tree.show();
+    QVERIFY(QTest::qWaitForWindowExposed(&tree));
+
+    for (int c = 0; c < tree.columnCount(); ++c)
+        QTRY_COMPARE(tree.columnWidth(c), columnWidths[c]);
+
+    // trigger a style change event
+    tree.setStyleSheet("QTreeView { qproperty-headerHidden: true }");
+    QTRY_COMPARE(tree.isHeaderHidden(), true);
+    tree.setStyleSheet("QTreeView { qproperty-headerHidden: false }");
+    QTRY_COMPARE(tree.isHeaderHidden(), false);
+
+    for (int c = 0; c < tree.columnCount(); ++c)
+        QTRY_COMPARE(tree.columnWidth(c), columnWidths[c]);
 }
 
 QTEST_MAIN(tst_QHeaderView)
