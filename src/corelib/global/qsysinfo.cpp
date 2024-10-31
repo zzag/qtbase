@@ -135,14 +135,12 @@ public:
 QWindowsSockInit::QWindowsSockInit()
 :   version(0)
 {
-    //### should we try for 2.2 on all platforms ??
     WSAData wsadata;
 
-    // IPv6 requires Winsock v2.0 or better.
-    if (WSAStartup(MAKEWORD(2, 0), &wsadata) != 0) {
-        qWarning("QTcpSocketAPI: WinSock v2.0 initialization failed.");
+    if (WSAStartup(MAKEWORD(2, 2), &wsadata) != 0) {
+        qWarning("QTcpSocketAPI: WinSock v2.2 initialization failed.");
     } else {
-        version = 0x20;
+        version = 0x22;
     }
 }
 
