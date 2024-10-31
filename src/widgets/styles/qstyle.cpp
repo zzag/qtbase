@@ -2433,7 +2433,7 @@ QCachedPainter::QCachedPainter(QPainter *painter, const QString &cachePrefix,
     , m_option(option)
     , m_paintRect(paintRect)
 {
-    const auto sz = size.isNull() ? option->rect.size() : size;
+    const auto sz = size.isEmpty() ? option->rect.size() : size;
     const qreal dpr = QStyleHelper::getDpr(painter);
     m_pixmapName = QStyleHelper::uniqueName(cachePrefix, option, sz, dpr);
     m_alreadyCached = QPixmapCache::find(m_pixmapName, &m_pixmap);
