@@ -615,7 +615,7 @@ qt_feature("cxx17_filesystem" PUBLIC
 )
 qt_feature("broken-threadlocal-dtors" PRIVATE
     LABEL "Broken execution of thread_local destructors at exit() time"
-    # Windows broken in different ways from Unix
+    # Windows is broken in different ways from Unix
     CONDITION WIN32 OR NOT (TEST_cxa_thread_atexit OR TEST_cxa_thread_atexit_impl)
 )
 qt_feature("dladdr" PRIVATE
