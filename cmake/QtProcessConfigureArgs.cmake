@@ -241,6 +241,7 @@ macro(defstub name)
 endmacro()
 
 defstub(qt_add_qmake_lib_dependency)
+defstub(qt_run_config_compile_test)
 defstub(qt_config_compile_test)
 defstub(qt_config_compile_test_armintrin)
 defstub(qt_config_compile_test_machine_tuple)

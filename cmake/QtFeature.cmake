@@ -127,6 +127,7 @@ function(qt_internal_evaluate_config_expression resultVar outIdx startIdx)
     set(result "")
     set(expression "${ARGN}")
     list(LENGTH expression length)
+    get_property(known_compile_tests GLOBAL PROPERTY _qtfeature_known_compile_tests)
 
     math(EXPR memberIdx "${startIdx} - 1")
     math(EXPR length "${length}-1")
@@ -177,8 +178,13 @@ function(qt_internal_evaluate_config_expression resultVar outIdx startIdx)
             string(COMPARE EQUAL "${lhs}" "${rhs}" stringCompareResult)
             list(APPEND result ${stringCompareResult})
         else()
-            string(FIND "${member}" "QT_FEATURE_" idx)
-            if(idx EQUAL 0)
+            if(member MATCHES "^TEST_")
+                # Remove the TEST_ prefix
+                string(SUBSTRING "${member}" 5 -1 test_name)
+                if(test_name IN_LIST known_compile_tests)
+                    qt_run_config_compile_test("${test_name}")
+                endif()
+            elseif(member MATCHES "^QT_FEATURE_")
                 # Remove the QT_FEATURE_ prefix
                 string(SUBSTRING "${member}" 11 -1 feature)
                 qt_evaluate_feature(${feature})
@@ -949,13 +955,33 @@ endfunction()
 #
 # Sets a TEST_${name}_OUTPUT variable with the build output, to the scope of the calling function.
 # Sets a TEST_${name} cache variable to either TRUE or FALSE if the build is successful or not.
-function(qt_config_compile_test name)
+#
+# The test is only run if a feature condition needs to evaluate the TEST_${name} variable. If you
+# need the test result regardless of any feature conditions, call
+# qt_run_config_compile_test right after qt_config_compile_test.
+macro(qt_config_compile_test name)
+    set_property(GLOBAL APPEND PROPERTY _qtfeature_known_compile_tests ${name})
+    set_property(GLOBAL PROPERTY _qtfeature_compile_test_args_${name} ${ARGN})
+    if(QT_RUN_COMPILE_TESTS_IMMEDIATELY)
+        qt_run_config_compile_test(${name})
+    endif()
+endmacro()
+
+# Runs a compile test that was defined with qt_config_compile_test.
+function(qt_run_config_compile_test name)
     if(DEFINED "TEST_${name}")
         return()
     endif()
 
+    get_property(test_args GLOBAL PROPERTY _qtfeature_compile_test_args_${name})
+    if("${test_args}" STREQUAL "")
+        message(FATAL_ERROR
+            "Can't find definition for compile test '${name}'. "
+            "The test probably wasn't defined with qt_config_compile_test."
+        )
+    endif()
     cmake_parse_arguments(arg "" "LABEL;PROJECT_PATH;C_STANDARD;CXX_STANDARD"
-        "COMPILE_OPTIONS;LIBRARIES;CODE;PACKAGES;CMAKE_FLAGS" ${ARGN})
+        "COMPILE_OPTIONS;LIBRARIES;CODE;PACKAGES;CMAKE_FLAGS" ${test_args})
 
     if(arg_PROJECT_PATH)
         message(STATUS "Performing Test ${arg_LABEL}")
