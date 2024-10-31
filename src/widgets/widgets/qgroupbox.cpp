@@ -727,9 +727,8 @@ void QGroupBox::mouseReleaseEvent(QMouseEvent *event)
 bool QGroupBoxPrivate::shouldHandleKeyEvent(const QKeyEvent *keyEvent) const
 {
     Q_Q(const QGroupBox);
-    Q_ASSERT(q->isEnabled());
 
-    if (!q->isCheckable() || keyEvent->isAutoRepeat())
+    if (!q->isEnabled() || !q->isCheckable() || keyEvent->isAutoRepeat())
         return false;
 
     const QList<Qt::Key> buttonPressKeys = QGuiApplicationPrivate::platformTheme()
