@@ -616,6 +616,7 @@ void tst_QAnyStringView::fromCharacterSpecial() const
     // Treating 'ä' as a UTF-8 sequence doesn't make sense, as it would be
     // invalid. And this is not how legacy Qt APIs handled it, either:
     QCOMPARE_NE(QAnyStringView('\xE4').tag(), QAnyStringView::Tag::Utf8);
+    QCOMPARE_NE(QAnyStringView(u8' ').tag(), QAnyStringView::Tag::Utf8);
 
     // Latin1 is expected, but UTF-16 is harmless (atm, QL1C is converted to
     // QChar, thus UTF-16). We only care that it's not UTF-8, anyway:

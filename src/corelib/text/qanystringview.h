@@ -155,7 +155,7 @@ private:
     static constexpr QAnyStringView fromCharInternal(const Char &ch) noexcept
     {
         if constexpr (sizeof ch == 1) // even char8_t is Latin-1 as single octet
-            return QtPrivate::wrapped_t<Char, QLatin1StringView>{QByteArrayView{&ch, 1}};
+            return QAnyStringView{&ch, 1, size_t{Tag::Latin1}};
         else // sizeof ch == 2
             return {&ch, 1};
     }
