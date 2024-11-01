@@ -289,6 +289,7 @@ function(qt_internal_get_qt_build_public_helpers out_var)
         QtPublicFindPackageHelpers
         QtPublicGitHelpers
         QtPublicPluginHelpers
+        QtPublicPluginHelpers_v2
         QtPublicSbomGenerationHelpers
         QtPublicSbomHelpers
         QtPublicTargetHelpers
