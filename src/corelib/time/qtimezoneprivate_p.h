@@ -76,7 +76,7 @@ public:
 
     // Create null time zone
     QTimeZonePrivate();
-    QTimeZonePrivate(const QTimeZonePrivate &other);
+    QTimeZonePrivate(const QTimeZonePrivate &other) = default;
     virtual ~QTimeZonePrivate();
 
     virtual QTimeZonePrivate *clone() const = 0;
@@ -322,7 +322,7 @@ public:
     QAndroidTimeZonePrivate();
     // Create named time zone
     QAndroidTimeZonePrivate(const QByteArray &ianaId);
-    QAndroidTimeZonePrivate(const QAndroidTimeZonePrivate &other);
+    QAndroidTimeZonePrivate(const QAndroidTimeZonePrivate &) = default;
     ~QAndroidTimeZonePrivate();
 
     QAndroidTimeZonePrivate *clone() const override;
@@ -496,7 +496,7 @@ public:
     QWinTimeZonePrivate();
     // Create named time zone
     QWinTimeZonePrivate(const QByteArray &ianaId);
-    QWinTimeZonePrivate(const QWinTimeZonePrivate &other);
+    QWinTimeZonePrivate(const QWinTimeZonePrivate &) = default;
     ~QWinTimeZonePrivate();
 
     QWinTimeZonePrivate *clone() const override;

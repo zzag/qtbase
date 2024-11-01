@@ -490,13 +490,6 @@ QWinTimeZonePrivate::QWinTimeZonePrivate(const QByteArray &ianaId)
     init(ianaId);
 }
 
-QWinTimeZonePrivate::QWinTimeZonePrivate(const QWinTimeZonePrivate &other)
-                   : QTimeZonePrivate(other), m_windowsId(other.m_windowsId),
-                     m_displayName(other.m_displayName), m_standardName(other.m_standardName),
-                     m_daylightName(other.m_daylightName), m_tranRules(other.m_tranRules)
-{
-}
-
 QWinTimeZonePrivate::~QWinTimeZonePrivate()
 {
 }

@@ -43,13 +43,6 @@ QAndroidTimeZonePrivate::QAndroidTimeZonePrivate(const QByteArray &ianaId)
     init(ianaId);
 }
 
-QAndroidTimeZonePrivate::QAndroidTimeZonePrivate(const QAndroidTimeZonePrivate &other)
-    : QTimeZonePrivate(other)
-{
-    androidTimeZone = other.androidTimeZone;
-    m_id = other.id();
-}
-
 QAndroidTimeZonePrivate::~QAndroidTimeZonePrivate()
 {
 }

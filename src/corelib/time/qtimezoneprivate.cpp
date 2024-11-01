@@ -121,11 +121,6 @@ QTimeZonePrivate::QTimeZonePrivate()
                             earlierWinData));
 }
 
-QTimeZonePrivate::QTimeZonePrivate(const QTimeZonePrivate &other)
-    : QSharedData(other), m_id(other.m_id)
-{
-}
-
 QTimeZonePrivate::~QTimeZonePrivate()
 {
 }
