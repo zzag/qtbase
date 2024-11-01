@@ -59,6 +59,11 @@ QChronoTimeZonePrivate::QChronoTimeZonePrivate(QByteArrayView id)
         m_id.assign(m_timeZone->name());
 }
 
+QChronoTimeZonePrivate *QChronoTimeZonePrivate::clone() const
+{
+    return new QChronoTimeZonePrivate(*this);
+}
+
 QChronoTimeZonePrivate::~QChronoTimeZonePrivate()
         = default;
 

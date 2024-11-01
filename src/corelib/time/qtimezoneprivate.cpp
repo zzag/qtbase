@@ -130,11 +130,6 @@ QTimeZonePrivate::~QTimeZonePrivate()
 {
 }
 
-QTimeZonePrivate *QTimeZonePrivate::clone() const
-{
-    return new QTimeZonePrivate(*this);
-}
-
 bool QTimeZonePrivate::operator==(const QTimeZonePrivate &other) const
 {
     // TODO Too simple, but need to solve problem of comparing different derived classes

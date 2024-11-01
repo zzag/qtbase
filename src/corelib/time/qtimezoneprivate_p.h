@@ -76,7 +76,7 @@ public:
     QTimeZonePrivate(const QTimeZonePrivate &other);
     virtual ~QTimeZonePrivate();
 
-    virtual QTimeZonePrivate *clone() const;
+    virtual QTimeZonePrivate *clone() const = 0;
 
     bool operator==(const QTimeZonePrivate &other) const;
     bool operator!=(const QTimeZonePrivate &other) const;
@@ -236,10 +236,12 @@ private:
 #if QT_CONFIG(timezone_tzdb)
 class QChronoTimeZonePrivate final : public QTimeZonePrivate
 {
+    QChronoTimeZonePrivate(const QChronoTimeZonePrivate &) = default;
 public:
     QChronoTimeZonePrivate();
     QChronoTimeZonePrivate(QByteArrayView id);
     ~QChronoTimeZonePrivate() override;
+    QChronoTimeZonePrivate *clone() const override;
 
     QByteArray systemTimeZoneId() const override;
 
@@ -259,7 +261,6 @@ public:
 
 private:
     const std::chrono::time_zone *const m_timeZone;
-    Q_DISABLE_COPY_MOVE(QChronoTimeZonePrivate)
 };
 #elif defined(Q_OS_DARWIN)
 class Q_AUTOTEST_EXPORT QMacTimeZonePrivate final : public QTimeZonePrivate
