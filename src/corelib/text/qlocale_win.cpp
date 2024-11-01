@@ -1221,4 +1221,41 @@ Q_CORE_EXPORT QLocale qt_localeFromLCID(LCID id)
     return QLocale(QString::fromLatin1(getWinLocaleName(id)));
 }
 
+#if !QT_CONFIG(icu)
+
+static QString localeConvertString(const QString &localeID, const QString &str, bool *ok,
+                                   DWORD flags)
+{
+    Q_ASSERT(ok);
+    LCID lcid = LocaleNameToLCID(reinterpret_cast<const wchar_t *>(localeID.constData()), 0);
+    // First compute the size of the output string
+    const int size = LCMapStringW(lcid, flags, reinterpret_cast<const wchar_t *>(str.constData()),
+                                  str.size(), 0, 0);
+    QString buf(size, Qt::Uninitialized);
+    if (lcid == 0 || size == 0
+        || LCMapStringW(lcid, flags, reinterpret_cast<const wchar_t *>(str.constData()), str.size(),
+                        reinterpret_cast<wchar_t *>(buf.data()), buf.size()) == 0) {
+        *ok = false;
+        return QString();
+    }
+
+    *ok = true;
+
+    return buf;
+}
+
+QString QLocalePrivate::toLower(const QString &str, bool *ok) const
+{
+    return localeConvertString(QString::fromUtf8(bcp47Name()), str, ok,
+                               LCMAP_LOWERCASE | LCMAP_LINGUISTIC_CASING);
+}
+
+QString QLocalePrivate::toUpper(const QString &str, bool *ok) const
+{
+    return localeConvertString(QString::fromUtf8(bcp47Name()), str, ok,
+                               LCMAP_UPPERCASE | LCMAP_LINGUISTIC_CASING);
+}
+
+#endif
+
 QT_END_NAMESPACE

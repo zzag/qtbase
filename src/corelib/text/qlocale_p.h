@@ -186,14 +186,6 @@ protected:
 Q_DECLARE_TYPEINFO(QSystemLocale::QueryType, Q_PRIMITIVE_TYPE);
 Q_DECLARE_TYPEINFO(QSystemLocale::CurrencyToStringArgument, Q_RELOCATABLE_TYPE);
 
-#if QT_CONFIG(icu)
-namespace QIcu {
-    QString toUpper(const QByteArray &localeId, const QString &str, bool *ok);
-    QString toLower(const QByteArray &localeId, const QString &str, bool *ok);
-}
-#endif
-
-
 struct QLocaleId
 {
     [[nodiscard]] Q_AUTOTEST_EXPORT static QLocaleId fromName(QStringView name) noexcept;
@@ -559,6 +551,11 @@ public:
     [[nodiscard]] static QLocale::Territory codeToTerritory(QStringView code) noexcept;
 
     [[nodiscard]] QLocale::MeasurementSystem measurementSystem() const;
+
+#if QT_CONFIG(icu) || (defined(Q_OS_WIN) && !defined(QT_BOOTSTRAPPED))
+    [[nodiscard]] QString toUpper(const QString &str, bool *ok) const;
+    [[nodiscard]] QString toLower(const QString &str, bool *ok) const;
+#endif
 
     // System locale has an m_data all its own; all others have m_data = locale_data + m_index
     const QLocaleData *const m_data;
