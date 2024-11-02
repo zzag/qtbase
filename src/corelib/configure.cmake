@@ -446,6 +446,23 @@ int main()
 }
 ")
 
+# pthread_timedjoin
+qt_config_compile_test(pthread_timedjoin
+    LABEL "pthread_timedjoin()"
+    LIBRARIES Threads::Threads
+    CODE
+"#include <pthread.h>
+#if __has_include(<pthread_np.h>)
+#  include <pthread_np.h>
+#endif
+int main()
+{
+    void *ret;
+    const struct timespec ts = {};
+    return pthread_timedjoin_np(pthread_self(), &ret, &ts);
+}
+")
+
 # renameat2
 qt_config_compile_test(renameat2
     LABEL "renameat2()"
@@ -712,6 +729,11 @@ qt_feature("pthread_clockjoin" PRIVATE
     LABEL "pthread_clockjoin() function"
     AUTODETECT UNIX
     CONDITION UNIX AND QT_FEATURE_thread AND TEST_pthread_clockjoin
+)
+qt_feature("pthread_timedjoin" PRIVATE
+    LABEL "pthread_timedjoin() function"
+    AUTODETECT UNIX
+    CONDITION UNIX AND QT_FEATURE_thread AND TEST_pthread_timedjoin
 )
 qt_feature("qqnx_pps" PRIVATE
     LABEL "PPS"

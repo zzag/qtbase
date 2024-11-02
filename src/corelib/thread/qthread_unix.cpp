@@ -28,6 +28,9 @@
 
 #include <sched.h>
 #include <errno.h>
+#if __has_include(<pthread_np.h>)
+#  include <pthread_np.h>
+#endif
 
 #if defined(Q_OS_FREEBSD)
 #  include <sys/cpuset.h>
@@ -73,10 +76,10 @@ static_assert(sizeof(pthread_t) <= sizeof(Qt::HANDLE));
 
 enum { ThreadPriorityResetFlag = 0x80000000 };
 
-#if QT_CONFIG(pthread_clockjoin)
-// If we have a way to perform a timed pthread_join(), we will do it. This
-// ensures that QThread::wait() only returns after pthread_join() or equivalent
-// has returned, ensuring that the thread has definitely exited.
+// If we have a way to perform a timed pthread_join(), we will do it if its
+// clock is not worse than the one QWaitCondition is using. This ensures that
+// QThread::wait() only returns after pthread_join() or equivalent has
+// returned, ensuring that the thread has definitely exited.
 //
 // Because only one thread can call this family of functions at a time, we
 // count how many threads are waiting and all but one of them wait on a
@@ -85,16 +88,19 @@ enum { ThreadPriorityResetFlag = 0x80000000 };
 // thread in charge wakes up one of the other waiters (if there's any) to
 // assume responsibility for joining.
 //
-// We don't bother with pthread_timedjoin() implementations that take a
-// CLOCK_REALTIME timeout.
-#else
 // If we don't have a way to perform timed pthread_join(), then we don't try
 // joining a all. All waiting threads will wait for the launched thread to
 // call QWaitCondition::wakeAll(). Note in this case it is possible for the
 // waiting threads to conclude the launched thread has exited before it has.
 //
 // To support this scenario, we start the thread in detached state.
+static constexpr bool UsingPThreadTimedJoin = QT_CONFIG(pthread_clockjoin)
+        || (QT_CONFIG(pthread_timedjoin) && SteadyClockClockId == CLOCK_REALTIME);
+#if !QT_CONFIG(pthread_clockjoin)
 int pthread_clockjoin_np(...) { return ENOSYS; }    // pretend
+#endif
+#if !QT_CONFIG(pthread_timedjoin)
+int pthread_timedjoin_np(...) { return ENOSYS; }    // pretend
 #endif
 
 #if QT_CONFIG(broken_threadlocal_dtors)
@@ -707,7 +713,7 @@ void QThread::start(Priority priority)
 
     pthread_attr_t attr;
     pthread_attr_init(&attr);
-    if constexpr (!QT_CONFIG(pthread_clockjoin))
+    if constexpr (!UsingPThreadTimedJoin)
         pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
 #ifdef Q_OS_DARWIN
     if (d->serviceLevel != QThread::QualityOfService::Auto)
@@ -852,7 +858,7 @@ static void wakeAllInternal(QThreadPrivate *d)
 
 inline void QThreadPrivate::wakeAll()
 {
-    if (data->isAdopted || !QT_CONFIG(pthread_clockjoin))
+    if (data->isAdopted || !UsingPThreadTimedJoin)
         wakeAllInternal(this);
 }
 
@@ -908,7 +914,10 @@ bool QThreadPrivate::wait(QMutexLocker<QMutex> &locker, QDeadlineTimer deadline)
 
         pthread_cleanup_push(&CancelState::run, &nocancel);
         pthread_t thrId = from_HANDLE<pthread_t>(data->threadId.loadRelaxed());
-        r = pthread_clockjoin_np(thrId, nullptr, SteadyClockClockId, pts);
+        if constexpr (QT_CONFIG(pthread_clockjoin))
+            r = pthread_clockjoin_np(thrId, nullptr, SteadyClockClockId, pts);
+        else
+            r = pthread_timedjoin_np(thrId, nullptr, pts);
         Q_ASSERT(r == 0 || r == ETIMEDOUT);
         pthread_cleanup_pop(1);
 
@@ -927,7 +936,7 @@ bool QThreadPrivate::wait(QMutexLocker<QMutex> &locker, QDeadlineTimer deadline)
         --(*static_cast<decltype(waiters) *>(ptr));
     }, &waiters);
     for (;;) {
-        if (QT_CONFIG(pthread_clockjoin) && mustJoin && !data->isAdopted) {
+        if (UsingPThreadTimedJoin && mustJoin && !data->isAdopted) {
             result = doJoin();
             break;
         }
