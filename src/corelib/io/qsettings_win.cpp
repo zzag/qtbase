@@ -547,8 +547,7 @@ HKEY QWinSettingsPrivate::writeHandle() const
 QWinSettingsPrivate::~QWinSettingsPrivate()
 {
     if (deleteWriteHandleOnExit && writeHandle() != 0) {
-        QString emptyKey;
-        DWORD res = RegDeleteKey(writeHandle(), reinterpret_cast<const wchar_t *>(emptyKey.utf16()));
+        DWORD res = RegDeleteKey(writeHandle(), L"");
         if (res != ERROR_SUCCESS) {
             qErrnoWarning(int(res), "QSettings: Failed to delete key \"%ls\"",
                           qUtf16Printable(regList.constFirst().key()));
