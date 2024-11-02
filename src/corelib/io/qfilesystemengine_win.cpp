@@ -684,7 +684,7 @@ static QString readSymLink(const QFileSystemEntry &link)
             DWORD len;
             wchar_t buffer[MAX_PATH];
             const QString volumeName = "\\\\?\\"_L1 + matchVolume.captured();
-            if (GetVolumePathNamesForVolumeName(reinterpret_cast<LPCWSTR>(volumeName.utf16()),
+            if (GetVolumePathNamesForVolumeName(reinterpret_cast<LPCWSTR>(volumeName.unicode()),
                                                 buffer, MAX_PATH, &len)
                 != 0) {
                 result.replace(0, matchVolume.capturedLength(), QString::fromWCharArray(buffer));

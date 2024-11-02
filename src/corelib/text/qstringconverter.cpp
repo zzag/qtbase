@@ -1799,7 +1799,7 @@ QByteArray QLocal8Bit::convertFromUnicode_sys(QStringView in, quint32 codePage,
                 fprintf(stderr,
                         "WideCharToMultiByte: Cannot convert multibyte text (error %d): %ls\n", r,
                         reinterpret_cast<const wchar_t *>(
-                                QStringView(ch, uclen).left(100).toString().utf16()));
+                                QStringView(ch, uclen).left(100).toString().unicode()));
 #endif
                 break;
             }

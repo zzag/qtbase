@@ -546,7 +546,7 @@ void QWinTimeZonePrivate::init(const QByteArray &ianaId)
                     bool ruleOk;
                     QWinTransitionRule rule =
                         readRegistryRule(dynamicKey,
-                                         reinterpret_cast<LPCWSTR>(QString::number(year).utf16()),
+                                         reinterpret_cast<LPCWSTR>(QString::number(year).unicode()),
                                          &ruleOk);
                     if (ruleOk
                         // Don't repeat a recurrent rule:
