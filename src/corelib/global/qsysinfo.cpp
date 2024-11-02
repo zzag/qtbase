@@ -963,11 +963,11 @@ QString QSysInfo::machineHostName()
     hostName.resize(512);
     unsigned long len = hostName.size();
     BOOL res = GetComputerNameEx(ComputerNameDnsHostname,
-            reinterpret_cast<wchar_t *>(const_cast<quint16 *>(hostName.utf16())), &len);
+                                 reinterpret_cast<wchar_t *>(hostName.data()), &len);
     if (!res && len > 512) {
         hostName.resize(len - 1);
-        GetComputerNameEx(ComputerNameDnsHostname,
-                reinterpret_cast<wchar_t *>(const_cast<quint16 *>(hostName.utf16())), &len);
+        GetComputerNameEx(ComputerNameDnsHostname, reinterpret_cast<wchar_t *>(hostName.data()),
+                          &len);
     }
     hostName.truncate(len);
     return hostName;
