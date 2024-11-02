@@ -446,6 +446,20 @@ int main()
 }
 ")
 
+# pthread_condattr_setclock
+qt_config_compile_test(pthread_condattr_setclock
+    LABEL "pthread_condattr_setclock()"
+    LIBRARIES Threads::Threads
+    CODE
+"#include <pthread.h>
+#include <time.h>
+int main()
+{
+    pthread_condattr_t condattr;
+    return pthread_condattr_setclock(&condattr, CLOCK_REALTIME);
+}
+")
+
 # pthread_timedjoin
 qt_config_compile_test(pthread_timedjoin
     LABEL "pthread_timedjoin()"
@@ -729,6 +743,11 @@ qt_feature("pthread_clockjoin" PRIVATE
     LABEL "pthread_clockjoin() function"
     AUTODETECT UNIX
     CONDITION UNIX AND QT_FEATURE_thread AND TEST_pthread_clockjoin
+)
+qt_feature("pthread_condattr_setclock" PRIVATE
+    LABEL "pthread_condattr_setclock() function"
+    AUTODETECT UNIX
+    CONDITION UNIX AND QT_FEATURE_thread AND TEST_pthread_condattr_setclock
 )
 qt_feature("pthread_timedjoin" PRIVATE
     LABEL "pthread_timedjoin() function"

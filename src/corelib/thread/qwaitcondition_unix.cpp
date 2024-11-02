@@ -30,14 +30,14 @@ static void qt_initialize_pthread_cond(pthread_cond_t *cond, const char *where)
 {
     pthread_condattr_t *attrp = nullptr;
 
-#if defined(CLOCK_MONOTONIC) && !defined(Q_OS_DARWIN)
+#if QT_CONFIG(pthread_condattr_setclock)
     pthread_condattr_t condattr;
     attrp = &condattr;
 
     pthread_condattr_init(&condattr);
     auto destroy = qScopeGuard([&] { pthread_condattr_destroy(&condattr); });
-    if (SteadyClockClockId != CLOCK_REALTIME)
-        pthread_condattr_setclock(&condattr, SteadyClockClockId);
+    if (QWaitConditionClockId != CLOCK_REALTIME)
+        pthread_condattr_setclock(&condattr, QWaitConditionClockId);
 #endif
 
     qt_report_pthread_error(pthread_cond_init(cond, attrp), where, "cv init");
@@ -53,7 +53,7 @@ public:
 
     int wait_relative(QDeadlineTimer deadline)
     {
-        timespec ti = deadlineToAbstime(deadline);
+        timespec ti = deadlineToAbstime<QWaitConditionClockId>(deadline);
         return pthread_cond_timedwait(&cond, &mutex, &ti);
     }
 

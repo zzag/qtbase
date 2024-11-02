@@ -95,7 +95,7 @@ enum { ThreadPriorityResetFlag = 0x80000000 };
 //
 // To support this scenario, we start the thread in detached state.
 static constexpr bool UsingPThreadTimedJoin = QT_CONFIG(pthread_clockjoin)
-        || (QT_CONFIG(pthread_timedjoin) && SteadyClockClockId == CLOCK_REALTIME);
+        || (QT_CONFIG(pthread_timedjoin) && QWaitConditionClockId == CLOCK_REALTIME);
 #if !QT_CONFIG(pthread_clockjoin)
 int pthread_clockjoin_np(...) { return ENOSYS; }    // pretend
 #endif
