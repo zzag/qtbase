@@ -2544,11 +2544,16 @@ qint64 QCoreApplication::applicationPid()
 }
 
 #ifdef Q_OS_WIN
-static inline QStringList winCmdArgs(const QString &cmdLine)
+static QStringList winCmdArgs()
 {
+    // On Windows, it is possible to pass Unicode arguments on
+    // the command line, but we don't implement any of the wide
+    // entry-points (wmain/wWinMain), so get the arguments from
+    // the Windows API instead of using argv. Note that we only
+    // do this when argv were not modified by the user in main().
     QStringList result;
     int size;
-    if (wchar_t **argv = CommandLineToArgvW(reinterpret_cast<const wchar_t *>(cmdLine.utf16()), &size)) {
+    if (wchar_t **argv = CommandLineToArgvW(GetCommandLine(), &size)) {
         result.reserve(size);
         wchar_t **argvEnd = argv + size;
         for (wchar_t **a = argv; a < argvEnd; ++a)
@@ -2608,13 +2613,7 @@ QStringList QCoreApplication::arguments()
 #if defined(Q_OS_WIN)
     const bool argsModifiedByUser = d->origArgv == nullptr;
     if (!argsModifiedByUser) {
-        // On Windows, it is possible to pass Unicode arguments on
-        // the command line, but we don't implement any of the wide
-        // entry-points (wmain/wWinMain), so get the arguments from
-        // the Windows API instead of using argv. Note that we only
-        // do this when argv were not modified by the user in main().
-        QString cmdline = QString::fromWCharArray(GetCommandLine());
-        QStringList commandLineArguments = winCmdArgs(cmdline);
+        QStringList commandLineArguments = winCmdArgs();
 
         // Even if the user didn't modify argv before passing them
         // on to QCoreApplication, derived QApplications might have.
