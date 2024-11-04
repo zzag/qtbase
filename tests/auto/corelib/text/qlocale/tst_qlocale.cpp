@@ -4232,17 +4232,22 @@ void tst_QLocale::mySystemLocale()
     QFETCH(QLocale::Language, language);
     QFETCH(QStringList, uiLanguages);
 
+    const QLocale::NumberOptions eno
+        = language == QLocale::C ? QLocale::OmitGroupSeparator : QLocale::DefaultNumberOptions;
+
     {
         MySystemLocale sLocale(name);
         QCOMPARE(QLocale().language(), language);
-        QCOMPARE(QLocale::system().language(), language);
+        const QLocale sys = QLocale::system();
+        QCOMPARE(sys.language(), language);
         auto reporter = qScopeGuard([]() {
             qDebug("Actual entries:\n\t%s",
                    qPrintable(QLocale::system().uiLanguages().join(u"\n\t")));
         });
-        QCOMPARE(QLocale::system().uiLanguages(), uiLanguages);
-        QCOMPARE(QLocale::system().uiLanguages(QLocale::TagSeparator::Underscore),
+        QCOMPARE(sys.uiLanguages(), uiLanguages);
+        QCOMPARE(sys.uiLanguages(QLocale::TagSeparator::Underscore),
                  uiLanguages.replaceInStrings(u"-", u"_"));
+        QCOMPARE(sys.numberOptions(), eno);
         reporter.dismiss();
     }
 
