@@ -1378,14 +1378,13 @@ QString QLocale::createSeparatedList(const QStringList &list) const
 /*!
     \nonreentrant
 
-    Sets the global default locale to \a locale. These
-    values are used when a QLocale object is constructed with
-    no arguments. If this function is not called, the system's
-    locale is used.
+    Sets the global default locale to \a locale.
 
-    \warning In a multithreaded application, the default locale
-    should be set at application startup, before any non-GUI threads
-    are created.
+    This locale is used when a QLocale object is constructed with no
+    arguments. If this function is not called, the system's locale is used.
+
+    \warning In a multithreaded application, the default locale should be set at
+    application startup, before any non-GUI threads are created.
 
     \sa system(), c()
 */
