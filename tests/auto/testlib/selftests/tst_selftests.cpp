@@ -624,7 +624,7 @@ struct TestLogger
         return outputFile.readAll();
     }
 
-    bool shouldIgnoreTest(const QString &test, Throw throwing) const;
+    bool shouldIgnoreTest(const QString &test) const;
 
     operator QTestLog::LogMode() const { return logger; }
 
@@ -633,18 +633,12 @@ struct TestLogger
     ArgumentStyle argumentStyle = NewStyleArgument;
 };
 
-bool TestLogger::shouldIgnoreTest(const QString &test, Throw throwing) const
+bool TestLogger::shouldIgnoreTest(const QString &test) const
 {
 #if defined(QT_USE_APPLE_UNIFIED_LOGGING)
     if (logger == QTestLog::Apple)
         return true;
 #endif
-
-    if (throwing == Throw::OnFail && test == "cmptest") {
-        // This test requires continuing the same test function after failure,
-        // so the output is different with this flag.
-        return true;
-    }
 
     // These tests are affected by timing and whether the CPU tick counter
     // is monotonically increasing. They won't work on some machines so
@@ -1031,11 +1025,11 @@ TestProcessResult runTestProcess(const QString &test, const QStringList &argumen
 /*
     Runs a single test and verifies the output against the expected results.
 */
-void runTest(const QString &test, const TestLoggers &requestedLoggers, Throw throwing = {})
+void runTest(const QString &test, const TestLoggers &requestedLoggers)
 {
     TestLoggers loggers;
     for (auto logger : requestedLoggers) {
-        if (!logger.shouldIgnoreTest(test, throwing))
+        if (!logger.shouldIgnoreTest(test))
             loggers += logger;
     }
 
@@ -1045,10 +1039,6 @@ void runTest(const QString &test, const TestLoggers &requestedLoggers, Throw thr
     QStringList arguments;
     for (auto logger : loggers)
         arguments += logger.arguments(test);
-    if (throwing == Throw::OnFail) // don't distinguish between throwonfail/throwonskip
-        arguments += {"-throwonfail", "-throwonskip"};
-    else
-        arguments += {"-nothrowonfail", "-nothrowonskip"};
 
     CAPTURE(test);
     CAPTURE(arguments);
@@ -1075,9 +1065,9 @@ void runTest(const QString &test, const TestLoggers &requestedLoggers, Throw thr
 /*
     Runs a single test and verifies the output against the expected result.
 */
-void runTest(const QString &test, const TestLogger &logger, Throw t = {})
+void runTest(const QString &test, const TestLogger &logger)
 {
-    runTest(test, TestLoggers{logger}, t);
+    runTest(test, TestLoggers{logger});
 }
 
 // ----------------------- Catch helpers -----------------------
@@ -1220,12 +1210,7 @@ SCENARIO("Test output of the loggers is as expected")
     GIVEN("The " << logger << " logger") {
         for (QString test : tests) {
             AND_GIVEN("The " << test << " subtest") {
-                WHEN("Throwing on failure or skip") {
-                    runTest(test, TestLogger(logger, StdoutOutput), Throw::OnFail);
-                }
-                WHEN("Returning on failure or skip") {
-                    runTest(test, TestLogger(logger, StdoutOutput));
-                }
+                runTest(test, TestLogger(logger, StdoutOutput));
             }
         }
     }

@@ -305,9 +305,6 @@ void Internal::maybeThrowOnSkip()
     with \c{true}, you need to call it \e{N} times with \c{false} to get back
     to where you started.
 
-    The default is \c{false}, unless the \l{Qt Test Environment Variables}
-    {QTEST_THROW_ON_FAIL environment variable} is set.
-
     This call has no effect when the \l{QTEST_THROW_ON_FAIL} C++ macro is
     defined.
 
@@ -331,9 +328,6 @@ void setThrowOnFail(bool enable) noexcept
     The feature is reference-counted: If you call this function \e{N} times
     with \c{true}, you need to call it \e{N} times with \c{false} to get back
     to where you started.
-
-    The default is \c{false}, unless the \l{Qt Test Environment Variables}
-    {QTEST_THROW_ON_SKIP environment variable} is set.
 
     This call has no effect when the \l{QTEST_THROW_ON_SKIP} C++ macro is
     defined.
@@ -616,11 +610,6 @@ Q_TESTLIB_EXPORT void qtest_qParseArgs(int argc, const char *const argv[], bool 
     QTest::testFunctions.clear();
     QTest::testTags.clear();
 
-    if (qEnvironmentVariableIsSet("QTEST_THROW_ON_FAIL"))
-        QTest::setThrowOnFail(true);
-    if (qEnvironmentVariableIsSet("QTEST_THROW_ON_SKIP"))
-        QTest::setThrowOnSkip(true);
-
 #if defined(Q_OS_DARWIN) && defined(HAVE_XCTEST)
     if (QXcodeTestLogger::canLogTestProgress())
         logFormat = QTestLog::XCTest;
@@ -677,10 +666,6 @@ Q_TESTLIB_EXPORT void qtest_qParseArgs(int argc, const char *const argv[], bool 
          "                       repeated forever. This is intended as a developer tool, and\n"
          "                       is only supported with the plain text logger.\n"
          " -skipblacklisted    : Skip blacklisted tests. Useful for measuring test coverage.\n"
-         " -[no]throwonfail    : Enables/disables throwing on QCOMPARE()/QVERIFY()/etc.\n"
-         "                       Default: off,  unless QTEST_THROW_ON_FAIL is set.\n"
-         " -[no]throwonskip    : Enables/disables throwing on QSKIP().\n"
-         "                       Default: off,  unless QTEST_THROW_ON_SKIP is set.\n"
          "\n"
          " Benchmarking options:\n"
 #if QT_CONFIG(valgrind)
@@ -841,14 +826,6 @@ Q_TESTLIB_EXPORT void qtest_qParseArgs(int argc, const char *const argv[], bool 
             QTest::Internal::noCrashHandler = true;
         } else if (strcmp(argv[i], "-skipblacklisted") == 0) {
             QTest::skipBlacklisted = true;
-        } else if (strcmp(argv[i], "-throwonfail") == 0) {
-            QTest::setThrowOnFail(true);
-        } else if (strcmp(argv[i], "-nothrowonfail") == 0) {
-            QTest::setThrowOnFail(false);
-        } else if (strcmp(argv[i], "-throwonskip") == 0) {
-            QTest::setThrowOnSkip(true);
-        } else if (strcmp(argv[i], "-nothrowonskip") == 0) {
-            QTest::setThrowOnSkip(false);
 #if QT_CONFIG(valgrind)
         } else if (strcmp(argv[i], "-callgrind") == 0) {
             if (!QBenchmarkValgrindUtils::haveValgrind()) {
