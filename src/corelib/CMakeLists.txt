@@ -148,6 +148,7 @@ qt_internal_add_module(Core
         io/qurlquery.cpp io/qurlquery.h
         io/qurlrecode.cpp
         io/qzipreader_p.h io/qzipwriter_p.h io/qzip.cpp
+        io/wcharhelpers_win_p.h
         kernel/qabstracteventdispatcher.cpp kernel/qabstracteventdispatcher.h kernel/qabstracteventdispatcher_p.h
         kernel/qabstractnativeeventfilter.cpp kernel/qabstractnativeeventfilter.h
         kernel/qapplicationstatic.h

@@ -24,6 +24,8 @@
 #include <qt_windows.h>
 #ifndef QT_BOOTSTRAPPED
 #include <QtCore/qvarlengtharray.h>
+#include <QtCore/private/wcharhelpers_win_p.h>
+
 #include <QtCore/q20iterator.h>
 #include <QtCore/q26numeric.h>
 #endif // !QT_BOOTSTRAPPED
@@ -1797,9 +1799,8 @@ QByteArray QLocal8Bit::convertFromUnicode_sys(QStringView in, quint32 codePage,
 #ifndef QT_NO_DEBUG
                 // Can't use qWarning(), as it'll recurse to handle %ls
                 fprintf(stderr,
-                        "WideCharToMultiByte: Cannot convert multibyte text (error %d): %ls\n", r,
-                        reinterpret_cast<const wchar_t *>(
-                                QStringView(ch, uclen).left(100).toString().unicode()));
+                        "WideCharToMultiByte: Cannot convert multibyte text (error %d): %ls\n",
+                        r, qt_castToWchar(QStringView(ch, uclen).left(100).toString()));
 #endif
                 break;
             }

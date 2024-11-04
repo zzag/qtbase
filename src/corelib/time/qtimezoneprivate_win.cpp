@@ -8,6 +8,7 @@
 #include "qdatetime.h"
 #include "qdebug.h"
 #include <private/qnumeric_p.h>
+#include <private/wcharhelpers_win_p.h>
 
 #include <algorithm>
 
@@ -537,10 +538,9 @@ void QWinTimeZonePrivate::init(const QByteArray &ianaId)
                 const int endYear = dynamicKey.value<int>(L"LastEntry").value_or(0);
                 for (int year = startYear; year <= endYear; ++year) {
                     bool ruleOk;
-                    QWinTransitionRule rule =
-                        readRegistryRule(dynamicKey,
-                                         reinterpret_cast<LPCWSTR>(QString::number(year).unicode()),
-                                         &ruleOk);
+                    QWinTransitionRule rule = readRegistryRule(dynamicKey,
+                                                               qt_castToWchar(QString::number(year)),
+                                                               &ruleOk);
                     if (ruleOk
                         // Don't repeat a recurrent rule:
                         && (m_tranRules.isEmpty()
