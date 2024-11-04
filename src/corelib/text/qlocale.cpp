@@ -1271,8 +1271,7 @@ size_t qHash(const QLocale &key, size_t seed) noexcept
 /*!
     \since 4.2
 
-    Sets the \a options related to number conversions for this
-    QLocale instance.
+    Sets the \a options related to number conversions for this QLocale instance.
 
     \sa numberOptions(), FloatingPointPrecisionOption
 */
@@ -1284,11 +1283,10 @@ void QLocale::setNumberOptions(NumberOptions options)
 /*!
     \since 4.2
 
-    Returns the options related to number conversions for this
-    QLocale instance.
+    Returns the options related to number conversions for this QLocale instance.
 
-    By default, no options are set for the standard locales, except
-    for the "C" locale, which has OmitGroupSeparator set by default.
+    By default, no options are set for the standard locales, except for the "C"
+    locale, which has OmitGroupSeparator set by default.
 
     \sa setNumberOptions(), toString(), groupSeparator(), FloatingPointPrecisionOption
 */
