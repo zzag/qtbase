@@ -55,6 +55,10 @@ public:
     {
         return !m_alreadyCached;
     }
+    QRect pixmapRect() const
+    {
+        return QRect(0, 0, m_pixmap.width(), m_pixmap.height());
+    }
     QPainter *operator->()
     {
         return painter();

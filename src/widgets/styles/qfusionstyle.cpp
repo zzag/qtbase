@@ -775,7 +775,7 @@ void QFusionStyle::drawPrimitive(PrimitiveElement elem,
 
         QCachedPainter p(painter, u"pushbutton-" + buttonColor.name(QColor::HexArgb), option);
         if (p.needsPainting()) {
-            const QRect rect = QRect(0, 0, option->rect.width(), option->rect.height());
+            const QRect rect = p.pixmapRect();
             const QRect r = rect.adjusted(0, 1, -1, 0);
             const QColor &darkOutline = (hasFocus | isDefault) ? highlightedOutline : outline;
 
@@ -1120,8 +1120,7 @@ void QFusionStyle::drawControl(ControlElement element, const QStyleOption *optio
                                        % QLatin1Char(isSectionDragTarget ? '1' : '0');
             QCachedPainter cp(painter, pixmapName, option);
             if (cp.needsPainting()) {
-                const QRect &rect = option->rect;
-                QRect pixmapRect(0, 0, rect.width(), rect.height());
+                const QRect pixmapRect = cp.pixmapRect();
                 QColor buttonColor = d->buttonColor(option->palette);
                 QColor gradientStartColor = buttonColor.lighter(104);
                 QColor gradientStopColor = buttonColor.darker(102);
@@ -1821,7 +1820,7 @@ void QFusionStyle::drawComplexControl(ComplexControl control, const QStyleOption
         if (const QStyleOptionSpinBox *spinBox = qstyleoption_cast<const QStyleOptionSpinBox *>(option)) {
             QCachedPainter cp(painter, "spinbox"_L1, option);
             if (cp.needsPainting()) {
-                const QRect pixmapRect(0, 0, spinBox->rect.width(), spinBox->rect.height());
+                const QRect pixmapRect = cp.pixmapRect();
                 const QRect r = pixmapRect.adjusted(0, 1, 0, -1);
                 const QColor buttonColor = d->buttonColor(option->palette);
                 const QColor &gradientStopColor = buttonColor;
@@ -2509,7 +2508,7 @@ void QFusionStyle::drawComplexControl(ComplexControl control, const QStyleOption
                                        % QLatin1StringView(!comboBox->frame ? "-frameless" : "");
             QCachedPainter cp(painter, "spinbox"_L1, option);
             if (cp.needsPainting()) {
-                QRect pixmapRect(0, 0, comboBox->rect.width(), comboBox->rect.height());
+                const QRect pixmapRect = cp.pixmapRect();
                 QStyleOptionComboBox comboBoxCopy = *comboBox;
                 comboBoxCopy.rect = pixmapRect;
 
@@ -2611,10 +2610,10 @@ void QFusionStyle::drawComplexControl(ComplexControl control, const QStyleOption
 
 
             if ((option->subControls & SC_SliderGroove) && groove.isValid()) {
-                QRect pixmapRect(0, 0, groove.width(), groove.height());
                 // draw background groove
                 QCachedPainter cp(painter, "slider_groove"_L1, option, groove.size(), groove);
                 if (cp.needsPainting()) {
+                    const QRect pixmapRect = cp.pixmapRect();
                     const QColor buttonColor = d->buttonColor(option->palette);
                     const auto grooveColor =
                         QColor::fromHsv(buttonColor.hue(),
@@ -2657,6 +2656,7 @@ void QFusionStyle::drawComplexControl(ComplexControl control, const QStyleOption
 
                 QCachedPainter cpBlue(painter, "slider_groove_blue"_L1, option, groove.size(), groove);
                 if (cpBlue.needsPainting()) {
+                    const QRect pixmapRect = cp.pixmapRect();
                     QLinearGradient gradient;
                     if (horizontal) {
                         gradient.setStart(pixmapRect.center().x(), pixmapRect.top());
@@ -2750,7 +2750,7 @@ void QFusionStyle::drawComplexControl(ComplexControl control, const QStyleOption
             if ((option->subControls & SC_SliderHandle) ) {
                 QCachedPainter cp(painter, "slider_handle"_L1, option, handle.size(), handle);
                 if (cp.needsPainting()) {
-                    QRect pixmapRect(0, 0, handle.width(), handle.height());
+                    const QRect pixmapRect = cp.pixmapRect();
                     QRect gradRect = pixmapRect.adjusted(2, 2, -2, -2);
 
                     // gradient fill
