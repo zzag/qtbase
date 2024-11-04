@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: LicenseRef-Qt-Commercial OR GPL-3.0-only
 
 #include <QtTest/qtest.h>
+#include <QtTest/private/qcomparisontesthelper_p.h>
 
 #include <QtXml/qdom.h>
 
@@ -114,6 +115,10 @@ private slots:
     void QTBUG49113_dontCrashWithNegativeIndex() const;
     void standalone();
     void splitTextLeakMemory() const;
+
+    void testDomListComparisonCompiles();
+    void testDomListComparison_data();
+    void testDomListComparison();
 
     void cleanupTestCase() const;
 
@@ -2335,6 +2340,65 @@ void tst_QDom::splitTextLeakMemory() const
     // only the parent node and the document have a reference on the nodes
     QCOMPARE(text.impl->ref.loadRelaxed(), 2);
     QCOMPARE(end.impl->ref.loadRelaxed(), 2);
+}
+
+void tst_QDom::testDomListComparisonCompiles()
+{
+    QTestPrivate::testEqualityOperatorsCompile<QDomNodeList>();
+}
+
+static QDomElement findElementByName(const QDomDocument &doc, QLatin1StringView tag)
+{
+    const auto list = doc.elementsByTagName(tag);
+#ifdef QTEST_THROW_ON_FAIL
+    QCOMPARE(list.size(), 1);
+    QCOMPARE(list.at(0).nodeType(), QDomNode::NodeType::ElementNode);
+#endif
+    return list.at(0).toElement();
+}
+
+void tst_QDom::testDomListComparison_data()
+{
+    QTest::addColumn<QDomDocument>("doc");
+    QTest::addColumn<QDomNodeList>("lhs");
+    QTest::addColumn<QDomNodeList>("rhs");
+    QTest::addColumn<bool>("result");
+
+    const auto xml = "<top><child1/><child2/><child3><cchild1/><cchild2/></child3></top>"_L1;
+
+    QDomDocument doc;
+    const auto result = doc.setContent(xml);
+    QVERIFY2(result, result.errorMessage.toLocal8Bit().constData());
+
+    const QDomNodeList null;
+    const QDomNodeList empty = findElementByName(doc, "child1"_L1).childNodes();
+    const QDomNodeList child3Children = findElementByName(doc, "child3"_L1).childNodes();
+    const QDomNodeList topChildren = findElementByName(doc, "top"_L1).childNodes();
+
+#define ROW(lhs, rhs, res) \
+    QTest::addRow("%s <> %s", #lhs, #rhs) << doc << lhs << rhs << bool(res)
+
+    ROW(null, null, true);
+    ROW(empty, empty, true);
+    ROW(child3Children, child3Children, true);
+    ROW(topChildren, topChildren, true);
+
+    ROW(null, empty, false);
+    ROW(empty, child3Children, false);
+    ROW(child3Children, topChildren, false);
+    ROW(topChildren, null, false);
+#undef ROW
+}
+
+void tst_QDom::testDomListComparison()
+{
+    [[maybe_unused]]
+    QFETCH(const QDomDocument, doc);
+    QFETCH(const QDomNodeList, lhs);
+    QFETCH(const QDomNodeList, rhs);
+    QFETCH(const bool, result);
+
+    QT_TEST_EQUALITY_OPS(lhs, rhs, result);
 }
 
 QTEST_MAIN(tst_QDom)
