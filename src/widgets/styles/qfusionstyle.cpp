@@ -775,7 +775,7 @@ void QFusionStyle::drawPrimitive(PrimitiveElement elem,
 
         QCachedPainter p(painter, u"pushbutton-" + buttonColor.name(QColor::HexArgb), option);
         if (p.needsPainting()) {
-            const QRect &rect = option->rect;
+            const QRect rect = QRect(0, 0, option->rect.width(), option->rect.height());
             const QRect r = rect.adjusted(0, 1, -1, 0);
             const QColor &darkOutline = (hasFocus | isDefault) ? highlightedOutline : outline;
 
