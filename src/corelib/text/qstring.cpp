@@ -9209,7 +9209,7 @@ typedef QVarLengthArray<Part, ExpectedParts> ParseResult;
 typedef QVarLengthArray<int, ExpectedParts/2> ArgIndexToPlaceholderMap;
 
 template <typename StringView>
-static ParseResult parseMultiArgFormatString(StringView s)
+static ParseResult parseMultiArgFormatString_impl(StringView s)
 {
     ParseResult result;
 
@@ -9238,6 +9238,11 @@ static ParseResult parseMultiArgFormatString(StringView s)
         result.push_back(Part{s.sliced(last, len - last)}); // trailing literal text
 
     return result;
+}
+
+static ParseResult parseMultiArgFormatString(QAnyStringView s)
+{
+    return s.visit([] (auto s) { return parseMultiArgFormatString_impl(s); });
 }
 
 static ArgIndexToPlaceholderMap makeArgIndexToPlaceholderMap(const ParseResult &parts)
@@ -9285,8 +9290,7 @@ static qsizetype resolveStringRefsAndReturnTotalSize(ParseResult &parts, const A
 
 } // unnamed namespace
 
-template <typename StringView>
-static QString argToQStringImpl(StringView pattern, size_t numArgs, const QtPrivate::ArgBase **args)
+QString QtPrivate::argToQString(QAnyStringView pattern, size_t numArgs, const ArgBase **args)
 {
     // Step 1-2 above
     ParseResult parts = parseMultiArgFormatString(pattern);
@@ -9336,13 +9340,6 @@ static QString argToQStringImpl(StringView pattern, size_t numArgs, const QtPriv
     result.truncate(out - result.cbegin());
 
     return result;
-}
-
-QString QtPrivate::argToQString(QAnyStringView pattern, size_t n, const ArgBase **args)
-{
-    return pattern.visit([n, args](auto pattern) {
-        return argToQStringImpl(pattern, n, args);
-    });
 }
 
 /*! \fn bool QString::isRightToLeft() const
