@@ -1193,7 +1193,12 @@ bool QFileSystemEngine::mkdir(const QFileSystemEntry &entry,
     Q_CHECK_FILE_NAME(path, false);
 
     mode_t mode = permissions ? QtPrivate::toMode_t(*permissions) : 0777;
-    return QT_MKDIR(removeTrailingSlashes(path), mode) == 0;
+    auto result = QT_MKDIR(removeTrailingSlashes(path), mode) == 0;
+#if defined(Q_OS_VXWORKS)
+    if (result)
+        forceRequestedPermissionsOnVxWorks(path, mode);
+#endif
+    return result;
 }
 
 bool QFileSystemEngine::rmdir(const QFileSystemEntry &entry)
