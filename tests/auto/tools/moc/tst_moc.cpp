@@ -965,6 +965,15 @@ void tst_Moc::initTestCase()
     QVERIFY(fi.exists());
     QVERIFY(fi.isDir());
 #endif
+
+    // Classes whose only test is to ensure moc did properly parse them and its
+    // output compiles. These lines here simply ensure that they did, indeed,
+    // get compiled.
+    QVERIFY(MyBooooooostishClass::staticMetaObject.className());
+    QVERIFY(MyTechPreviewObject::staticMetaObject.className());
+    QVERIFY(QmlMacro::staticMetaObject.className());
+    QVERIFY(SignalWithDefaultArg::staticMetaObject.className());
+    QVERIFY(TestPointeeCanBeIncomplete::staticMetaObject.className());
 }
 
 void tst_Moc::dontStripNamespaces()

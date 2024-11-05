@@ -2195,6 +2195,44 @@
     {
         "classes": [
             {
+                "classInfos": [
+                    {
+                        "name": "QML.Element",
+                        "value": "auto"
+                    }
+                ],
+                "className": "QmlMacro",
+                "lineNumber": 11,
+                "object": true,
+                "qualifiedClassName": "QmlMacro",
+                "signals": [
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "b",
+                                "type": "QByteArray"
+                            }
+                        ],
+                        "index": 0,
+                        "name": "f",
+                        "returnType": "void"
+                    }
+                ],
+                "superClasses": [
+                    {
+                        "access": "public",
+                        "name": "QObject"
+                    }
+                ]
+            }
+        ],
+        "inputFile": "qmlmacro.h",
+        "outputRevision": 68
+    },
+    {
+        "classes": [
+            {
                 "className": "TestQPrivateSlots",
                 "lineNumber": 14,
                 "methods": [
@@ -3164,6 +3202,85 @@
             }
         ],
         "inputFile": "task87883.h",
+        "outputRevision": 68
+    },
+    {
+        "classes": [
+            {
+                "className": "MyTechPreviewObject",
+                "lineNumber": 13,
+                "methods": [
+                    {
+                        "access": "public",
+                        "index": 4,
+                        "name": "myTPInvokable1",
+                        "returnType": "void",
+                        "tag": "QT_TECH_PREVIEW_API"
+                    },
+                    {
+                        "access": "public",
+                        "index": 5,
+                        "name": "myTPInvokable2",
+                        "returnType": "void",
+                        "tag": "QT_TECH_PREVIEW_API"
+                    }
+                ],
+                "object": true,
+                "properties": [
+                    {
+                        "constant": false,
+                        "designable": true,
+                        "final": false,
+                        "index": 0,
+                        "member": "m_status",
+                        "name": "status",
+                        "required": false,
+                        "scriptable": true,
+                        "stored": true,
+                        "type": "int",
+                        "user": false
+                    }
+                ],
+                "qualifiedClassName": "MyTechPreviewObject",
+                "signals": [
+                    {
+                        "access": "public",
+                        "index": 0,
+                        "name": "mySignal",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "index": 1,
+                        "name": "myTPSignal",
+                        "returnType": "void",
+                        "tag": "QT_TECH_PREVIEW_API"
+                    }
+                ],
+                "slots": [
+                    {
+                        "access": "public",
+                        "index": 2,
+                        "name": "mySlot",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "index": 3,
+                        "name": "myTPSlot",
+                        "returnType": "void",
+                        "tag": "QT_TECH_PREVIEW_API"
+                    }
+                ],
+                "superClasses": [
+                    {
+                        "access": "public",
+                        "name": "QObject"
+                    }
+                ]
+            }
+        ],
+        "inputFile": "tech-preview.h",
         "outputRevision": 68
     },
     {
