@@ -47,6 +47,9 @@ QT_BEGIN_NAMESPACE
 
 class Q_AUTOTEST_EXPORT QTimeZonePrivate : public QSharedData
 {
+    // Nothing should be copy-assigning instances of either this or its derived
+    // classes (only clone() should copy, using the copy-constructor):
+    bool operator=(const QTimeZonePrivate &) const = delete;
 public:
     // Version of QTimeZone::OffsetData struct using msecs for efficiency
     struct Data {
@@ -174,6 +177,7 @@ template<> QTimeZonePrivate *QSharedDataPointer<QTimeZonePrivate>::clone();
 
 class Q_AUTOTEST_EXPORT QUtcTimeZonePrivate final : public QTimeZonePrivate
 {
+    bool operator=(const QUtcTimeZonePrivate &) const = delete;
 public:
     // Create default UTC time zone
     QUtcTimeZonePrivate();
@@ -236,6 +240,7 @@ private:
 #if QT_CONFIG(timezone_tzdb)
 class QChronoTimeZonePrivate final : public QTimeZonePrivate
 {
+    bool operator=(const QChronoTimeZonePrivate &) const = delete;
     QChronoTimeZonePrivate(const QChronoTimeZonePrivate &) = default;
 public:
     QChronoTimeZonePrivate();
@@ -265,6 +270,7 @@ private:
 #elif defined(Q_OS_DARWIN)
 class Q_AUTOTEST_EXPORT QMacTimeZonePrivate final : public QTimeZonePrivate
 {
+    bool operator=(const QMacTimeZonePrivate &) const = delete;
 public:
     // Create default time zone
     QMacTimeZonePrivate();
@@ -310,6 +316,7 @@ private:
 #elif defined(Q_OS_ANDROID)
 class QAndroidTimeZonePrivate final : public QTimeZonePrivate
 {
+    bool operator=(const QAndroidTimeZonePrivate &) const = delete;
 public:
     // Create default time zone
     QAndroidTimeZonePrivate();
@@ -378,6 +385,7 @@ struct QTzTimeZoneCacheEntry
 
 class Q_AUTOTEST_EXPORT QTzTimeZonePrivate final : public QTimeZonePrivate
 {
+    bool operator=(const QTzTimeZonePrivate &) const = delete;
     QTzTimeZonePrivate(const QTzTimeZonePrivate &) = default;
 public:
     // Create default time zone
@@ -430,6 +438,7 @@ private:
 #elif QT_CONFIG(icu)
 class Q_AUTOTEST_EXPORT QIcuTimeZonePrivate final : public QTimeZonePrivate
 {
+    bool operator=(const QIcuTimeZonePrivate &) const = delete;
 public:
     // Create default time zone
     QIcuTimeZonePrivate();
@@ -473,6 +482,7 @@ private:
 #elif defined(Q_OS_WIN)
 class Q_AUTOTEST_EXPORT QWinTimeZonePrivate final : public QTimeZonePrivate
 {
+    bool operator=(const QWinTimeZonePrivate &) const = delete;
 public:
     struct QWinTransitionRule {
         int startYear;
