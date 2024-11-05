@@ -368,14 +368,16 @@ Q_CONSTINIT uint QCoreApplicationPrivate::attribs =
     (1 << Qt::AA_SynthesizeMouseForUnhandledTouchEvents) |
     (1 << Qt::AA_SynthesizeMouseForUnhandledTabletEvents);
 
-struct QCoreApplicationData {
+struct QCoreApplicationData
+{
     QCoreApplicationData() noexcept {
         applicationNameSet = false;
         applicationVersionSet = false;
     }
     ~QCoreApplicationData() {
-#ifndef QT_NO_QOBJECT
+#if !defined(QT_NO_QOBJECT) && defined(Q_OS_WIN)
         // cleanup the QAdoptedThread created for the main() thread
+        // (for Unix systems, see qthread_unix.cpp:set_thread_data())
         if (auto *t = QCoreApplicationPrivate::theMainThread.loadAcquire()) {
             QThreadData *data = QThreadData::get2(t);
             data->deref(); // deletes the data and the adopted thread
