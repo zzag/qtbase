@@ -1402,9 +1402,20 @@ void QTabWidget::setTabBarAutoHide(bool enabled)
 */
 void QTabWidget::clear()
 {
-    // ### optimize by introduce QStackedLayout::clear()
-    while (count())
-        removeTab(0);
+    Q_D(QTabWidget);
+    Q_ASSERT(d->stack->layout());
+    d->stack->layout()->setEnabled(false);
+    d->stack->setUpdatesEnabled(false);
+    d->tabs->setUpdatesEnabled(false);
+
+    int c = count();
+    while (c)
+        removeTab(--c);
+
+    d->tabs->setUpdatesEnabled(true);
+    d->stack->setUpdatesEnabled(true);
+    d->stack->layout()->setEnabled(true);
+    d->stack->layout()->activate();
 }
 
 QTabBar::Shape _q_tb_tabBarShapeFrom(QTabWidget::TabShape shape, QTabWidget::TabPosition position)
