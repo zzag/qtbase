@@ -646,7 +646,7 @@ void tst_QWidget::getSetCheck()
 #if defined (Q_OS_WIN)
     obj1.setWindowFlags(Qt::FramelessWindowHint | Qt::WindowSystemMenuHint);
     const HWND handle = reinterpret_cast<HWND>(obj1.winId());   // explicitly create window handle
-    QVERIFY((GetWindowLongPtr(handle, GWL_STYLE) & LONG_PTR(WS_OVERLAPPED)) == 0);
+    QVERIFY(GetWindowLongPtr(handle, GWL_STYLE) & LONG_PTR(WS_POPUP));
 #endif
 }
 
@@ -9838,7 +9838,7 @@ public:
 
 public slots:
     void resizeMe() {
-        resize(150, 150);
+        resize(100, 100);
     }
 };
 
@@ -9850,7 +9850,7 @@ void tst_QWidget::moveInResizeEvent()
     testWidget.show();
     QVERIFY(QTest::qWaitForWindowExposed(&testWidget));
 
-    QRect expectedGeometry(100,100, 150, 150);
+    QRect expectedGeometry(100,100, 100, 100);
     QTRY_COMPARE(testWidget.geometry(), expectedGeometry);
 }
 
