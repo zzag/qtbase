@@ -1076,8 +1076,9 @@ static void createQObjectOnDestruction()
     // On Unix systems, we use a Q_DESTRUCTOR_FUNCTION in qthread_unix.cpp to
     // work around the issue, but that means it cannot have run yet.
     //
-    // This variable is set on Windows too, even though the nature of the
-    // problem is different.
+    // On Windows, given the nature of how destructors are run in DLLs, they're
+    // always considered broken. In fact, we know the destructor in
+    // qthread_win.cpp hasn't run yet.
 #else
     // The thread_local destructor in qthread_unix.cpp has run so the
     // QAdoptedThread must have been cleaned up.

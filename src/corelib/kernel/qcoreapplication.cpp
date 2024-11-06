@@ -374,16 +374,6 @@ struct QCoreApplicationData
         applicationNameSet = false;
         applicationVersionSet = false;
     }
-    ~QCoreApplicationData() {
-#if !defined(QT_NO_QOBJECT) && defined(Q_OS_WIN)
-        // cleanup the QAdoptedThread created for the main() thread
-        // (for Unix systems, see qthread_unix.cpp:set_thread_data())
-        if (auto *t = QCoreApplicationPrivate::theMainThread.loadAcquire()) {
-            QThreadData *data = QThreadData::get2(t);
-            data->deref(); // deletes the data and the adopted thread
-        }
-#endif
-    }
 
     QString orgName, orgDomain;
     QString application; // application name, initially from argv[0], can then be modified.
