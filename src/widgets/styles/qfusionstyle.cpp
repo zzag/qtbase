@@ -2916,6 +2916,8 @@ QSize QFusionStyle::sizeFromContents(ContentsType type, const QStyleOption *opti
     switch (type) {
     case CT_PushButton:
         if (const QStyleOptionButton *btn = qstyleoption_cast<const QStyleOptionButton *>(option)) {
+            const int horizontalMargin = pixelMetric(PM_ButtonMargin, btn);
+            newSize += QSize(horizontalMargin, 0);
             if (!btn->text.isEmpty() && newSize.width() < 80)
                 newSize.setWidth(80);
             if (!btn->icon.isNull() && btn->iconSize.height() > 16)
