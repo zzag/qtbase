@@ -140,6 +140,11 @@ extern QString qAppFileName();
 
 Q_CONSTINIT bool QCoreApplicationPrivate::setuidAllowed = false;
 
+Q_CONSTINIT QCoreApplication *QCoreApplication::self = nullptr;
+Q_CONSTINIT static QBasicAtomicPointer<QCoreApplication> g_self = nullptr;
+#  undef qApp
+#  define qApp g_self.loadRelaxed()
+
 #if !defined(Q_OS_WIN)
 #ifdef Q_OS_DARWIN
 QString QCoreApplicationPrivate::infoDictionaryStringProperty(const QString &propertyName)
@@ -199,7 +204,7 @@ Q_CONSTINIT QString *QCoreApplicationPrivate::cachedApplicationFilePath = nullpt
 
 bool QCoreApplicationPrivate::checkInstance(const char *function)
 {
-    bool b = (QCoreApplication::self != nullptr);
+    bool b = (qApp != nullptr);
     if (!b)
         qWarning("QApplication::%s: Please instantiate the QApplication object first", function);
     return b;
@@ -359,7 +364,6 @@ Q_CONSTINIT QAbstractEventDispatcher *QCoreApplicationPrivate::eventDispatcher =
 
 #endif // QT_NO_QOBJECT
 
-Q_CONSTINIT QCoreApplication *QCoreApplication::self = nullptr;
 Q_CONSTINIT uint QCoreApplicationPrivate::attribs =
     (1 << Qt::AA_SynthesizeMouseForUnhandledTouchEvents) |
     (1 << Qt::AA_SynthesizeMouseForUnhandledTabletEvents);
@@ -817,6 +821,7 @@ void Q_TRACE_INSTRUMENT(qtcore) QCoreApplicationPrivate::init()
 
     Q_ASSERT_X(!QCoreApplication::self, "QCoreApplication", "there should be only one application object");
     QCoreApplication::self = q;
+    g_self.storeRelaxed(q);
 
 #if QT_CONFIG(thread)
 #ifdef Q_OS_WASM
@@ -918,6 +923,7 @@ QCoreApplication::~QCoreApplication()
     qt_call_post_routines();
 
     self = nullptr;
+    g_self.storeRelaxed(nullptr);
 #ifndef QT_NO_QOBJECT
     QCoreApplicationPrivate::is_app_closing = true;
     QCoreApplicationPrivate::is_app_running = false;
@@ -1096,7 +1102,7 @@ void QCoreApplication::setQuitLockEnabled(bool enabled)
 bool QCoreApplication::notifyInternal2(QObject *receiver, QEvent *event)
 {
     bool selfRequired = QCoreApplicationPrivate::threadRequiresCoreApplication();
-    if (selfRequired && !self)
+    if (selfRequired && !qApp)
         return false;
 
     // Make it possible for Qt Script to hook into events even
@@ -1121,7 +1127,7 @@ bool QCoreApplication::notifyInternal2(QObject *receiver, QEvent *event)
     if (threadData->thread.loadRelaxed() != QCoreApplicationPrivate::mainThread())
         return false;
 #endif
-    return self->notify(receiver, event);
+    return qApp->notify(receiver, event);
 }
 
 /*!
@@ -1250,7 +1256,7 @@ bool QCoreApplicationPrivate::sendThroughApplicationEventFilters(QObject *receiv
 bool QCoreApplicationPrivate::sendThroughObjectEventFilters(QObject *receiver, QEvent *event)
 {
     if ((receiver->d_func()->threadData.loadRelaxed()->thread.loadAcquire() != mainThread()
-         || receiver != QCoreApplication::instance())
+         || receiver != qApp)
         && receiver->d_func()->extraData) {
         for (qsizetype i = 0; i < receiver->d_func()->extraData->eventFilters.size(); ++i) {
             QObject *obj = receiver->d_func()->extraData->eventFilters.at(i);
