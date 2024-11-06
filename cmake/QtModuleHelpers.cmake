@@ -1260,6 +1260,14 @@ function(qt_describe_module target)
     if(NOT QT_NAMESPACE STREQUAL "")
         string(APPEND extra_module_information "\n    \"namespace\": \"${QT_NAMESPACE}\",")
     endif()
+    if(target STREQUAL "Gui")
+        qt_internal_list_to_json_array(qpa_platforms_array QT_QPA_PLATFORMS)
+        string(APPEND extra_module_information "
+    \"qpa\": {
+        \"platforms\": ${qpa_platforms_array},
+        \"default_platform\": \"${QT_QPA_DEFAULT_PLATFORM}\"
+    },")
+    endif()
 
     # Set up indentation helper variables.
     set(indent1 "    ")
