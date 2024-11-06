@@ -175,7 +175,6 @@ QThreadPrivate::QThreadPrivate(QThreadData *d)
 
 #if defined (Q_OS_WIN)
     handle = 0;
-    id = 0;
     terminationEnabled = true;
     terminatePending = false;
 #endif

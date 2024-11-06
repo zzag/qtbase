@@ -228,7 +228,6 @@ public:
     void finish(bool lockAnyway = true) noexcept;
 
     Qt::HANDLE handle;
-    unsigned int id;
     bool terminationEnabled, terminatePending;
 #endif // Q_OS_WIN
 #ifdef Q_OS_WASM

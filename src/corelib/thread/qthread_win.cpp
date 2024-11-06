@@ -124,7 +124,6 @@ QThreadData *QThreadData::current(bool createIfNecessary)
 void QAdoptedThread::init()
 {
     d_func()->handle = GetCurrentThread();
-    d_func()->id = GetCurrentThreadId();
 }
 
 /**************************************************************************
@@ -257,8 +256,6 @@ void QThreadPrivate::finish(bool lockAnyway) noexcept
         CloseHandle(d->handle);
         d->handle = 0;
     }
-
-    d->id = 0;
 }
 
 /**************************************************************************
@@ -342,12 +339,12 @@ void QThread::start(Priority priority)
 #if defined(Q_CC_MSVC) && !defined(_DLL)
     // MSVC -MT or -MTd build
     d->handle = (Qt::HANDLE) _beginthreadex(NULL, d->stackSize, QThreadPrivate::start,
-                                            this, CREATE_SUSPENDED, &(d->id));
+                                            this, CREATE_SUSPENDED, nullptr);
 #else
     // MSVC -MD or -MDd or MinGW build
     d->handle = CreateThread(nullptr, d->stackSize,
                              reinterpret_cast<LPTHREAD_START_ROUTINE>(QThreadPrivate::start),
-                             this, CREATE_SUSPENDED, reinterpret_cast<LPDWORD>(&d->id));
+                             this, CREATE_SUSPENDED, nullptr);
 #endif
 
     if (!d->handle) {
@@ -422,7 +419,7 @@ bool QThread::wait(QDeadlineTimer deadline)
     Q_D(QThread);
     QMutexLocker locker(&d->mutex);
 
-    if (d->id == GetCurrentThreadId()) {
+    if (isCurrentThread()) {
         qWarning("QThread::wait: Thread tried to wait on itself");
         return false;
     }
