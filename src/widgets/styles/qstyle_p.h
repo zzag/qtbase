@@ -57,7 +57,8 @@ public:
     }
     QRect pixmapRect() const
     {
-        return QRect(0, 0, m_pixmap.width(), m_pixmap.height());
+        const auto sz = m_pixmap.deviceIndependentSize();
+        return QRect(0, 0, sz.width(), sz.height());
     }
     QPainter *operator->()
     {
