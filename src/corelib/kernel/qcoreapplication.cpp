@@ -140,10 +140,15 @@ extern QString qAppFileName();
 
 Q_CONSTINIT bool QCoreApplicationPrivate::setuidAllowed = false;
 
+#if QT_VERSION >= QT_VERSION_CHECK(7, 0, 0)
+# warning "Audit remaining direct usages of this variable for memory ordering semantics"
+Q_CONSTINIT QBasicAtomicPointer<QCoreApplication> QCoreApplication::self = nullptr;
+#else
 Q_CONSTINIT QCoreApplication *QCoreApplication::self = nullptr;
 Q_CONSTINIT static QBasicAtomicPointer<QCoreApplication> g_self = nullptr;
 #  undef qApp
 #  define qApp g_self.loadRelaxed()
+#endif
 
 #if !defined(Q_OS_WIN)
 #ifdef Q_OS_DARWIN
@@ -812,8 +817,12 @@ void Q_TRACE_INSTRUMENT(qtcore) QCoreApplicationPrivate::init()
     initLocale();
 
     Q_ASSERT_X(!QCoreApplication::self, "QCoreApplication", "there should be only one application object");
+#if QT_VERSION < QT_VERSION_CHECK(7, 0, 0)
     QCoreApplication::self = q;
     g_self.storeRelaxed(q);
+#else
+    QCoreApplication::self.storeRelaxed(q);
+#endif
 
 #if QT_CONFIG(thread)
 #ifdef Q_OS_WASM
@@ -914,8 +923,13 @@ QCoreApplication::~QCoreApplication()
 
     qt_call_post_routines();
 
+#if QT_VERSION < QT_VERSION_CHECK(7, 0, 0)
     self = nullptr;
     g_self.storeRelaxed(nullptr);
+#else
+    self.storeRelaxed(nullptr);
+#endif
+
 #ifndef QT_NO_QOBJECT
     QCoreApplicationPrivate::is_app_closing = true;
     QCoreApplicationPrivate::is_app_running = false;
