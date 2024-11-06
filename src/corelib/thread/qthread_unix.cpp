@@ -869,24 +869,6 @@ inline void QThreadPrivate::wakeAll()
         wakeAllInternal(this);
 }
 
-bool QThread::wait(QDeadlineTimer deadline)
-{
-    Q_D(QThread);
-    QMutexLocker locker(&d->mutex);
-
-    if (d->threadState == QThreadPrivate::NotStarted)
-        return true;
-    if (d->threadState == QThreadPrivate::Finished)
-        return true;
-
-    if (isCurrentThread()) {
-        qWarning("QThread::wait: Thread tried to wait on itself");
-        return false;
-    }
-
-    return d->wait(locker, deadline);
-}
-
 bool QThreadPrivate::wait(QMutexLocker<QMutex> &locker, QDeadlineTimer deadline)
 {
     constexpr int HasJoinerBit = int(0x8000'0000);  // a.k.a. sign bit

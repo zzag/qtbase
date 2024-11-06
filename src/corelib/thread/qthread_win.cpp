@@ -414,20 +414,6 @@ void QThread::terminate()
     d->finish(false);
 }
 
-bool QThread::wait(QDeadlineTimer deadline)
-{
-    Q_D(QThread);
-    QMutexLocker locker(&d->mutex);
-
-    if (isCurrentThread()) {
-        qWarning("QThread::wait: Thread tried to wait on itself");
-        return false;
-    }
-    if (d->threadState == QThreadPrivate::NotStarted || d->threadState == QThreadPrivate::Finished)
-        return true;
-    return d->wait(locker, deadline);
-}
-
 bool QThreadPrivate::wait(QMutexLocker<QMutex> &locker, QDeadlineTimer deadline)
 {
     Q_ASSERT(threadState != QThreadPrivate::Finished);

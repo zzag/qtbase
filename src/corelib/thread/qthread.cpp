@@ -926,6 +926,19 @@ QThread::Priority QThread::priority() const
 
     \sa sleep(), terminate()
 */
+bool QThread::wait(QDeadlineTimer deadline)
+{
+    Q_D(QThread);
+    QMutexLocker locker(&d->mutex);
+
+    if (d->threadState == QThreadPrivate::NotStarted || d->threadState == QThreadPrivate::Finished)
+        return true;
+    if (isCurrentThread()) {
+        qWarning("QThread::wait: Thread tried to wait on itself");
+        return false;
+    }
+    return d->wait(locker, deadline);
+}
 
 /*!
     \fn void QThread::setTerminationEnabled(bool enabled)
