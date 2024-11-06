@@ -363,7 +363,7 @@ class QAdoptedThread : public QThread
     Q_DECLARE_PRIVATE(QThread)
 
 public:
-    QAdoptedThread(QThreadData *data = nullptr);
+    QAdoptedThread(QThreadData *data);
     ~QAdoptedThread();
     void init();
 

@@ -13,6 +13,8 @@
 
 QT_BEGIN_NAMESPACE
 
+using namespace Qt::StringLiterals;
+
 /*
     QPostEventList
 */
@@ -113,6 +115,20 @@ QAbstractEventDispatcher *QThreadData::createEventDispatcher()
 QAdoptedThread::QAdoptedThread(QThreadData *data)
     : QThread(*new QThreadPrivate(data))
 {
+    // avoid a cyclic reference count: QThreadData owns this QAdoptedThread
+    // object but QObject's constructor increased the count
+    data->deref();
+
+    data->isAdopted = true;
+    Qt::HANDLE id = QThread::currentThreadId();
+    data->threadId.storeRelaxed(id);
+    if (!QCoreApplicationPrivate::theMainThreadId.loadAcquire()) {
+        // we are the main thread
+        QCoreApplicationPrivate::theMainThread.storeRelease(this);
+        QCoreApplicationPrivate::theMainThreadId.storeRelaxed(id);
+        setObjectName(u"Qt mainThread"_s);
+    }
+
     // thread should be running and not finished for the lifetime
     // of the application (even if QCoreApplication goes away)
 #if QT_CONFIG(thread)
@@ -1130,15 +1146,6 @@ QThreadData *QThreadData::current(bool createIfNecessary)
     if (!data && createIfNecessary) {
         data = new QThreadData;
         data->thread = new QAdoptedThread(data);
-        data->threadId.storeRelaxed(Qt::HANDLE(data->thread.loadAcquire()));
-        data->deref();
-        data->isAdopted = true;
-        if (!QCoreApplicationPrivate::theMainThreadId.loadAcquire()) {
-            auto *mainThread = data->thread.loadRelaxed();
-            mainThread->setObjectName("Qt mainThread");
-            QCoreApplicationPrivate::theMainThread.storeRelease(mainThread);
-            QCoreApplicationPrivate::theMainThreadId.storeRelaxed(data->threadId.loadRelaxed());
-        }
     }
     return data;
 }
