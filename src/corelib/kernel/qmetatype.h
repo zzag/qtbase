@@ -2539,6 +2539,8 @@ struct QMetaTypeInterfaceWrapper
         /*.legacyRegisterOp=*/ QMetaTypeForType<T>::getLegacyRegister()
     };
 };
+template<typename T> struct QMetaTypeInterfaceWrapper<T &> {};
+
 
 #if !defined(Q_OS_WIN) && defined(Q_CC_CLANG)
 #  pragma GCC visibility pop
