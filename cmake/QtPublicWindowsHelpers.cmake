@@ -14,9 +14,9 @@ function(qt6_add_win_app_sdk target)
     elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "arm*")
          set(win_app_sdk_arch "arm")
     elseif(CMAKE_SIZEOF_VOID_P EQUAL 8)
-        set(win_app_sdk_arch "64")
+        set(win_app_sdk_arch "x64")
     elseif(CMAKE_SIZEOF_VOID_P EQUAL 4)
-        set(win_app_sdk_arch "86")
+        set(win_app_sdk_arch "x86")
     endif()
 
     if(WIN_APP_SDK_ROOT)
@@ -61,13 +61,13 @@ function(qt6_add_win_app_sdk target)
             NAMES Microsoft.WindowsAppRuntime
             HINTS ${WINAPPSDK_LIBRARY_DIR} "${win_app_sdk_root}"
                                            "${win_app_sdk_root}/lib"
-                                           "${win_app_sdk_root}/lib/win10-x${win_app_sdk_arch}")
+                                           "${win_app_sdk_root}/lib/win10-${win_app_sdk_arch}")
 
         find_library(WINAPPSDK_BOOTSTRAP_LIBRARY
             NAMES Microsoft.WindowsAppRuntime.Bootstrap
             HINTS ${WINAPPSDK_LIBRARY_DIR} "${win_app_sdk_root}"
                                            "${win_app_sdk_root}/lib"
-                                           "${win_app_sdk_root}/lib/win10-x${win_app_sdk_arch}")
+                                           "${win_app_sdk_root}/lib/win10-${win_app_sdk_arch}")
 
         if(WINAPPSDK_INCLUDE_DIR AND WINAPPSDK_LIBRARY AND WINAPPSDK_BOOTSTRAP_LIBRARY)
             execute_process(COMMAND
@@ -93,7 +93,7 @@ function(qt6_add_win_app_sdk target)
     target_include_directories(${target}
                                PRIVATE "${generated_headers_path}")
     target_link_directories(${target}
-                            PRIVATE "${win_app_sdk_root}/lib/win10-x${win_app_sdk_arch}")
+                            PRIVATE "${win_app_sdk_root}/lib/win10-${win_app_sdk_arch}")
     target_link_libraries(${target}
         PRIVATE Microsoft.WindowsAppRuntime.lib Microsoft.WindowsAppRuntime.Bootstrap.lib)
 endfunction()
