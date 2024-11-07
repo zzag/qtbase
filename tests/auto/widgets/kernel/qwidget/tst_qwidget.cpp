@@ -4628,29 +4628,26 @@ void tst_QWidget::widgetAt()
     w1->showNormal();
     QVERIFY(QTest::qWaitForWindowExposed(w1.data()));
     const QPoint testPos = referencePos + QPoint(100, 100);
-    QWidget *wr;
-    QTRY_VERIFY((wr = QApplication::widgetAt((testPos))));
-    QCOMPARE(wr->objectName(), QString("w1"));
+    QTRY_COMPARE(QApplication::widgetAt((testPos)), w1.data());
 
     w2->showNormal();
     QVERIFY(QTest::qWaitForWindowExposed(w2.data()));
-    QTRY_VERIFY((wr = QApplication::widgetAt(testPos)));
-    QCOMPARE(wr->objectName(), QString("w2"));
+    QTRY_COMPARE(QApplication::widgetAt(testPos), w2.data());
 
     w2->lower();
-    QTRY_VERIFY((wr = QApplication::widgetAt(testPos)) && wr->objectName() == QString("w1"));
+    QTRY_COMPARE(QApplication::widgetAt(testPos), w1.data());
     w2->raise();
 
-    QTRY_VERIFY((wr = QApplication::widgetAt(testPos)) && wr->objectName() == QString("w2"));
+    QTRY_COMPARE(QApplication::widgetAt(testPos), w2.data());
 
     QWidget *w3 = new QWidget(w2.data());
     w3->setGeometry(10,10,50,50);
     w3->setObjectName("w3");
     w3->showNormal();
-    QTRY_VERIFY((wr = QApplication::widgetAt(testPos)) && wr->objectName() == QString("w3"));
+    QTRY_COMPARE(QApplication::widgetAt(testPos), w3);
 
     w3->setAttribute(Qt::WA_TransparentForMouseEvents);
-    QTRY_VERIFY((wr = QApplication::widgetAt(testPos)) && wr->objectName() == QString("w2"));
+    QTRY_COMPARE(QApplication::widgetAt(testPos), w2.data());
 
     if (!QGuiApplicationPrivate::platformIntegration()
                                ->hasCapability(QPlatformIntegration::WindowMasks)) {
@@ -4662,10 +4659,8 @@ void tst_QWidget::widgetAt()
     rgn -= QRect(point, QSize(1,1));
     w2->setMask(rgn);
 
-    QTRY_VERIFY((wr = QApplication::widgetAt(testPos)));
-    QTRY_COMPARE(wr->objectName(), w1->objectName());
-    QTRY_VERIFY((wr = QApplication::widgetAt(testPos + QPoint(1, 1))));
-    QTRY_COMPARE(wr->objectName(), w2->objectName());
+    QTRY_COMPARE(QApplication::widgetAt(testPos), w1.data());
+    QTRY_COMPARE(QApplication::widgetAt(testPos + QPoint(1, 1)), w2.data());
 
     QBitmap bitmap(w2->size());
     QPainter p(&bitmap);
@@ -4675,7 +4670,7 @@ void tst_QWidget::widgetAt()
     p.end();
     w2->setMask(bitmap);
     QTRY_COMPARE(QApplication::widgetAt(testPos), w1.data());
-    QTRY_VERIFY(QApplication::widgetAt(testPos + QPoint(1, 1)) == w2.data());
+    QTRY_COMPARE(QApplication::widgetAt(testPos + QPoint(1, 1)), w2.data());
 }
 
 void tst_QWidget::task110173()
