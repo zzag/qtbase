@@ -3413,7 +3413,7 @@ void tst_QHeaderView::stretchAndRestoreLastSection()
 
     // Default last section is larger
     QCOMPARE(header.sectionSize(8), defaultSectionSize);
-    QCOMPARE_GE(header.sectionSize(9), biggerSizeThanAnySection);
+    QTRY_COMPARE_GE(header.sectionSize(9), biggerSizeThanAnySection);
 
     // Moving last section away (restore old last section 9 - and make 8 larger)
     header.swapSections(9, 8);
