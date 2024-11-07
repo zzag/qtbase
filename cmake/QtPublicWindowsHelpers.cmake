@@ -94,6 +94,8 @@ function(qt6_add_win_app_sdk target)
                                PRIVATE "${generated_headers_path}")
     target_link_directories(${target}
                             PRIVATE "${win_app_sdk_root}/lib/win10-${win_app_sdk_arch}")
+    target_link_directories(${target}
+                        PRIVATE "${win_app_sdk_root}/runtimes/win-${win_app_sdk_arch}/native")
     target_link_libraries(${target}
         PRIVATE Microsoft.WindowsAppRuntime.lib Microsoft.WindowsAppRuntime.Bootstrap.lib)
 endfunction()
