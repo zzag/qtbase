@@ -1124,7 +1124,7 @@ bool QCoreApplication::notifyInternal2(QObject *receiver, QEvent *event)
         return doNotify(receiver, event);
 
 #if QT_VERSION >= QT_VERSION_CHECK(7, 0, 0)
-    if (threadData->thread.loadRelaxed() != QCoreApplicationPrivate::mainThread())
+    if (!QThread::isMainThread())
         return false;
 #endif
     return qApp->notify(receiver, event);
@@ -1234,7 +1234,7 @@ static bool doNotify(QObject *receiver, QEvent *event)
 bool QCoreApplicationPrivate::sendThroughApplicationEventFilters(QObject *receiver, QEvent *event)
 {
     // We can't access the application event filters outside of the main thread (race conditions)
-    Q_ASSERT(receiver->d_func()->threadData.loadAcquire()->thread.loadRelaxed() == mainThread());
+    Q_ASSERT(QThread::isMainThread());
 
     if (extraData) {
         // application event filters are only called for objects in the GUI thread
@@ -1286,7 +1286,7 @@ bool QCoreApplicationPrivate::notify_helper(QObject *receiver, QEvent * event)
     Q_TRACE_EXIT(QCoreApplication_notify_exit, consumed, filtered);
 
     // send to all application event filters (only does anything in the main thread)
-    if (receiver->d_func()->threadData.loadRelaxed()->thread.loadAcquire() == mainThread()
+    if (QThread::isMainThread()
             && QCoreApplication::self
             && QCoreApplication::self->d_func()->sendThroughApplicationEventFilters(receiver, event)) {
         filtered = true;
@@ -2150,7 +2150,7 @@ void QCoreApplicationPrivate::quit()
 {
     Q_Q(QCoreApplication);
 
-    if (QThread::currentThread() == mainThread()) {
+    if (QThread::isMainThread()) {
         QEvent quitEvent(QEvent::Quit);
         QCoreApplication::sendEvent(q, &quitEvent);
     } else {
@@ -2913,7 +2913,7 @@ void QCoreApplication::requestPermission(const QPermission &requestedPermission,
     QtPrivate::SlotObjUniquePtr slotObj{slotObjRaw}; // adopts
     Q_ASSERT(slotObj);
 
-    if (QThread::currentThread() != QCoreApplicationPrivate::mainThread()) {
+    if (!QThread::isMainThread()) {
         qCWarning(lcPermissions, "Permissions can only be requested from the GUI (main) thread");
         return;
     }
