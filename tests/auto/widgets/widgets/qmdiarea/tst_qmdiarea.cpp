@@ -2241,7 +2241,7 @@ void tst_QMdiArea::tabBetweenSubWindows()
     QVERIFY(QTest::qWaitForWindowExposed(&mdiArea));
 
     QWidget *focusWidget = subWindows.back()->widget();
-    QCOMPARE(qApp->focusWidget(), focusWidget);
+    QTRY_COMPARE(qApp->focusWidget(), focusWidget);
 
     QSignalSpy spy(&mdiArea, SIGNAL(subWindowActivated(QMdiSubWindow*)));
     QCOMPARE(spy.size(), 0);
