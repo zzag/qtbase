@@ -2440,7 +2440,6 @@ QCachedPainter::QCachedPainter(QPainter *painter, const QString &cachePrefix,
     if (!m_alreadyCached) {
         m_pixmap = styleCachePixmap(sz, dpr);
         m_pixmapPainter = std::make_unique<QPainter>(&m_pixmap);
-        m_pixmapPainter->setRenderHint(QPainter::Antialiasing);
         s_pixmapCacheKeys += m_pixmapName;
     }
 }
