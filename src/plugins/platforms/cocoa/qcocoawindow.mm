@@ -214,8 +214,6 @@ void QCocoaWindow::setGeometry(const QRect &rectIn)
         const QMargins margins = frameMargins();
         rect.moveTopLeft(rect.topLeft() + QPoint(margins.left(), margins.top()));
     }
-    if (geometry() == rect)
-        return;
 
     setCocoaGeometry(rect);
 }
@@ -1483,18 +1481,6 @@ bool QCocoaWindow::windowShouldClose()
 
 void QCocoaWindow::handleGeometryChange()
 {
-    // Prevent geometry change during initialization, as that will result
-    // in a resize event, and Qt expects those to come after the show event.
-    // FIXME: Remove once we've clarified the Qt behavior for this.
-    if (!m_initialized)
-        return;
-
-    // It can happen that the current NSWindow is nil (if we are changing styleMask
-    // from/to borderless, and the content view is being re-parented), which results
-    // in invalid coordinates.
-    if (m_inSetStyleMask && !m_view.window)
-        return;
-
     QRect newGeometry;
     if (isContentView() && !isEmbedded()) {
         // Content views are positioned at (0, 0) in the window, so we resolve via the window
@@ -1509,6 +1495,24 @@ void QCocoaWindow::handleGeometryChange()
 
     qCDebug(lcQpaWindow) << "QCocoaWindow::handleGeometryChange" << window()
                                << "current" << geometry() << "new" << newGeometry;
+
+    // It can happen that the current NSWindow is nil (if we are changing styleMask
+    // from/to borderless, and the content view is being re-parented), which results
+    // in invalid coordinates.
+    if (m_inSetStyleMask && !m_view.window) {
+        qCDebug(lcQpaWindow) << "Lacking window during style mask update, ignoring geometry change";
+        return;
+    }
+
+    // Prevent geometry change during initialization, as that will result
+    // in a resize event, and Qt expects those to come after the show event.
+    // FIXME: Remove once we've clarified the Qt behavior for this.
+    if (!m_initialized) {
+        // But update the QPlatformWindow reality
+        QPlatformWindow::setGeometry(newGeometry);
+        qCDebug(lcQpaWindow) << "Window still initializing, skipping event";
+        return;
+    }
 
     QWindowSystemInterface::handleGeometryChange(window(), newGeometry);
 
