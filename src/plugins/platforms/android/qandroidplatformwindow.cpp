@@ -124,7 +124,7 @@ void QAndroidPlatformWindow::raise()
 
 QMargins QAndroidPlatformWindow::safeAreaMargins() const
 {
-    if ((m_windowState & Qt::WindowMaximized) && (window()->flags() & Qt::MaximizeUsingFullscreenGeometryHint)) {
+    if ((m_windowState & Qt::WindowMaximized) && (window()->flags() & Qt::ExpandedClientAreaHint)) {
         QRect availableGeometry = platformScreen()->availableGeometry();
         return QMargins(availableGeometry.left(), availableGeometry.top(),
                         availableGeometry.right(), availableGeometry.bottom());
@@ -166,7 +166,7 @@ void QAndroidPlatformWindow::setVisible(bool visible)
         if (window()->isTopLevel()) {
             updateSystemUiVisibility();
             if ((m_windowState & Qt::WindowFullScreen)
-                    || ((m_windowState & Qt::WindowMaximized) && (window()->flags() & Qt::MaximizeUsingFullscreenGeometryHint))) {
+                    || ((m_windowState & Qt::WindowMaximized) && (window()->flags() & Qt::ExpandedClientAreaHint))) {
                 setGeometry(platformScreen()->geometry());
             } else if (m_windowState & Qt::WindowMaximized) {
                 setGeometry(platformScreen()->availableGeometry());
@@ -259,7 +259,7 @@ void QAndroidPlatformWindow::updateSystemUiVisibility()
     if (!isNonRegularWindow) {
         if (m_windowState & Qt::WindowFullScreen)
             QtAndroid::setSystemUiVisibility(QtAndroid::SYSTEM_UI_VISIBILITY_FULLSCREEN);
-        else if (flags & Qt::MaximizeUsingFullscreenGeometryHint)
+        else if (flags & Qt::ExpandedClientAreaHint)
             QtAndroid::setSystemUiVisibility(QtAndroid::SYSTEM_UI_VISIBILITY_TRANSLUCENT);
         else
             QtAndroid::setSystemUiVisibility(QtAndroid::SYSTEM_UI_VISIBILITY_NORMAL);

@@ -47,6 +47,7 @@ private:
     QGroupBox *customizeWindowGroup;
     QCheckBox *transparentForInputCheckBox;
     QCheckBox *noDropShadowCheckBox;
+    QCheckBox *expandedClientAreaCheckBox;
 };
 
 // Control for the Qt::WindowState enum, optional with a "visible" QCheckbox
