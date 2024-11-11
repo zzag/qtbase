@@ -2627,10 +2627,10 @@ QFontEngine *QFontDatabasePrivate::findFont(const QFontDef &req,
             }
         }
 
-        if (!engine)
+        if (!engine) {
             engine = new QFontEngineBox(request.pixelSize);
-
-        qCDebug(lcFontMatch, "returning box engine");
+            qCDebug(lcFontMatch, "returning box engine");
+        }
     }
 
     return engine;
