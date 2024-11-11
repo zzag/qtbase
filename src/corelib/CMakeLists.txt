@@ -1427,6 +1427,7 @@ endif()
 qt_internal_extend_target(Core CONDITION WASM
     SOURCES
         platform/wasm/qstdweb.cpp platform/wasm/qstdweb_p.h
+        platform/wasm/qwasmsocket.cpp platform/wasm/qwasmsocket_p.h
         kernel/qeventdispatcher_wasm.cpp kernel/qeventdispatcher_wasm_p.h
 )
 
