@@ -9712,6 +9712,7 @@ void tst_QWidget::dumpObjectTree()
     Q_SET_OBJECT_NAME(w);
     w.move(100, 100);
     w.resize(200, 200);
+    QPoint pos = w.pos();
 
     QLineEdit le(&w);
     Q_SET_OBJECT_NAME(le);
@@ -9730,6 +9731,7 @@ void tst_QWidget::dumpObjectTree()
 
     QTestPrivate::androidCompatibleShow(&w);
     QVERIFY(QTest::qWaitForWindowActive(&w));
+    QTRY_COMPARE(w.pos(), pos);
 
     {
         const char * const expected[] = {
