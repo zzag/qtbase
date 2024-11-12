@@ -34,10 +34,6 @@ public:
         QTouchEvent(eventType, device, modifiers, touchPoints) { }
     ~QMutableTouchEvent() override;
 
-    static QMutableTouchEvent *from(QTouchEvent *e) { return static_cast<QMutableTouchEvent *>(e); }
-
-    static QMutableTouchEvent &from(QTouchEvent &e) { return static_cast<QMutableTouchEvent &>(e); }
-
     void setTarget(QObject *target) { m_target = target; }
     void addPoint(const QEventPoint &point);
 
@@ -55,10 +51,6 @@ public:
                              Qt::MouseEventSource source = Qt::MouseEventSynthesizedByQt) :
         QSinglePointEvent(type, device, point, button, buttons, modifiers, source) { }
     ~QMutableSinglePointEvent() override;
-
-    static QMutableSinglePointEvent *from(QSinglePointEvent *e) { return static_cast<QMutableSinglePointEvent *>(e); }
-
-    static QMutableSinglePointEvent &from(QSinglePointEvent &e) { return static_cast<QMutableSinglePointEvent &>(e); }
 
     void setSource(Qt::MouseEventSource s) { m_source = s; }
 
