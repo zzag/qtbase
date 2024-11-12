@@ -624,9 +624,6 @@ function(qt6_android_add_apk_target target)
         # Add custom command that creates the apk and triggers rebuild if files listed in
         # ${dep_file_path} are changed.
         add_custom_command(OUTPUT "${apk_final_file_path}"
-            COMMAND ${CMAKE_COMMAND}
-                -E copy "$<TARGET_FILE:${target}>"
-                "${apk_final_dir}/${target_file_copy_relative_path}"
             COMMAND "${deployment_tool}"
                 --input "${deployment_file}"
                 --output "${apk_final_dir}"
@@ -636,7 +633,7 @@ function(qt6_android_add_apk_target target)
                 ${extra_args}
                 ${sign_apk}
             COMMENT "Creating APK for ${target}"
-            DEPENDS "${target}" "${deployment_file}" ${extra_deps}
+            DEPENDS "${target}" "${deployment_file}" ${extra_deps} ${target}_prepare_apk_dir
             DEPFILE "${dep_file_path}"
             VERBATIM
             ${uses_terminal}
@@ -645,9 +642,6 @@ function(qt6_android_add_apk_target target)
         # Add custom command that creates the aar and triggers rebuild if files listed in
         # ${dep_file_path} are changed.
         add_custom_command(OUTPUT "${aar_final_file_path}"
-            COMMAND ${CMAKE_COMMAND}
-                -E copy "$<TARGET_FILE:${target}>"
-                "${apk_final_dir}/${target_file_copy_relative_path}"
             COMMAND "${deployment_tool}"
                 --input "${deployment_file}"
                 --output "${apk_final_dir}"
@@ -657,7 +651,7 @@ function(qt6_android_add_apk_target target)
                 --build-aar
                 ${extra_args}
             COMMENT "Creating AAR for ${target}"
-            DEPENDS "${target}" "${deployment_file}" ${extra_deps}
+            DEPENDS "${target}" "${deployment_file}" ${extra_deps} ${target}_prepare_apk_dir
             DEPFILE "${dep_file_path}"
             VERBATIM
             ${uses_terminal}
