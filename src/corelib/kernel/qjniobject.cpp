@@ -1325,8 +1325,7 @@ QJniObject QJniObject::getObjectField(const char *fieldName, const char *signatu
 QJniObject QJniObject::fromString(const QString &string)
 {
     QJniEnvironment env;
-    jstring stringRef = env->NewString(reinterpret_cast<const jchar*>(string.constData()),
-                                                                      string.length());
+    jstring stringRef = QtJniTypes::Detail::fromQString(string, env.jniEnv());
     QJniObject stringObject = getCleanJniObject(stringRef, env.jniEnv());
     stringObject.d->m_className = "java/lang/String";
     return stringObject;
@@ -1352,10 +1351,7 @@ QString QJniObject::toString() const
         return QString();
 
     QJniObject string = callObjectMethod<jstring>("toString");
-    const int strLength = string.jniEnv()->GetStringLength(string.object<jstring>());
-    QString res(strLength, Qt::Uninitialized);
-    string.jniEnv()->GetStringRegion(string.object<jstring>(), 0, strLength, reinterpret_cast<jchar *>(res.data()));
-    return res;
+    return QtJniTypes::Detail::toQString(string.object<jstring>(), string.jniEnv());
 }
 
 /*!

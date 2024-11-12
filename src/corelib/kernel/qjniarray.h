@@ -735,9 +735,7 @@ public:
         } else if constexpr (std::is_same_v<QString, T>) {
             jstring string = static_cast<jstring>(env->GetObjectArrayElement(arrayObject(), i));
             if (string) {
-                const auto length = env->GetStringLength(string);
-                QString res(length, Qt::Uninitialized);
-                env->GetStringRegion(string, 0, length, reinterpret_cast<jchar *>(res.data()));
+                QString res = QtJniTypes::Detail::toQString(string, env);
                 env->DeleteLocalRef(string);
                 return res;
             } else {
@@ -817,6 +815,8 @@ public:
             for (auto element : *this) {
                 if constexpr (std::is_same_v<decltype(element), QString>)
                     container.emplace_back(element);
+                else if constexpr (std::is_same_v<decltype(element), jstring>)
+                    container.emplace_back(QtJniTypes::Detail::toQString(element, env));
                 else
                     container.emplace_back(QJniObject(element).toString());
             }
