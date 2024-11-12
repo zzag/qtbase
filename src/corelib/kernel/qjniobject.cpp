@@ -328,10 +328,18 @@ public:
         }
     }
 
+    bool isJString() const;
+
     QByteArray m_className;
     jobject m_jobject = nullptr;
     jclass m_jclass = nullptr;
     bool m_own_jclass = true;
+    enum class IsJString : quint8 {
+        Unknown,
+        Yes,
+        No,
+    };
+    mutable IsJString m_is_jstring = IsJString::Unknown;
 };
 
 template <typename ...Args>
@@ -349,6 +357,29 @@ static jclass getCachedClass(const QByteArray &className)
     QReadLocker locker(cachedClassesLock);
     const auto &it = cachedClasses->constFind(className);
     return it != cachedClasses->constEnd() ? it.value() : nullptr;
+}
+
+
+bool QJniObjectPrivate::isJString() const
+{
+    Q_ASSERT(m_jobject);
+    if (m_is_jstring != IsJString::Unknown)
+        return m_is_jstring == IsJString::Yes;
+
+    static constexpr auto stringSignature = QtJniTypes::Traits<jstring>::className();
+    if (!m_className.isEmpty()) {
+        m_is_jstring = m_className == stringSignature
+                     ? IsJString::Yes
+                     : IsJString::No;
+    } else {
+        const jclass strClass = getCachedClass(stringSignature.data());
+        const bool isStringInstance = strClass
+                                    ? QJniEnvironment::getJniEnv()->IsInstanceOf(m_jobject, strClass)
+                                    : false;
+        m_is_jstring = isStringInstance ? IsJString::Yes : IsJString::No;
+    }
+
+    return m_is_jstring == IsJString::Yes;
 }
 
 /*!
@@ -1327,7 +1358,8 @@ QJniObject QJniObject::fromString(const QString &string)
     QJniEnvironment env;
     jstring stringRef = QtJniTypes::Detail::fromQString(string, env.jniEnv());
     QJniObject stringObject = getCleanJniObject(stringRef, env.jniEnv());
-    stringObject.d->m_className = "java/lang/String";
+    stringObject.d->m_className = QtJniTypes::Traits<jstring>::className();
+    stringObject.d->m_is_jstring = QJniObjectPrivate::IsJString::Yes;
     return stringObject;
 }
 
@@ -1350,7 +1382,10 @@ QString QJniObject::toString() const
     if (!isValid())
         return QString();
 
-    QJniObject string = callObjectMethod<jstring>("toString");
+    if (d->isJString())
+        return QtJniTypes::Detail::toQString(object<jstring>(), jniEnv());
+
+    const QJniObject string = callMethod<jstring>("toString");
     return QtJniTypes::Detail::toQString(string.object<jstring>(), string.jniEnv());
 }
 
