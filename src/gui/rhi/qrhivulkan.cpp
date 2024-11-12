@@ -8671,7 +8671,7 @@ bool QVkSwapChain::createOrResize()
         return false;
     }
 
-    if (needsRegistration)
+    if (needsRegistration || !rhiD->swapchains.contains(this))
         rhiD->swapchains.insert(this);
 
     if (m_depthStencil && m_depthStencil->sampleCount() != m_sampleCount) {

@@ -6779,10 +6779,10 @@ bool QD3D12SwapChain::createOrResize()
 
     QDxgiVSyncService::instance()->registerWindow(window);
 
-    if (needsRegistration) {
+    if (needsRegistration || !rhiD->swapchains.contains(this))
         rhiD->swapchains.insert(this);
-        rhiD->registerResource(this);
-    }
+
+    rhiD->registerResource(this);
 
     return true;
 }

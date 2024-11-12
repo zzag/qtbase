@@ -6418,7 +6418,7 @@ bool QMetalSwapChain::createOrResize()
     // else no destroy(), this is intentional
 
     QRHI_RES_RHI(QRhiMetal);
-    if (needsRegistration)
+    if (needsRegistration || !rhiD->swapchains.contains(this))
         rhiD->swapchains.insert(this);
 
     window = m_window;
@@ -6540,8 +6540,7 @@ bool QMetalSwapChain::createOrResize()
         [desc release];
     }
 
-    if (needsRegistration)
-        rhiD->registerResource(this);
+    rhiD->registerResource(this);
 
     return true;
 }
