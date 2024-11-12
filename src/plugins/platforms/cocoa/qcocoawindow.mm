@@ -744,6 +744,9 @@ void QCocoaWindow::setWindowFlags(Qt::WindowFlags flags)
     bool ignoreMouse = flags & Qt::WindowTransparentForInput;
     if (m_view.window.ignoresMouseEvents != ignoreMouse)
         m_view.window.ignoresMouseEvents = ignoreMouse;
+
+    m_view.window.titlebarAppearsTransparent = (flags & Qt::NoTitleBarBackgroundHint)
+        || (m_view.window.styleMask & QT_IGNORE_DEPRECATIONS(NSWindowStyleMaskTexturedBackground));
 }
 
 // ----------------------- Window state -----------------------
@@ -2034,7 +2037,6 @@ void QCocoaWindow::applyContentBorderThickness(NSWindow *window)
     if (!m_drawContentBorderGradient) {
         window.styleMask = window.styleMask & ~NSWindowStyleMaskTexturedBackground;
         [window.contentView.superview setNeedsDisplay:YES];
-        window.titlebarAppearsTransparent = NO;
         return;
     }
 
@@ -2059,7 +2061,6 @@ void QCocoaWindow::applyContentBorderThickness(NSWindow *window)
     int effectiveBottomContentBorderThickness = 0;
 
     [window setStyleMask:[window styleMask] | NSWindowStyleMaskTexturedBackground];
-    window.titlebarAppearsTransparent = YES;
 
     // Setting titlebarAppearsTransparent to YES means that the border thickness has to account
     // for the title bar height as well, otherwise sheets will not be presented at the correct

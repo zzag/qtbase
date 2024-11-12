@@ -2353,6 +2353,11 @@
            window's \l{QWindow::safeAreaMargins()}{safe area margins} will reflect any
            areas that may have conflicting UI elements.
 
+    \value [since 6.9] NoTitleBarBackgroundHint Requests that the window's title bar is drawn
+           without a background color. This flag is useful in combination with
+           Qt::ExpandedClientAreaHint, to give the perception that the window's
+           client area seamlessly blends with the titlebar area and controls.
+
     \value WindowType_Mask  A mask for extracting the window type
                             part of the window flags.
 

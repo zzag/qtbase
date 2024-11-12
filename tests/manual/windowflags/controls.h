@@ -48,6 +48,7 @@ private:
     QCheckBox *transparentForInputCheckBox;
     QCheckBox *noDropShadowCheckBox;
     QCheckBox *expandedClientAreaCheckBox;
+    QCheckBox *noTitleBarBackgroundCheckBox;
 };
 
 // Control for the Qt::WindowState enum, optional with a "visible" QCheckbox

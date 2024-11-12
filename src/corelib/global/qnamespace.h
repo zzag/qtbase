@@ -240,6 +240,7 @@ namespace Qt {
             "Use Qt::ExpandedClientAreaHint instead") = 0x00400000,
 #endif
         ExpandedClientAreaHint = 0x00400000,
+        NoTitleBarBackgroundHint = 0x00800000,
 
         CustomizeWindowHint = 0x02000000,
         WindowStaysOnBottomHint = 0x04000000,

@@ -33,6 +33,7 @@ HintControl::HintControl(QWidget *parent)
     , transparentForInputCheckBox(new QCheckBox(tr("Transparent for input")))
     , noDropShadowCheckBox(new QCheckBox(tr("No drop shadow")))
     , expandedClientAreaCheckBox(new QCheckBox(tr("Expanded client area")))
+    , noTitleBarBackgroundCheckBox(new QCheckBox(tr("No titlebar background")))
 {
     connect(msWindowsFixedSizeDialogCheckBox, SIGNAL(clicked()), this, SLOT(slotCheckBoxChanged()));
     connect(x11BypassWindowManagerCheckBox, SIGNAL(clicked()), this, SLOT(slotCheckBoxChanged()));
@@ -51,6 +52,7 @@ HintControl::HintControl(QWidget *parent)
     connect(transparentForInputCheckBox, SIGNAL(clicked()), this, SLOT(slotCheckBoxChanged()));
     connect(noDropShadowCheckBox, SIGNAL(clicked()), this, SLOT(slotCheckBoxChanged()));
     connect(expandedClientAreaCheckBox, SIGNAL(clicked()), this, SLOT(slotCheckBoxChanged()));
+    connect(noTitleBarBackgroundCheckBox, SIGNAL(clicked()), this, SLOT(slotCheckBoxChanged()));
 
     auto *layout = new QHBoxLayout(this);
     layout->setSpacing(0);
@@ -70,6 +72,7 @@ HintControl::HintControl(QWidget *parent)
     basicHintsLayout->addWidget(msWindowsFixedSizeDialogCheckBox);
     basicHintsLayout->addWidget(x11BypassWindowManagerCheckBox);
     basicHintsLayout->addWidget(expandedClientAreaCheckBox);
+    basicHintsLayout->addWidget(noTitleBarBackgroundCheckBox);
     layout->addLayout(basicHintsLayout);
 
     customizeWindowGroup->setCheckable(true);
@@ -128,6 +131,8 @@ Qt::WindowFlags HintControl::hints() const
         flags |= Qt::NoDropShadowWindowHint;
     if (expandedClientAreaCheckBox->isChecked())
         flags |= Qt::ExpandedClientAreaHint;
+    if (noTitleBarBackgroundCheckBox->isChecked())
+        flags |= Qt::NoTitleBarBackgroundHint;
     return flags;
 }
 
@@ -150,6 +155,7 @@ void HintControl::setHints(Qt::WindowFlags flags)
     transparentForInputCheckBox->setChecked(flags & Qt::WindowTransparentForInput);
     noDropShadowCheckBox->setChecked(flags & Qt::NoDropShadowWindowHint);
     expandedClientAreaCheckBox->setChecked(flags & Qt::ExpandedClientAreaHint);
+    noTitleBarBackgroundCheckBox->setChecked(flags & Qt::NoTitleBarBackgroundHint);
 }
 
 void HintControl::slotCheckBoxChanged()
