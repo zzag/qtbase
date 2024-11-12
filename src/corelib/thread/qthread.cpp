@@ -126,7 +126,9 @@ QAdoptedThread::QAdoptedThread(QThreadData *data)
         // we are the main thread
         QCoreApplicationPrivate::theMainThread.storeRelease(this);
         QCoreApplicationPrivate::theMainThreadId.storeRelaxed(id);
-        setObjectName(u"Qt mainThread"_s);
+
+        // bypass the bindings because nothing can be listening yet
+        d_func()->setObjectNameWithoutBindings(u"Qt mainThread"_s);
     }
 
     // thread should be running and not finished for the lifetime
