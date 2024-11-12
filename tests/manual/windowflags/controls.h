@@ -44,7 +44,7 @@ private:
     QCheckBox *windowShadeButtonCheckBox;
     QCheckBox *windowStaysOnTopCheckBox;
     QCheckBox *windowStaysOnBottomCheckBox;
-    QCheckBox *customizeWindowHintCheckBox;
+    QGroupBox *customizeWindowGroup;
     QCheckBox *transparentForInputCheckBox;
     QCheckBox *noDropShadowCheckBox;
 };
