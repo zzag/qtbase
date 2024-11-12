@@ -4090,6 +4090,10 @@ public:
                 return QVariant(QStringList{u"en-CA"_s, u"fr-CA"_s, u"de-AT"_s,
                                             u"en-GB"_s, u"fr-FR"_s});
             }
+            if (m_name == u"no") // QTBUG-131127
+                return QVariant(QStringList{u"no"_s, u"en-US"_s, u"nb"_s});
+            if (m_name == u"no-US") // Empty query result:
+                return QVariant(QStringList{});
             return QVariant(QStringList{m_name});
         case LanguageId:
             return m_id.language_id;
@@ -4121,6 +4125,15 @@ void tst_QLocale::mySystemLocale_data()
     QTest::addColumn<QString>("name");
     QTest::addColumn<QLocale::Language>("language");
     QTest::addColumn<QStringList>("uiLanguages");
+
+    QTest::addRow("empty")
+        << u"no-US"_s << QLocale::NorwegianBokmal
+        << QStringList{u"nb-US"_s, u"nb-Latn-US"_s,
+                       u"nb-Latn-NO"_s, u"nb-NO"_s, u"nb"_s, u"nb-Latn"_s};
+    QTest::addRow("no") // QTBUG-131127
+        << u"no"_s << QLocale::NorwegianBokmal
+        << QStringList{u"no"_s, u"nb-Latn-NO"_s, u"nb-NO"_s, u"en-US"_s, u"en-Latn-US"_s, u"en"_s,
+                       u"nb"_s, u"nb-Latn-NO"_s, u"nb-NO"_s, u"nb-Latn"_s, u"en-Latn"_s};
 
     QTest::addRow("catalan")
         << u"ca"_s << QLocale::Catalan

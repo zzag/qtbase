@@ -5036,8 +5036,10 @@ QStringList QLocale::uiLanguages(TagSeparator separator) const
         const auto prior = QString::fromLatin1(id.name(sep));
         if (isSystem && i < uiLanguages.size()) {
             // Adding likely-adjusted forms to system locale's list.
+            Q_ASSERT(uiLanguages.at(i) == prior
+                     // A legacy code may get mapped to an ID with a different name:
+                     || QLatin1String(QLocaleId::fromName(uiLanguages.at(i)).name(sep)) == prior);
             // Insert just after the entry we're supplementing:
-            Q_ASSERT(uiLanguages.at(i) == prior);
             j = i + 1;
         } else {
             // Plain locale or empty system uiLanguages; just append.
