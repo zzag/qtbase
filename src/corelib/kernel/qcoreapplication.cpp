@@ -1255,9 +1255,7 @@ bool QCoreApplicationPrivate::sendThroughApplicationEventFilters(QObject *receiv
 
 bool QCoreApplicationPrivate::sendThroughObjectEventFilters(QObject *receiver, QEvent *event)
 {
-    if ((receiver->d_func()->threadData.loadRelaxed()->thread.loadAcquire() != mainThread()
-         || receiver != qApp)
-        && receiver->d_func()->extraData) {
+    if (receiver != qApp && receiver->d_func()->extraData) {
         for (qsizetype i = 0; i < receiver->d_func()->extraData->eventFilters.size(); ++i) {
             QObject *obj = receiver->d_func()->extraData->eventFilters.at(i);
             if (!obj)
