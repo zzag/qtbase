@@ -2099,6 +2099,8 @@ QJsonObject FunctionDef::toJson(int index) const
     if (!tag.isEmpty())
         fdef["tag"_L1] = QString::fromUtf8(tag);
     fdef["returnType"_L1] = QString::fromUtf8(normalizedType);
+    if (isConst)
+        fdef["isConst"_L1] = true;
 
     QJsonArray args;
     for (const ArgumentDef &arg: arguments)

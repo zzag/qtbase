@@ -331,12 +331,14 @@
                     {
                         "access": "private",
                         "index": 2,
+                        "isConst": true,
                         "name": "pureSlot2",
                         "returnType": "void"
                     },
                     {
                         "access": "private",
                         "index": 3,
+                        "isConst": true,
                         "name": "pureSlot3",
                         "returnType": "void"
                     }
@@ -369,12 +371,14 @@
                     {
                         "access": "private",
                         "index": 2,
+                        "isConst": true,
                         "name": "pureSlot2",
                         "returnType": "void"
                     },
                     {
                         "access": "private",
                         "index": 3,
+                        "isConst": true,
                         "name": "pureSlot3",
                         "returnType": "void"
                     }
@@ -407,12 +411,14 @@
                     {
                         "access": "private",
                         "index": 2,
+                        "isConst": true,
                         "name": "pureSlot2",
                         "returnType": "void"
                     },
                     {
                         "access": "private",
                         "index": 3,
+                        "isConst": true,
                         "name": "pureSlot3",
                         "returnType": "void"
                     }
@@ -445,12 +451,14 @@
                     {
                         "access": "private",
                         "index": 2,
+                        "isConst": true,
                         "name": "pureSlot2",
                         "returnType": "void"
                     },
                     {
                         "access": "private",
                         "index": 3,
+                        "isConst": true,
                         "name": "pureSlot3",
                         "returnType": "void"
                     }
@@ -483,12 +491,14 @@
                     {
                         "access": "private",
                         "index": 2,
+                        "isConst": true,
                         "name": "pureSlot2",
                         "returnType": "void"
                     },
                     {
                         "access": "private",
                         "index": 3,
+                        "isConst": true,
                         "name": "pureSlot3",
                         "returnType": "void"
                     }
@@ -521,12 +531,14 @@
                     {
                         "access": "private",
                         "index": 2,
+                        "isConst": true,
                         "name": "pureSlot2",
                         "returnType": "void"
                     },
                     {
                         "access": "private",
                         "index": 3,
+                        "isConst": true,
                         "name": "pureSlot3",
                         "returnType": "void"
                     }
@@ -559,12 +571,14 @@
                     {
                         "access": "private",
                         "index": 2,
+                        "isConst": true,
                         "name": "pureSlot2",
                         "returnType": "void"
                     },
                     {
                         "access": "private",
                         "index": 3,
+                        "isConst": true,
                         "name": "pureSlot3",
                         "returnType": "void"
                     }
@@ -597,12 +611,14 @@
                     {
                         "access": "private",
                         "index": 2,
+                        "isConst": true,
                         "name": "pureSlot2",
                         "returnType": "void"
                     },
                     {
                         "access": "private",
                         "index": 3,
+                        "isConst": true,
                         "name": "pureSlot3",
                         "returnType": "void"
                     }
@@ -635,12 +651,14 @@
                     {
                         "access": "private",
                         "index": 2,
+                        "isConst": true,
                         "name": "pureSlot2",
                         "returnType": "void"
                     },
                     {
                         "access": "private",
                         "index": 3,
+                        "isConst": true,
                         "name": "pureSlot3",
                         "returnType": "void"
                     }
@@ -835,6 +853,7 @@
                     {
                         "access": "public",
                         "index": 5,
+                        "isConst": true,
                         "name": "constConstRefReturn",
                         "returnType": "void"
                     }
@@ -2149,6 +2168,7 @@
                     {
                         "access": "public",
                         "index": 0,
+                        "isConst": true,
                         "name": "foo",
                         "returnType": "const char*"
                     }
