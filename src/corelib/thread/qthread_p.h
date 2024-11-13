@@ -301,7 +301,11 @@ public:
 class QThreadData
 {
 public:
-    QThreadData(int initialRefCount = 1);
+    QThreadData(int initialRefCount = 1)
+        : _ref(initialRefCount)
+    {
+        // fprintf(stderr, "QThreadData %p created\n", this);
+    }
     ~QThreadData();
 
     static Q_AUTOTEST_EXPORT QThreadData *current(bool createIfNecessary = true);
@@ -333,8 +337,8 @@ private:
     QAtomicInt _ref;
 
 public:
-    int loopLevel;
-    int scopeLevel;
+    int loopLevel = 0;
+    int scopeLevel = 0;
 
     QStack<QEventLoop *> eventLoops;
     QPostEventList postEventList;
@@ -343,10 +347,10 @@ public:
     QAtomicPointer<QAbstractEventDispatcher> eventDispatcher;
     QList<void *> tls;
 
-    bool quitNow;
-    bool canWait;
-    bool isAdopted;
-    bool requiresCoreApplication;
+    bool quitNow = false;
+    bool canWait = true;
+    bool isAdopted = false;
+    bool requiresCoreApplication = true;
 };
 
 class QScopedScopeLevelCounter

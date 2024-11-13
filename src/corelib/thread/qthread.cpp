@@ -42,14 +42,6 @@ void QPostEventList::addEvent(const QPostEvent &ev)
   QThreadData
 */
 
-QThreadData::QThreadData(int initialRefCount)
-    : _ref(initialRefCount), loopLevel(0), scopeLevel(0),
-      eventDispatcher(nullptr),
-      quitNow(false), canWait(true), isAdopted(false), requiresCoreApplication(true)
-{
-    // fprintf(stderr, "QThreadData %p created\n", this);
-}
-
 QThreadData::~QThreadData()
 {
 #if QT_CONFIG(thread)
