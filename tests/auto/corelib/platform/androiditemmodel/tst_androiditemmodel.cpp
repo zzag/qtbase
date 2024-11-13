@@ -225,9 +225,7 @@ void tst_AndroidItemModel::setData()
     QFETCH(int, column);
     QFETCH(int, role);
 
-    QSignalSpy spy(
-            qProxy,
-            SIGNAL(dataChanged(const QModelIndex &, const QModelIndex &, const QList<int> &)));
+    QSignalSpy spy(qProxy, &QAbstractItemModel::dataChanged);
 
     jModel.callMethod<void>("addRow");
     if (!isList)
@@ -238,7 +236,7 @@ void tst_AndroidItemModel::setData()
 
     JQtModelIndex index = jModel.callMethod<JQtModelIndex>("index", row, column, JQtModelIndex());
     QVERIFY(jModel.callMethod<jboolean>("setData", index, QJniObject(Void()), role));
-    QTRY_COMPARE_WITH_TIMEOUT(spy.count(), 1, 50);
+    QTRY_COMPARE(spy.count(), 1);
 
     const QList<QVariant> arguments = spy.takeFirst();
     QCOMPARE(arguments.size(), 3);
@@ -252,7 +250,7 @@ void tst_AndroidItemModel::setData()
     QCOMPARE(roles, QList<int>{role});
 
     jint jDataChangedCount = jModel.getField<jint>("m_dataChangedCount");
-    QTRY_COMPARE_WITH_TIMEOUT(jDataChangedCount, 1, 50);
+    QTRY_COMPARE(jDataChangedCount, 1);
 }
 
 void tst_AndroidItemModel::resetModel()
