@@ -333,19 +333,19 @@ public:
         return canWait;
     }
 
-private:
-    QAtomicInt _ref;
-
-public:
-    int loopLevel = 0;
-    int scopeLevel = 0;
-
     QStack<QEventLoop *> eventLoops;
     QPostEventList postEventList;
     QAtomicPointer<QThread> thread;
     QAtomicPointer<void> threadId;
     QAtomicPointer<QAbstractEventDispatcher> eventDispatcher;
     QList<void *> tls;
+
+private:
+    QAtomicInt _ref;
+
+public:
+    int loopLevel = 0;
+    int scopeLevel = 0;
 
     bool quitNow = false;
     bool canWait = true;
