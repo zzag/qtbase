@@ -732,7 +732,8 @@ bool QTestResult::report3WayResult(bool success,
                                    const char *(*lhsFormatter)(const void*),
                                    const char *(*rhsFormatter)(const void*),
                                    const char *lhsExpression, const char *rhsExpression,
-                                   const char *(*orderFormatter)(const void*),
+                                   const char *(*actualOrderFormatter)(const void *),
+                                   const char *(*expectedOrderFormatter)(const void *),
                                    const void *actualOrder, const void *expectedOrder,
                                    const char *expectedExpression,
                                    const char *file, int line)
@@ -762,8 +763,8 @@ bool QTestResult::report3WayResult(bool success,
     const std::unique_ptr<const char[]> lhsStr{lhsFormatter(lhs)};
     const std::unique_ptr<const char[]> rhsStr{rhsFormatter(rhs)};
 
-    const std::unique_ptr<const char[]> actual{orderFormatter(actualOrder)};
-    const std::unique_ptr<const char[]> expected{orderFormatter(expectedOrder)};
+    const std::unique_ptr<const char[]> actual{actualOrderFormatter(actualOrder)};
+    const std::unique_ptr<const char[]> expected{expectedOrderFormatter(expectedOrder)};
 
     if (!failureMessage)
         failureMessage = failureMessageForOp(QTest::ComparisonOperation::ThreeWayCompare);

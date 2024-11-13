@@ -2859,7 +2859,7 @@ bool QTest::compare_helper(bool success, const char *failureMsg,
     in the output, with the expected comparison expression
     \a expectedExpression. Their respective values are supplied by
     \a actualOrderPtr and \a expectedOrderPtr pointers, which are
-    formatted by \a orderFormatter.
+    formatted by \a actualOrderFormatter and \a expectedOrderFormatter.
 
     If \a failureMsg is \nullptr a default is used. If a formatter
     function returns \a nullptr, the text \c{"<null>"} is used.
@@ -2869,7 +2869,8 @@ bool QTest::compare_3way_helper(bool success, const char *failureMsg,
                                 const char *(*lhsFormatter)(const void*),
                                 const char *(*rhsFormatter)(const void*),
                                 const char *lhsExpression, const char *rhsExpression,
-                                const char *(*orderFormatter)(const void*),
+                                const char *(*actualOrderFormatter)(const void *),
+                                const char *(*expectedOrderFormatter)(const void *),
                                 const void *actualOrderPtr, const void *expectedOrderPtr,
                                 const char *expectedExpression,
                                 const char *file, int line)
@@ -2878,7 +2879,8 @@ bool QTest::compare_3way_helper(bool success, const char *failureMsg,
                                          lhsPtr, rhsPtr,
                                          lhsFormatter, rhsFormatter,
                                          lhsExpression, rhsExpression,
-                                         orderFormatter,
+                                         actualOrderFormatter,
+                                         expectedOrderFormatter,
                                          actualOrderPtr, expectedOrderPtr,
                                          expectedExpression,
                                          file, line);
