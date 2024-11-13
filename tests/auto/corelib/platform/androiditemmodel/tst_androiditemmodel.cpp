@@ -225,7 +225,6 @@ void tst_AndroidItemModel::setData()
     QFETCH(int, column);
     QFETCH(int, role);
 
-    jboolean success = false;
     QSignalSpy spy(
             qProxy,
             SIGNAL(dataChanged(const QModelIndex &, const QModelIndex &, const QList<int> &)));
