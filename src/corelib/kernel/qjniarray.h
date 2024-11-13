@@ -24,6 +24,12 @@ QT_BEGIN_NAMESPACE
 template <typename T> class QJniArray;
 template <typename T> struct QJniArrayMutableIterator;
 
+// forward declare here so that we don't have to include the private header
+namespace QtAndroidPrivate
+{
+    Q_CORE_EXPORT jclass findClass(const char *className, JNIEnv *env);
+}
+
 template <typename T>
 struct QJniArrayIterator
 {
@@ -915,7 +921,7 @@ auto QJniArrayBase::makeObjectArray(List &&list)
                                      std::is_base_of<QtJniTypes::JObjectBase, ElementType>>) {
         elementClass = std::begin(list)->objectClass();
     } else if constexpr (std::is_same_v<ElementType, QString>) {
-        elementClass = env->FindClass("java/lang/String");
+        elementClass = QtAndroidPrivate::findClass("java/lang/String", env);
     } else {
         elementClass = env->GetObjectClass(*std::begin(list));
     }
