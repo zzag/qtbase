@@ -35,6 +35,11 @@ public:
         Undefined = 0x80
     };
 
+    enum JsonFormat {
+        Indented,
+        Compact,
+    };
+
     QJsonValue(Type = Null);
     QJsonValue(bool b);
     QJsonValue(double n);
@@ -70,6 +75,10 @@ public:
     QVariant toVariant() const;
 
     static QJsonValue fromJson(QByteArrayView json, QJsonParseError *error = nullptr);
+
+#if !defined(QT_JSON_READONLY) || defined(Q_QDOC)
+    QByteArray toJson(JsonFormat format = JsonFormat::Indented) const;
+#endif
 
     Type type() const;
     inline bool isNull() const { return type() == Null; }

@@ -267,7 +267,8 @@ void tst_QtJson::testNumbers()
         for (int i = 0; i < n; ++i)
             array.append(numbers[i]);
 
-        QByteArray serialized = QJsonDocument(array).toJson();
+        QByteArray serialized = QJsonValue(array).toJson();
+        QCOMPARE(QJsonDocument(array).toJson(), serialized);
         QJsonValue json = QJsonValue::fromJson(serialized);
         QJsonArray array2 = json.toArray();
 
@@ -314,7 +315,8 @@ void tst_QtJson::testNumbers()
         for (int i = 0; i < n; ++i)
             array.append(QJsonValue(numbers[i]));
 
-        QByteArray serialized = QJsonDocument(array).toJson();
+        QByteArray serialized = QJsonValue(array).toJson();
+        QCOMPARE(QJsonDocument(array).toJson(), serialized);
         QJsonValue json = QJsonValue::fromJson(serialized);
         QJsonArray array2 = json.toArray();
 
@@ -359,7 +361,8 @@ void tst_QtJson::testNumbers()
         for (int i = 0; i < n; ++i)
             array.append(numbers[i]);
 
-        QByteArray serialized = QJsonDocument(array).toJson();
+        QByteArray serialized = QJsonValue(array).toJson();
+        QCOMPARE(QJsonDocument(array).toJson(), serialized);
         QJsonValue json = QJsonValue::fromJson(serialized);
         QJsonArray array2 = json.toArray();
 
@@ -393,7 +396,8 @@ void tst_QtJson::testNumbers_2()
 
     QJsonValue jValue1(jObject);
     QJsonDocument jDocument1(jObject);
-    QByteArray ba(jDocument1.toJson());
+    QByteArray ba(jValue1.toJson());
+    QCOMPARE(jDocument1.toJson(), ba);
 
     QJsonValue jValue2(QJsonValue::fromJson(ba));
     QJsonDocument jDocument2(QJsonDocument::fromJson(ba));
@@ -434,7 +438,8 @@ void tst_QtJson::testNumbers_3()
     jObject.insert("d2", QJsonValue(d2));
     QJsonDocument jDocument1(jObject);
     QJsonValue jValue1(jObject);
-    QByteArray ba(jDocument1.toJson());
+    QByteArray ba(jValue1.toJson());
+    QCOMPARE(jDocument1.toJson(), ba);
 
     QJsonDocument jDocument2(QJsonDocument::fromJson(ba));
     QJsonValue jValue2(QJsonValue::fromJson(ba));
@@ -462,7 +467,7 @@ void tst_QtJson::testNumbers_4()
     array << QJsonValue(-9223372036854775808.0);
     array << QJsonValue(+18446744073709551616.0);
     array << QJsonValue(-18446744073709551616.0);
-    QJsonDocument doc1 = QJsonDocument(array);
+    QJsonValue doc1 = QJsonValue(array);
     const QByteArray json(doc1.toJson());
     const QByteArray expected =
             "[\n"
@@ -484,7 +489,7 @@ void tst_QtJson::testNumbers_4()
     array2 << QJsonValue(Q_INT64_C(-9007199254740992));
     array2 << QJsonValue(Q_INT64_C(+9223372036854775807));
     array2 << QJsonValue(Q_INT64_C(-9223372036854775807));
-    QJsonDocument doc2 = QJsonDocument(array2);
+    QJsonValue doc2 = QJsonValue(array2);
     const QByteArray json2(doc2.toJson());
     const QByteArray expected2 =
             "[\n"
@@ -1916,7 +1921,7 @@ void tst_QtJson::toVariantList()
 
 void tst_QtJson::toJson()
 {
-    // Test QJsonDocument::Indented format
+    // Test QJson{Document,Value}::Indented format
     {
         QJsonObject object;
         object.insert("\\Key\n", QString("Value"));
@@ -1929,7 +1934,7 @@ void tst_QtJson::toJson()
         array.append(QLatin1String("\\\a\n\r\b\tabcABC\""));
         object.insert("Array", array);
 
-        QByteArray json = QJsonDocument(object).toJson();
+        QByteArray json = QJsonValue(object).toJson();
 
         QByteArray expected =
                 "{\n"
@@ -1949,6 +1954,7 @@ void tst_QtJson::toJson()
         doc.setObject(object);
         json = doc.toJson();
         QCOMPARE(json, expected);
+        QCOMPARE(QJsonDocument(object).toJson(), expected);
 
         doc.setArray(array);
         json = doc.toJson();
@@ -1961,9 +1967,10 @@ void tst_QtJson::toJson()
                 "    \"\\\\\\u0007\\n\\r\\b\\tabcABC\\\"\"\n"
                 "]\n";
         QCOMPARE(json, expected);
+        QCOMPARE(QJsonValue(array).toJson(), expected);
     }
 
-    // Test QJsonDocument::Compact format
+    // Test QJson{Document,Value}::Compact format
     {
         QJsonObject object;
         object.insert("\\Key\n", QString("Value"));
@@ -1976,7 +1983,7 @@ void tst_QtJson::toJson()
         array.append(QLatin1String("\\\a\n\r\b\tabcABC\""));
         object.insert("Array", array);
 
-        QByteArray json = QJsonDocument(object).toJson(QJsonDocument::Compact);
+        QByteArray json = QJsonValue(object).toJson(QJsonValue::Compact);
         QByteArray expected =
                 "{\"Array\":[true,999,\"string\",null,\"\\\\\\u0007\\n\\r\\b\\tabcABC\\\"\"],\"\\\\Key\\n\":\"Value\",\"null\":null}";
         QCOMPARE(json, expected);
@@ -1985,11 +1992,13 @@ void tst_QtJson::toJson()
         doc.setObject(object);
         json = doc.toJson(QJsonDocument::Compact);
         QCOMPARE(json, expected);
+        QCOMPARE(QJsonDocument(object).toJson(QJsonDocument::Compact), expected);
 
         doc.setArray(array);
         json = doc.toJson(QJsonDocument::Compact);
         expected = "[true,999,\"string\",null,\"\\\\\\u0007\\n\\r\\b\\tabcABC\\\"\"]";
         QCOMPARE(json, expected);
+        QCOMPARE(QJsonValue(array).toJson(QJsonValue::Compact), expected);
     }
 }
 
@@ -2002,7 +2011,7 @@ void tst_QtJson::toJsonSillyNumericValues()
     array.append(QJsonValue(std::numeric_limits<double>::quiet_NaN())); // encode to: null
     object.insert("Array", array);
 
-    QByteArray json = QJsonDocument(object).toJson();
+    QByteArray json = QJsonValue(object).toJson();
 
     QByteArray expected =
             "{\n"
@@ -2039,7 +2048,7 @@ void tst_QtJson::toJsonLargeNumericValues()
     array.append(QJsonValue(-9007199254740992LL)); // JS Number min integer
     object.insert("Array", array);
 
-    QByteArray json = QJsonDocument(object).toJson();
+    QByteArray json = QJsonValue(object).toJson();
 
     QByteArray expected =
             "{\n"
@@ -2088,7 +2097,7 @@ void tst_QtJson::toJsonDenormalValues()
         array.append(QJsonValue(-std::numeric_limits<double>::denorm_min()));
         object.insert("Array", array);
 
-        QByteArray json = QJsonDocument(object).toJson();
+        QByteArray json = QJsonValue(object).toJson();
         QByteArray expected =
                 "{\n"
                 "    \"Array\": [\n"
@@ -2105,6 +2114,8 @@ void tst_QtJson::toJsonDenormalValues()
                 "}\n";
 
         QCOMPARE(json, expected);
+
+        QCOMPARE(QJsonDocument(object).toJson(), expected);
         QJsonDocument doc;
         doc.setObject(object);
         json = doc.toJson();
@@ -2118,15 +2129,22 @@ void tst_QtJson::fromJson()
 {
     {
         QByteArray json = "[\n    true\n]\n";
+
         QJsonDocument doc = QJsonDocument::fromJson(json);
         QVERIFY(!doc.isEmpty());
         QCOMPARE(doc.isArray(), true);
         QCOMPARE(doc.isObject(), false);
-        QJsonArray array = doc.array();
+        QJsonValue root = QJsonValue::fromJson(json);
+        QVERIFY(root.isArray());
+        QCOMPARE(doc.array(), root.toArray());
+
+        QJsonArray array = root.toArray();
         QCOMPARE(array.size(), 1);
         QCOMPARE(array.at(0).type(), QJsonValue::Bool);
         QCOMPARE(array.at(0).toBool(), true);
+
         QCOMPARE(doc.toJson(), json);
+        QCOMPARE(root.toJson(), json);
     }
     {
         //regression test: test if unicode_control_characters are correctly decoded
@@ -2135,11 +2153,17 @@ void tst_QtJson::fromJson()
         QVERIFY(!doc.isEmpty());
         QCOMPARE(doc.isArray(), true);
         QCOMPARE(doc.isObject(), false);
-        QJsonArray array = doc.array();
+        QJsonValue root = QJsonValue::fromJson(json);
+        QVERIFY(root.isArray());
+        QCOMPARE(doc.array(), root.toArray());
+
+        QJsonArray array = root.toArray();
         QCOMPARE(array.size(), 1);
         QCOMPARE(array.at(0).type(), QJsonValue::String);
         QCOMPARE(array.at(0).toString(), QString::fromUtf8(UNICODE_NON_CHARACTER));
+
         QCOMPARE(doc.toJson(), json);
+        QCOMPARE(root.toJson(), json);
     }
     {
         QByteArray json = "[]";
@@ -2149,6 +2173,10 @@ void tst_QtJson::fromJson()
         QCOMPARE(doc.isObject(), false);
         QJsonArray array = doc.array();
         QCOMPARE(array.size(), 0);
+
+        QJsonValue root = QJsonValue::fromJson(json);
+        QVERIFY(root.isArray());
+        QCOMPARE(doc.array(), root.toArray());
     }
     {
         QByteArray json = "{}";
@@ -2165,10 +2193,16 @@ void tst_QtJson::fromJson()
         QVERIFY(!doc.isEmpty());
         QCOMPARE(doc.isArray(), false);
         QCOMPARE(doc.isObject(), true);
-        QJsonObject object = doc.object();
+        QJsonValue root = QJsonValue::fromJson(json);
+        QVERIFY(root.isObject());
+        QCOMPARE(doc.object(), root.toObject());
+
+        QJsonObject object = root.toObject();
         QCOMPARE(object.size(), 1);
         QCOMPARE(object.value("Key"), QJsonValue(true));
+
         QCOMPARE(doc.toJson(), json);
+        QCOMPARE(root.toJson(), json);
     }
     {
         QByteArray json = "[ null, true, false, \"Foo\", 1, [], {} ]";
@@ -2535,9 +2569,7 @@ void tst_QtJson::parseStrings()
         QJsonValue val = array.at(0);
         QCOMPARE(val.type(), QJsonValue::String);
 
-        // TODO: QJsonValue::toJson
-        QJsonDocument doc(array);
-        QCOMPARE(doc.toJson(), json);
+        QCOMPARE(root.toJson(), json);
     }
 
     struct Pairs {
@@ -2568,9 +2600,7 @@ void tst_QtJson::parseStrings()
         QJsonValue val = array.at(0);
         QCOMPARE(val.type(), QJsonValue::String);
 
-        // TODO: QJsonValue::toJson
-        QJsonDocument doc(array);
-        QCOMPARE(doc.toJson(), out);
+        QCOMPARE(root.toJson(), out);
     }
 
 }
@@ -2867,7 +2897,8 @@ void tst_QtJson::makeEscapes()
     QFETCH(QByteArray, result);
 
     QJsonArray array = { input };
-    QByteArray json = QJsonDocument(array).toJson(QJsonDocument::Compact);
+    QByteArray json = QJsonValue(array).toJson(QJsonValue::Compact);
+    QCOMPARE(QJsonDocument(array).toJson(QJsonDocument::Compact), json);
 
     QVERIFY(json.startsWith("[\""));
     result.prepend("[\"");
@@ -3279,14 +3310,14 @@ void tst_QtJson::longStrings()
         QMap <QString, QVariant> map;
         map["key"] = s;
 
-        /* Create a QJsonDocument from the QMap ... */
-        QJsonDocument d1 = QJsonDocument::fromVariant(QVariant(map));
+        /* Create a QJsonValue from the QMap ... */
+        QJsonValue d1 = QJsonValue::fromVariant(QVariant(map));
         /* ... and a QByteArray from the QJsonDocument */
         QByteArray a1 = d1.toJson();
 
         /* Create a QJsonDocument from the QByteArray ... */
-        QJsonDocument d2 = QJsonDocument::fromJson(a1);
-        /* ... and a QByteArray from the QJsonDocument */
+        QJsonValue d2 = QJsonValue::fromJson(a1);
+        /* ... and a QByteArray from the QJsonValue */
         QByteArray a2 = d2.toJson();
         QCOMPARE(a1, a2);
 
@@ -3294,8 +3325,8 @@ void tst_QtJson::longStrings()
         QJsonObject o1, o2;
         o1[s] = 42;
         o2[QLatin1String(ba.data(), i + 1)] = 42;
-        d1.setObject(o1);
-        d2.setObject(o2);
+        d1 = o1;
+        d2 = o2;
         a1 = d1.toJson();
         a2 = d2.toJson();
         QCOMPARE(a1, a2);
@@ -3310,13 +3341,13 @@ void tst_QtJson::longStrings()
         QMap <QString, QVariant> map;
         map["key"] = s;
 
-        /* Create a QJsonDocument from the QMap ... */
-        QJsonDocument d1 = QJsonDocument::fromVariant(QVariant(map));
-        /* ... and a QByteArray from the QJsonDocument */
+        /* Create a QJsonValue from the QMap ... */
+        QJsonValue d1 = QJsonValue::fromVariant(QVariant(map));
+        /* ... and a QByteArray from the QJsonValue */
         QByteArray a1 = d1.toJson();
 
         /* Create a QJsonDocument from the QByteArray ... */
-        QJsonDocument d2 = QJsonDocument::fromJson(a1);
+        QJsonValue d2 = QJsonValue::fromJson(a1);
         /* ... and a QByteArray from the QJsonDocument */
         QByteArray a2 = d2.toJson();
         QCOMPARE(a1, a2);
@@ -3325,8 +3356,8 @@ void tst_QtJson::longStrings()
         QJsonObject o1, o2;
         o1[s] = 42;
         o2[QLatin1String(ba.data(), i + 1)] = 42;
-        d1.setObject(o1);
-        d2.setObject(o2);
+        d1 = o1;
+        d2 = o2;
         a1 = d1.toJson();
         a2 = d2.toJson();
         QCOMPARE(a1, a2);
@@ -3489,7 +3520,7 @@ void tst_QtJson::removeNonLatinKey()
 
     sourceObject.insert(nonLatinKeyName, 1);
 
-    const QByteArray json = QJsonDocument(sourceObject).toJson();
+    const QByteArray json = QJsonValue(sourceObject).toJson();
     const QJsonObject restoredObject = QJsonValue::fromJson(json).toObject();
 
     QCOMPARE(sourceObject.keys(), restoredObject.keys());

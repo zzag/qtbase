@@ -15,6 +15,7 @@
 #include <qdebug.h>
 #include "qdatastream.h"
 #include "qjsonparser_p.h"
+#include "qjsonwriter_p.h"
 
 #include <private/qnumeric_p.h>
 #include <private/qcborvalue_p.h>
@@ -606,7 +607,7 @@ QVariant QJsonValue::toVariant() const
 
     Currently, only objects/maps and arrays/lists can be parsed.
 
-    \sa QJsonParseError, isUndefined()
+    \sa QJsonParseError, isUndefined(), toJson()
  */
 QJsonValue QJsonValue::fromJson(QByteArrayView json, QJsonParseError *error)
 {
@@ -615,6 +616,43 @@ QJsonValue QJsonValue::fromJson(QByteArrayView json, QJsonParseError *error)
     result.value = parser.parse(error);
     return result;
 }
+
+/*!
+    \enum QJsonValue::JsonFormat
+    \since 6.9
+
+    This value defines the format of the JSON byte array produced
+    when converting to a QJsonValue using toJson().
+
+    \value Indented Defines human readable output as follows:
+        \snippet code/src_corelib_serialization_qjsondocument.cpp 0
+
+    \value Compact Defines a compact output as follows:
+        \snippet code/src_corelib_serialization_qjsondocument.cpp 1
+  */
+
+/*!
+    \since 6.9
+    Converts the QJsonValue to a UTF-8 encoded JSON value in the provided \a format.
+
+    Currently, only objects/maps and arrays/lists can be encoded.
+
+    \sa fromJson(), JsonFormat
+ */
+#if !defined(QT_JSON_READONLY) || defined(Q_QDOC)
+QByteArray QJsonValue::toJson(JsonFormat format) const
+{
+    QByteArray json;
+
+    const QCborContainerPrivate *container = QJsonPrivate::Value::container(value);
+    if (isArray())
+        QJsonPrivate::Writer::arrayToJson(container, json, 0, (format == Compact));
+    else
+        QJsonPrivate::Writer::objectToJson(container, json, 0, (format == Compact));
+
+    return json;
+}
+#endif
 
 /*!
     Returns the type of the value.
