@@ -521,9 +521,8 @@ void Parser::addIncludesRecursive(const QString &filename, QList<QString> &inclu
             rinc = info2.absoluteFilePath();
             filename = info2.fileName();
         }
-
         // only search possible qt headers
-        if (filename.startsWith(QLatin1Char('q'), Qt::CaseInsensitive)) {
+        if (QFileInfo(filename).baseName().startsWith(QLatin1Char('q'), Qt::CaseInsensitive)) {
             QString resolved = resolveInclude(rinc);
             if (!resolved.isEmpty() && !includes.contains(resolved)) {
                 includes.push_back(resolved);
