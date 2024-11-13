@@ -605,8 +605,6 @@ QVariant QJsonValue::toVariant() const
     the optional \a error variable will contain further details about the
     error.
 
-    Currently, only objects/maps and arrays/lists can be parsed.
-
     \sa QJsonParseError, isUndefined(), toJson()
  */
 QJsonValue QJsonValue::fromJson(QByteArrayView json, QJsonParseError *error)

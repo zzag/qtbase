@@ -272,6 +272,11 @@ QJsonDocument QJsonDocument::fromJson(const QByteArray &json, QJsonParseError *e
     if (val.isArray() || val.isMap()) {
         result.d = std::make_unique<QJsonDocumentPrivate>();
         result.d->value = val;
+    } else if (!val.isUndefined() && error) {
+        // parsed a valid string/number/bool/null,
+        // but QJsonDocument only stores objects and arrays.
+        error->error = QJsonParseError::IllegalValue;
+        error->offset = 0;
     }
     return result;
 }
