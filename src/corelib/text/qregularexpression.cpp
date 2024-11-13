@@ -1389,7 +1389,7 @@ QRegularExpression &QRegularExpression::operator=(const QRegularExpression &re) 
 
 /*!
     \fn void QRegularExpression::swap(QRegularExpression &other)
-    \memberswap{reglar expression}
+    \memberswap{regular expression}
 */
 
 /*!
