@@ -1,0 +1,118 @@
+// Copyright (C) 2024 The Qt Company Ltd.
+// SPDX-License-Identifier: LicenseRef-Qt-Commercial OR LGPL-3.0-only OR GPL-2.0-only OR GPL-3.0-only
+
+#include "qfonticonengine_p.h"
+
+#ifndef QT_NO_ICON
+
+#include <QtCore/qdebug.h>
+#include <QtCore/qfile.h>
+#include <QtCore/qset.h>
+
+#include <QtGui/qfontdatabase.h>
+#include <QtGui/qpainter.h>
+#include <QtGui/qpalette.h>
+
+QT_BEGIN_NAMESPACE
+
+using namespace Qt::StringLiterals;
+
+QFontIconEngine::QFontIconEngine(const QString &iconName, const QFont &font)
+    : m_iconName(iconName)
+    , m_iconFont(font)
+{
+}
+
+QFontIconEngine::~QFontIconEngine() = default;
+
+QString QFontIconEngine::iconName()
+{
+    return m_iconName;
+}
+
+bool QFontIconEngine::isNull()
+{
+    const QString text = string();
+    if (text.isEmpty())
+        return true;
+    const QChar c0 = text.at(0);
+    const QFontMetrics fontMetrics(m_iconFont);
+    if (c0.category() == QChar::Other_Surrogate && text.size() > 1)
+        return !fontMetrics.inFontUcs4(QChar::surrogateToUcs4(c0, text.at(1)));
+    return !fontMetrics.inFont(c0);
+}
+
+QList<QSize> QFontIconEngine::availableSizes(QIcon::Mode, QIcon::State)
+{
+    return {{16, 16}, {24, 24}, {48, 48}, {128, 128}};
+}
+
+QSize QFontIconEngine::actualSize(const QSize &size, QIcon::Mode mode, QIcon::State state)
+{
+    return QIconEngine::actualSize(size, mode, state);
+}
+
+QPixmap QFontIconEngine::pixmap(const QSize &size, QIcon::Mode mode, QIcon::State state)
+{
+    return scaledPixmap(size, mode, state, 1.0);
+}
+
+QPixmap QFontIconEngine::scaledPixmap(const QSize &size, QIcon::Mode mode, QIcon::State state, qreal scale)
+{
+    const quint64 cacheKey = calculateCacheKey(mode, state);
+    if (cacheKey != m_pixmapCacheKey || m_pixmap.size() != size
+     || m_pixmap.devicePixelRatio() != scale) {
+        m_pixmap = QPixmap(size * scale);
+        m_pixmap.fill(Qt::transparent);
+        m_pixmap.setDevicePixelRatio(scale);
+
+        if (!m_pixmap.isNull()) {
+            QPainter painter(&m_pixmap);
+            paint(&painter, QRect(QPoint(), size), mode, state);
+        }
+
+        m_pixmapCacheKey = cacheKey;
+    }
+
+    return m_pixmap;
+}
+
+void QFontIconEngine::paint(QPainter *painter, const QRect &rect, QIcon::Mode mode, QIcon::State state)
+{
+    Q_UNUSED(state);
+
+    painter->save();
+    QFont renderFont(m_iconFont);
+    renderFont.setPixelSize(rect.height());
+    painter->setFont(renderFont);
+
+    QPalette palette;
+    switch (mode) {
+    case QIcon::Active:
+        painter->setPen(palette.color(QPalette::Active, QPalette::Text));
+        break;
+    case QIcon::Normal:
+        painter->setPen(palette.color(QPalette::Active, QPalette::Text));
+        break;
+    case QIcon::Disabled:
+        painter->setPen(palette.color(QPalette::Disabled, QPalette::Text));
+        break;
+    case QIcon::Selected:
+        painter->setPen(palette.color(QPalette::Active, QPalette::HighlightedText));
+        break;
+    }
+
+    const QString text = string();
+
+    painter->drawText(rect, Qt::AlignCenter, text);
+    painter->restore();
+}
+
+QString QFontIconEngine::string() const
+{
+    return {};
+}
+
+QT_END_NAMESPACE
+
+#endif // QT_NO_ICON
