@@ -633,8 +633,6 @@ QJsonValue QJsonValue::fromJson(QByteArrayView json, QJsonParseError *error)
     \since 6.9
     Converts the QJsonValue to a UTF-8 encoded JSON value in the provided \a format.
 
-    Currently, only objects/maps and arrays/lists can be encoded.
-
     \sa fromJson(), JsonFormat
  */
 #if !defined(QT_JSON_READONLY) || defined(Q_QDOC)
@@ -642,11 +640,7 @@ QByteArray QJsonValue::toJson(JsonFormat format) const
 {
     QByteArray json;
 
-    const QCborContainerPrivate *container = QJsonPrivate::Value::container(value);
-    if (isArray())
-        QJsonPrivate::Writer::arrayToJson(container, json, 0, (format == Compact));
-    else
-        QJsonPrivate::Writer::objectToJson(container, json, 0, (format == Compact));
+    QJsonPrivate::Writer::valueToJson(value, json, 0, (format == Compact));
 
     return json;
 }

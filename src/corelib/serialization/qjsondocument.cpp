@@ -12,8 +12,6 @@
 #include <qdebug.h>
 #include <qcbormap.h>
 #include <qcborarray.h>
-#include "qcborvalue_p.h"
-#include "qjsonwriter_p.h"
 #include "qjsonparser_p.h"
 #include "qjson_p.h"
 #include "qdatastream.h"
@@ -244,13 +242,8 @@ QByteArray QJsonDocument::toJson(JsonFormat format) const
     if (!d)
         return json;
 
-    const QCborContainerPrivate *container = QJsonPrivate::Value::container(d->value);
-    if (d->value.isArray())
-        QJsonPrivate::Writer::arrayToJson(container, json, 0, (format == Compact));
-    else
-        QJsonPrivate::Writer::objectToJson(container, json, 0, (format == Compact));
-
-    return json;
+    return QJsonPrivate::Value::fromTrustedCbor(d->value).toJson(
+            format == JsonFormat::Compact ? QJsonValue::Compact : QJsonValue::Indented);
 }
 #endif
 
@@ -479,12 +472,7 @@ QDebug operator<<(QDebug dbg, const QJsonDocument &o)
         dbg << "QJsonDocument()";
         return dbg;
     }
-    QByteArray json;
-    const QCborContainerPrivate *container = QJsonPrivate::Value::container(o.d->value);
-    if (o.d->value.isArray())
-        QJsonPrivate::Writer::arrayToJson(container, json, 0, true);
-    else
-        QJsonPrivate::Writer::objectToJson(container, json, 0, true);
+    QByteArray json = QJsonPrivate::Value::fromTrustedCbor(o.d->value).toJson(QJsonValue::Compact);
     dbg.nospace() << "QJsonDocument("
                   << json.constData() // print as utf-8 string without extra quotation marks
                   << ')';

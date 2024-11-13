@@ -88,6 +88,8 @@ private Q_SLOTS:
     void toJsonSillyNumericValues();
     void toJsonLargeNumericValues();
     void toJsonDenormalValues();
+    void toJsonTopLevel_data();
+    void toJsonTopLevel();
     void fromJson();
     void fromJsonErrors();
     void parseNumbers();
@@ -2129,6 +2131,33 @@ void tst_QtJson::toJsonDenormalValues()
     }
 }
 
+void tst_QtJson::toJsonTopLevel_data()
+{
+    QTest::addColumn<QJsonValue>("value");
+    QTest::addColumn<QByteArray>("result");
+
+    QTest::addRow("undefined") << QJsonValue() << QByteArray("null");
+    QTest::addRow("null") << QJsonValue(QJsonValue::Null) << QByteArray("null");
+    QTest::addRow("true") << QJsonValue(true) << QByteArray("true");
+    QTest::addRow("false") << QJsonValue(false) << QByteArray("false");
+    QTest::addRow("integer") << QJsonValue(42) << QByteArray("42");
+    QTest::addRow("float") << QJsonValue(42.1) << QByteArray("42.1");
+    QTest::addRow("string") << QJsonValue("a string") << QByteArray("\"a string\"");
+    QTest::addRow("string with escapes")
+            << QJsonValue("some \"escapes\"\t\n") << QByteArray(R"("some \"escapes\"\t\n")");
+    QTest::addRow("large number") << QJsonValue(18446744073709551616.0)
+                                  << QByteArray("18446744073709552000");
+}
+
+void tst_QtJson::toJsonTopLevel()
+{
+    QFETCH(QJsonValue, value);
+    QFETCH(QByteArray, result);
+
+    QCOMPARE(value.toJson(), result);
+    QCOMPARE(value.toJson(QJsonValue::Compact), result);
+}
+
 void tst_QtJson::fromJson()
 {
     {
@@ -2748,7 +2777,7 @@ void tst_QtJson::parseStrings()
         QJsonValue val2 = QJsonValue::fromJson(jsonStr);
         QCOMPARE(val, val2);
         QCOMPARE(val2.type(), QJsonValue::String);
-        // TODO: QJsonValue::toJson
+        QCOMPARE(val2.toJson(), jsonStr);
     }
 
     struct Pairs {
@@ -2784,10 +2813,13 @@ void tst_QtJson::parseStrings()
         QByteArray jsonStr = "\"";
         jsonStr += pairs[i].in;
         jsonStr += '\"';
+        QByteArray jsonStrOut = "\"";
+        jsonStrOut += pairs[i].out;
+        jsonStrOut += '\"';
         QJsonValue val2 = QJsonValue::fromJson(jsonStr);
         QCOMPARE(val, val2);
         QCOMPARE(val2.type(), QJsonValue::String);
-        // TODO: QJsonValue::toJson
+        QCOMPARE(val2.toJson(), jsonStrOut);
     }
 
 }
@@ -3178,17 +3210,22 @@ void tst_QtJson::makeEscapes()
 {
     QFETCH(QString, input);
     QFETCH(QByteArray, result);
+    QByteArray resultStr = result;
 
     QJsonArray array = { input };
     QByteArray json = QJsonValue(array).toJson(QJsonValue::Compact);
     QCOMPARE(QJsonDocument(array).toJson(QJsonDocument::Compact), json);
+    QByteArray jsonStr = QJsonValue(input).toJson();
 
     QVERIFY(json.startsWith("[\""));
     result.prepend("[\"");
+    resultStr.prepend('"');
     QVERIFY(json.endsWith("\"]"));
     result.append("\"]");
+    resultStr.append('"');
 
     QCOMPARE(json, result);
+    QCOMPARE(jsonStr, resultStr);
 }
 
 void tst_QtJson::assignObjects()
