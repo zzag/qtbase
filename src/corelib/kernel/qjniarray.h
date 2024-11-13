@@ -875,8 +875,11 @@ auto QJniArrayBase::makeArray(List &&list, NewFn &&newArray, SetFn &&setRegion)
     const size_type length = size_type(std::size(list));
     JNIEnv *env = QJniEnvironment::getJniEnv();
     auto localArray = (env->*newArray)(length);
-    if (QJniEnvironment::checkAndClearExceptions(env))
+    if (QJniEnvironment::checkAndClearExceptions(env)) {
+        if (localArray)
+            env->DeleteLocalRef(localArray);
         return QJniArray<ElementType>();
+    }
 
     if (length) {
         // can't use static_cast here because we have signed/unsigned mismatches
@@ -889,7 +892,7 @@ auto QJniArrayBase::makeArray(List &&list, NewFn &&newArray, SetFn &&setRegion)
                 (env->*setRegion)(localArray, i++, 1, reinterpret_cast<const ElementType *>(&e));
         }
     }
-    return QJniArray<ElementType>(localArray);
+    return QJniArray<ElementType>(QJniObject::fromLocalRef(localArray));
 };
 
 template <typename List>
@@ -917,8 +920,11 @@ auto QJniArrayBase::makeObjectArray(List &&list)
         elementClass = env->GetObjectClass(*std::begin(list));
     }
     auto localArray = env->NewObjectArray(length, elementClass, nullptr);
-    if (QJniEnvironment::checkAndClearExceptions(env))
+    if (QJniEnvironment::checkAndClearExceptions(env)) {
+        if (localArray)
+            env->DeleteLocalRef(localArray);
         return ResultType();
+    }
 
     // explicitly manage the frame for local references in chunks of 100
     QJniObject::LocalFrame frame(env);
@@ -937,7 +943,7 @@ auto QJniArrayBase::makeObjectArray(List &&list)
     }
     if (i)
         env->PopLocalFrame(nullptr);
-    return ResultType(localArray);
+    return ResultType(QJniObject::fromLocalRef(localArray));
 }
 
 namespace QtJniTypes
