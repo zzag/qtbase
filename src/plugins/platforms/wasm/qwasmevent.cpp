@@ -75,18 +75,26 @@ Qt::Key webKeyToQtKey(const std::string &code, const std::string &key, bool isDe
     QStringIterator i(str);
     return static_cast<Qt::Key>(i.next(0));
 }
-} // namespace
 
-namespace KeyboardModifier
+QFlags<Qt::KeyboardModifier> getKeyboardModifiers(const emscripten::val &event)
 {
-template <>
-QFlags<Qt::KeyboardModifier> getForEvent<EmscriptenKeyboardEvent>(
-    const EmscriptenKeyboardEvent& event)
-{
-    return internal::Helper<EmscriptenKeyboardEvent>::getModifierForEvent(event) |
-        (event.location == DOM_KEY_LOCATION_NUMPAD ? Qt::KeypadModifier : Qt::NoModifier);
+    QFlags<Qt::KeyboardModifier> keyModifier = Qt::NoModifier;
+    if (event["shiftKey"].as<bool>())
+        keyModifier |= Qt::ShiftModifier;
+    if (event["ctrlKey"].as<bool>())
+        keyModifier |= platform() == Platform::MacOS ? Qt::MetaModifier : Qt::ControlModifier;
+    if (event["altKey"].as<bool>())
+        keyModifier |= Qt::AltModifier;
+    if (event["metaKey"].as<bool>())
+        keyModifier |= platform() == Platform::MacOS ? Qt::ControlModifier : Qt::MetaModifier;
+    if (event["constructor"]["name"].as<std::string>() == "KeyboardEvent" &&
+        event["location"].as<unsigned int>() == DOM_KEY_LOCATION_NUMPAD) {
+        keyModifier |= Qt::KeypadModifier;
+    }
+    return keyModifier;
 }
-}  // namespace KeyboardModifier
+
+} // namespace
 
 Event::Event(EventType type, emscripten::val webEvent)
     : webEvent(webEvent), type(type)
@@ -99,7 +107,7 @@ KeyEvent::KeyEvent(EventType type, emscripten::val event) : Event(type, event)
     const auto webKey = event["key"].as<std::string>();
     deadKey = isDeadKeyEvent(webKey.c_str());
     autoRepeat = event["repeat"].as<bool>();
-    modifiers = KeyboardModifier::getForEvent(event);
+    modifiers = getKeyboardModifiers(event);
     key = webKeyToQtKey(code, webKey, deadKey, modifiers);
 
     text = QString::fromUtf8(webKey);
@@ -144,7 +152,7 @@ MouseEvent::MouseEvent(EventType type, emscripten::val event) : Event(type, even
     localPoint = QPointF(event["offsetX"].as<qreal>(), event["offsetY"].as<qreal>());
     pointInPage = QPointF(event["pageX"].as<qreal>(), event["pageY"].as<qreal>());
     pointInViewport = QPointF(event["clientX"].as<qreal>(), event["clientY"].as<qreal>());
-    modifiers = KeyboardModifier::getForEvent(event);
+    modifiers = getKeyboardModifiers(event);
 }
 
 PointerEvent::PointerEvent(EventType type, emscripten::val event) : MouseEvent(type, event)
