@@ -1119,9 +1119,9 @@ void QThread::setTerminationEnabled(bool)
 // No threads: so we can just use static variables
 Q_CONSTINIT static QThreadData *data = nullptr;
 
-QThreadData *QThreadData::current(bool createIfNecessary)
+QThreadData *QThreadData::current()
 {
-    if (!data && createIfNecessary) {
+    if (!data) {
         data = new QThreadData;
         data->thread = new QAdoptedThread(data);
     }
