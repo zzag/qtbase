@@ -211,8 +211,6 @@ struct MouseEvent : public Event
 
 struct PointerEvent : public MouseEvent
 {
-    static std::optional<PointerEvent> fromWeb(emscripten::val webEvent);
-
     PointerEvent(EventType type, emscripten::val webEvent);
     ~PointerEvent();
     PointerEvent(const PointerEvent &other);

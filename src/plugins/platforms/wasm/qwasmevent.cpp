@@ -209,29 +209,6 @@ PointerEvent &PointerEvent::operator=(const PointerEvent &other) = default;
 
 PointerEvent &PointerEvent::operator=(PointerEvent &&other) = default;
 
-std::optional<PointerEvent> PointerEvent::fromWeb(emscripten::val event)
-{
-    const auto eventType = ([&event]() -> std::optional<EventType> {
-        const auto eventTypeString = event["type"].as<std::string>();
-
-        if (eventTypeString == "pointermove")
-            return EventType::PointerMove;
-        else if (eventTypeString == "pointerup")
-            return EventType::PointerUp;
-        else if (eventTypeString == "pointerdown")
-            return EventType::PointerDown;
-        else if (eventTypeString == "pointerenter")
-            return EventType::PointerEnter;
-        else if (eventTypeString == "pointerleave")
-            return EventType::PointerLeave;
-        return std::nullopt;
-    })();
-    if (!eventType)
-        return std::nullopt;
-
-    return PointerEvent(*eventType, event);
-}
-
 DragEvent::DragEvent(EventType type, emscripten::val event, QWindow *window)
     : MouseEvent(type, event), dataTransfer(event["dataTransfer"]), targetWindow(window)
 {

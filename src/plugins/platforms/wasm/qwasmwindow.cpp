@@ -101,9 +101,11 @@ QWasmWindow::QWasmWindow(QWindow *w, QWasmDeadKeySupport *deadKeySupport,
     m_flags = window()->flags();
 
     m_pointerEnterCallback = std::make_unique<qstdweb::EventCallback>(m_window, "pointerenter",
-        [this](emscripten::val event) { this->handlePointerEvent(event); });
+        [this](emscripten::val event) { this->handlePointerEvent(PointerEvent(EventType::PointerEnter, event)); }
+    );
     m_pointerLeaveCallback = std::make_unique<qstdweb::EventCallback>(m_window, "pointerleave",
-        [this](emscripten::val event) { this->handlePointerEvent(event); });
+        [this](emscripten::val event) { this->handlePointerEvent(PointerEvent(EventType::PointerLeave, event)); }
+    );
     m_wheelEventCallback = std::make_unique<qstdweb::EventCallback>( m_window, "wheel",
         [this](emscripten::val event) { this->handleWheelEvent(event); });
 
@@ -584,10 +586,10 @@ bool QWasmWindow::processKeyForInputContext(const KeyEvent &event)
     return result;
 }
 
-void QWasmWindow::handlePointerEvent(const emscripten::val &event)
+void QWasmWindow::handlePointerEvent(const PointerEvent &event)
 {
-    if (processPointer(*PointerEvent::fromWeb(event)))
-        event.call<void>("preventDefault");
+    if (processPointer(event))
+        event.webEvent.call<void>("preventDefault");
 }
 
 bool QWasmWindow::processPointer(const PointerEvent &event)

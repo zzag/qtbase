@@ -19,19 +19,18 @@ QT_BEGIN_NAMESPACE
 ClientArea::ClientArea(QWasmWindow *window, QWasmScreen *screen, emscripten::val element)
     : m_screen(screen), m_window(window), m_element(element)
 {
-    const auto callback = std::function([this](emscripten::val event) {
-        processPointer(*PointerEvent::fromWeb(event));
-        event.call<void>("preventDefault");
-        event.call<void>("stopPropagation");
-    });
-
-    m_pointerDownCallback =
-            std::make_unique<qstdweb::EventCallback>(element, "pointerdown", callback);
-    m_pointerMoveCallback =
-            std::make_unique<qstdweb::EventCallback>(element, "pointermove", callback);
-    m_pointerUpCallback = std::make_unique<qstdweb::EventCallback>(element, "pointerup", callback);
-    m_pointerCancelCallback =
-            std::make_unique<qstdweb::EventCallback>(element, "pointercancel", callback);
+    m_pointerDownCallback = std::make_unique<qstdweb::EventCallback>(element, "pointerdown",
+        [this](emscripten::val event){ processPointer(PointerEvent(EventType::PointerDown, event)); }
+    );
+    m_pointerMoveCallback = std::make_unique<qstdweb::EventCallback>(element, "pointermove",
+        [this](emscripten::val event){ processPointer(PointerEvent(EventType::PointerMove, event)); }
+    );
+    m_pointerUpCallback = std::make_unique<qstdweb::EventCallback>(element, "pointerup",
+        [this](emscripten::val event){ processPointer(PointerEvent(EventType::PointerUp, event)); }
+    );
+    m_pointerCancelCallback = std::make_unique<qstdweb::EventCallback>(element, "pointercancel",
+        [this](emscripten::val event){ processPointer(PointerEvent(EventType::PointerCancel, event)); }
+    );
 
         element.call<void>("setAttribute", emscripten::val("draggable"), emscripten::val("true"));
 
@@ -69,9 +68,8 @@ ClientArea::ClientArea(QWasmWindow *window, QWasmScreen *screen, emscripten::val
 
 }
 
-bool ClientArea::processPointer(const PointerEvent &event)
+void ClientArea::processPointer(const PointerEvent &event)
 {
-
     switch (event.type) {
     case EventType::PointerDown:
         m_element.call<void>("setPointerCapture", event.pointerId);
@@ -90,7 +88,8 @@ bool ClientArea::processPointer(const PointerEvent &event)
     const bool eventAccepted = deliverEvent(event);
     if (!eventAccepted && event.type == EventType::PointerDown)
         QGuiApplicationPrivate::instance()->closeAllPopups();
-    return eventAccepted;
+    event.webEvent.call<void>("preventDefault");
+    event.webEvent.call<void>("stopPropagation");
 }
 
 bool ClientArea::deliverEvent(const PointerEvent &event)
