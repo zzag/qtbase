@@ -418,10 +418,14 @@ struct FunctionData<Ret (Args...), ExtraFlags>
         if constexpr (ExtraFlags & QtMocConstants::MethodRevisioned)
             ++p;
         *p++ = returnType;
-        for (uint i = 0; i < sizeof...(Args); ++i)
-            *p++ = params[i].typeIdx;
-        for (uint i = 0; i < sizeof...(Args); ++i)
-            *p++ = params[i].nameIdx;
+        if constexpr (sizeof...(Args)) {
+            for (uint i = 0; i < sizeof...(Args); ++i)
+                *p++ = params[i].typeIdx;
+            for (uint i = 0; i < sizeof...(Args); ++i)
+                *p++ = params[i].nameIdx;
+        } else {
+            Q_UNUSED(params);
+        }
     }
 
     constexpr
