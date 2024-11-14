@@ -286,9 +286,11 @@ function(qt_enable_separate_debug_info target installDestination)
             set(BUNDLE_ID ${target})
         endif()
 
+        get_target_property(is_bundle ${target} MACOSX_BUNDLE)
+
         if (NOT "x${arg_DSYM_OUTPUT_DIR}" STREQUAL "x")
             set(debug_info_bundle_dir "${arg_DSYM_OUTPUT_DIR}/${target}")
-        elseif(is_framework)
+        elseif(is_framework OR is_bundle)
             set(debug_info_bundle_dir "$<TARGET_BUNDLE_DIR:${target}>")
         else()
             set(debug_info_bundle_dir "$<TARGET_FILE:${target}>")
