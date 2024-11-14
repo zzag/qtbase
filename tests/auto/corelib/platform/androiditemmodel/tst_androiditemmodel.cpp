@@ -249,8 +249,7 @@ void tst_AndroidItemModel::setData()
     QCOMPARE(bottomRight, qProxy->index(row, column, QModelIndex()));
     QCOMPARE(roles, QList<int>{role});
 
-    jint jDataChangedCount = jModel.getField<jint>("m_dataChangedCount");
-    QTRY_COMPARE(jDataChangedCount, 1);
+    QTRY_COMPARE(jModel.getField<jint>("m_dataChangedCount"), 1);
 }
 
 void tst_AndroidItemModel::resetModel()
