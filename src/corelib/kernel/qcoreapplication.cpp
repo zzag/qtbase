@@ -536,14 +536,6 @@ QThread *QCoreApplicationPrivate::mainThread()
     return theMainThread.loadRelaxed();
 }
 
-bool QCoreApplicationPrivate::threadRequiresCoreApplication()
-{
-    QThreadData *data = QThreadData::current(false);
-    if (!data)
-        return true;    // default setting
-    return data->requiresCoreApplication;
-}
-
 void QCoreApplicationPrivate::checkReceiverThread(QObject *receiver)
 {
     QThread *currentThread = QThread::currentThread();
@@ -1107,7 +1099,13 @@ void QCoreApplication::setQuitLockEnabled(bool enabled)
 */
 bool QCoreApplication::notifyInternal2(QObject *receiver, QEvent *event)
 {
-    bool selfRequired = QCoreApplicationPrivate::threadRequiresCoreApplication();
+    // Qt enforces the rule that events can only be sent to objects in
+    // the current thread, so receiver->d_func()->threadData is
+    // equivalent to QThreadData::current(), just without the function
+    // call overhead.
+    QObjectPrivate *d = receiver->d_func();
+    QThreadData *threadData = d->threadData.loadAcquire();
+    bool selfRequired = threadData->requiresCoreApplication;
     if (selfRequired && !qApp)
         return false;
 
@@ -1119,12 +1117,6 @@ bool QCoreApplication::notifyInternal2(QObject *receiver, QEvent *event)
         return result;
     }
 
-    // Qt enforces the rule that events can only be sent to objects in
-    // the current thread, so receiver->d_func()->threadData is
-    // equivalent to QThreadData::current(), just without the function
-    // call overhead.
-    QObjectPrivate *d = receiver->d_func();
-    QThreadData *threadData = d->threadData.loadAcquire();
     QScopedScopeLevelCounter scopeLevelCounter(threadData);
     if (!selfRequired)
         return doNotify(receiver, event);
