@@ -10,7 +10,7 @@ rhel
 # QTBUG-130738
 [familyNameWithCommaQuote:weird]
 vxworks
-[familyNameWithCommaQuote:commaSeparated]
+[familyNameWithCommaQuote:commaSeparatedWeird]
 vxworks
 [familyNameWithCommaQuote:commaSeparatedBogus]
 vxworks
