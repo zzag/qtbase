@@ -28,6 +28,13 @@ class tst_QFontEngine : public QObject
             return QString::fromUtf8(rowName.mid(split + 1));
         }
 
+        QLatin1StringView glyphName() const
+        {
+            const auto split = rowName.indexOf('@');
+            Q_ASSERT(split >= 0);
+            return rowName.left(split);
+        }
+
         QFont font() const
         {
             QFont font(familyName());
@@ -59,6 +66,8 @@ private slots:
     void glyphCount();
     void glyphIndex_data() { data(); }
     void glyphIndex();
+    void glyphName_data() { data(); }
+    void glyphName();
 
 private:
     void setupApplication();
@@ -251,6 +260,22 @@ void tst_QFontEngine::glyphIndex()
     const auto fontEngine = candidate.fontEngine();
     QCOMPARE(fontEngine->type(), engineType);
     QCOMPARE(fontEngine->glyphIndex(candidate.ucs4), candidate.expectedGlyphIndex);
+}
+
+void tst_QFontEngine::glyphName()
+{
+    QFETCH_GLOBAL(const QFontEngine::Type, engineType);
+    QFETCH(const Candidate, candidate);
+    if (!candidate.isFontAvailable())
+        QSKIP("Font is not available");
+
+    const auto fontEngine = candidate.fontEngine();
+    QCOMPARE(fontEngine->type(), engineType);
+    QCOMPARE(fontEngine->glyphName(candidate.expectedGlyphIndex),
+             candidate.glyphName());
+
+    QCOMPARE(fontEngine->glyphName(0), ".notdef");
+    QCOMPARE(fontEngine->glyphName(std::numeric_limits<glyph_t>::max()), QString());
 }
 
 #endif // !define(QFONTENGINE_BENCHMARK)

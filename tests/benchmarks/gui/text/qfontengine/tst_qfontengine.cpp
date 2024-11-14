@@ -31,3 +31,16 @@ void tst_QFontEngine::glyphIndex()
         fontEngine->glyphIndex(candidate.ucs4);
     }
 }
+
+void tst_QFontEngine::glyphName()
+{
+    QFETCH(const Candidate, candidate);
+    if (!candidate.isFontAvailable())
+        QSKIP("Font is not available");
+
+    const auto fontEngine = candidate.fontEngine();
+
+    QBENCHMARK {
+        fontEngine->glyphName(candidate.expectedGlyphIndex);
+    }
+}

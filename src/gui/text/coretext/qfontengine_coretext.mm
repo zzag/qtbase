@@ -319,6 +319,14 @@ glyph_t QCoreTextFontEngine::glyphIndex(uint ucs4) const
     return glyphIndices[0];
 }
 
+QString QCoreTextFontEngine::glyphName(glyph_t index) const
+{
+    QString result = QCFString(CTFontCopyNameForGlyph(ctfont, index));
+    if (result.isEmpty())
+        result = QFontEngine::glyphName(index);
+    return result;
+}
+
 int QCoreTextFontEngine::stringToCMap(const QChar *str, int len, QGlyphLayout *glyphs,
                                       int *nglyphs, QFontEngine::ShaperFlags flags) const
 {

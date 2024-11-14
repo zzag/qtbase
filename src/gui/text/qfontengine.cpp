@@ -28,6 +28,8 @@
 
 QT_BEGIN_NAMESPACE
 
+using namespace Qt::StringLiterals;
+
 static inline bool qtransform_equals_no_translate(const QTransform &a, const QTransform &b)
 {
     if (a.type() <= QTransform::TxTranslate && b.type() <= QTransform::TxTranslate) {
@@ -875,6 +877,49 @@ QFontEngine::Glyph *QFontEngine::glyphData(glyph_t,
                                            const QTransform &)
 {
     return nullptr;
+}
+
+#if QT_CONFIG(harfbuzz)
+template <typename Functor>
+auto queryHarfbuzz(const QFontEngine *engine, Functor &&func)
+{
+    decltype(func(nullptr)) result = {};
+
+    hb_face_t *hbFace = hb_qt_face_get_for_engine(const_cast<QFontEngine *>(engine));
+    if (hb_font_t *hbFont = hb_font_create(hbFace)) {
+        // explicitly use OpenType handlers for this font
+        hb_ot_font_set_funcs(hbFont);
+
+        result = func(hbFont);
+
+        hb_font_destroy(hbFont);
+    }
+
+    return result;
+}
+#endif
+
+QString QFontEngine::glyphName(glyph_t index) const
+{
+    QString result;
+    if (index >= glyph_t(glyphCount()))
+        return result;
+
+#if QT_CONFIG(harfbuzz)
+    result = queryHarfbuzz(this, [index](hb_font_t *hbFont){
+        QString result;
+        // According to the OpenType specification, glyph names are limited to 63
+        // characters and can only contain (a subset of) ASCII.
+        char name[64];
+        if (hb_font_get_glyph_name(hbFont, index, name, sizeof(name)))
+            result = QString::fromLatin1(name);
+        return result;
+    });
+#endif
+
+    if (result.isEmpty())
+        result = index ? u"gid%1"_s.arg(index) : u".notdef"_s;
+    return result;
 }
 
 QImage QFontEngine::renderedPathForGlyph(glyph_t glyph, const QColor &color)
@@ -1843,6 +1888,13 @@ glyph_t QFontEngineMulti::glyphIndex(uint ucs4) const
     }
 
     return glyph;
+}
+
+QString QFontEngineMulti::glyphName(glyph_t glyph) const
+{
+    const int which = highByte(glyph);
+    const_cast<QFontEngineMulti *>(this)->ensureEngineAt(which);
+    return engine(which)->glyphName(stripped(glyph));
 }
 
 int QFontEngineMulti::stringToCMap(const QChar *str, int len,

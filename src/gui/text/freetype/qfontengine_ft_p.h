@@ -181,6 +181,7 @@ private:
     QFixed underlinePosition() const override;
 
     glyph_t glyphIndex(uint ucs4) const override;
+    QString glyphName(glyph_t index) const override;
     void doKerning(QGlyphLayout *, ShaperFlags) const override;
 
     void getUnscaledGlyph(glyph_t glyph, QPainterPath *path, glyph_metrics_t *metrics) override;
