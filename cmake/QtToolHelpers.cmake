@@ -283,7 +283,11 @@ function(qt_internal_add_tool target_name)
         _qt_internal_add_try_run_post_build("${target_name}" "${arg_TRY_RUN_FLAGS}")
     endif()
 
-    qt_enable_separate_debug_info(${target_name} "${install_dir}" QT_EXECUTABLE)
+    qt_internal_defer_separate_debug_info("${target_name}"
+        SEPARATE_DEBUG_INFO_ARGS
+            "${install_dir}"
+            QT_EXECUTABLE
+    )
     qt_internal_install_pdb_files(${target_name} "${install_dir}")
 
     if(QT_GENERATE_SBOM)

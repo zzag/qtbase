@@ -242,9 +242,13 @@ function(qt_internal_add_executable name)
         else()
             unset(separate_debug_info_executable_arg)
         endif()
-        qt_enable_separate_debug_info(${name} "${arg_INSTALL_DIRECTORY}"
-                                      ${separate_debug_info_executable_arg}
-                                      ADDITIONAL_INSTALL_ARGS ${additional_install_args})
+
+        qt_internal_defer_separate_debug_info("${name}"
+            SEPARATE_DEBUG_INFO_ARGS
+                "${arg_INSTALL_DIRECTORY}"
+                ${separate_debug_info_executable_arg}
+                ADDITIONAL_INSTALL_ARGS ${additional_install_args}
+        )
         qt_internal_install_pdb_files(${name} "${arg_INSTALL_DIRECTORY}")
     endif()
 
@@ -264,6 +268,13 @@ function(qt_internal_add_executable name)
 
         _qt_internal_extend_sbom(${name} ${sbom_args})
     endif()
+
+    qt_add_list_file_finalizer(qt_internal_finalize_executable "${name}")
+endfunction()
+
+# Finalizer for all generic internal executables.
+function(qt_internal_finalize_executable target)
+    qt_internal_finalize_executable_separate_debug_info("${target}")
 endfunction()
 
 # This function compiles the target at configure time the very first time and creates the custom
