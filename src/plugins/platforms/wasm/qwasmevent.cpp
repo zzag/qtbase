@@ -101,7 +101,7 @@ Event::Event(EventType type, emscripten::val webEvent)
 {
 }
 
-KeyEvent::KeyEvent(EventType type, emscripten::val event) : Event(type, event)
+KeyEvent::KeyEvent(EventType type, emscripten::val event, QWasmDeadKeySupport *deadKeySupport) : Event(type, event)
 {
     const auto code = event["code"].as<std::string>();
     const auto webKey = event["key"].as<std::string>();
@@ -116,27 +116,8 @@ KeyEvent::KeyEvent(EventType type, emscripten::val event) : Event(type, event)
 
     if (key == Qt::Key_Tab)
         text = "\t";
-}
 
-std::optional<KeyEvent> KeyEvent::fromWebWithDeadKeyTranslation(emscripten::val event,
-                                                                QWasmDeadKeySupport *deadKeySupport)
-{
-    const auto eventType = ([&event]() -> std::optional<EventType> {
-        const auto eventTypeString = event["type"].as<std::string>();
-
-        if (eventTypeString == "keydown")
-            return EventType::KeyDown;
-        else if (eventTypeString == "keyup")
-            return EventType::KeyUp;
-        return std::nullopt;
-    })();
-    if (!eventType)
-        return std::nullopt;
-
-    auto result = KeyEvent(*eventType, event);
-    deadKeySupport->applyDeadKeyTranslations(&result);
-
-    return result;
+    deadKeySupport->applyDeadKeyTranslations(this);
 }
 
 MouseEvent::MouseEvent(EventType type, emscripten::val event) : Event(type, event)

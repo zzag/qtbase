@@ -63,10 +63,7 @@ struct Event
 
 struct KeyEvent : public Event
 {
-    static std::optional<KeyEvent>
-    fromWebWithDeadKeyTranslation(emscripten::val webEvent, QWasmDeadKeySupport *deadKeySupport);
-
-    KeyEvent(EventType type, emscripten::val webEvent);
+    KeyEvent(EventType type, emscripten::val webEvent, QWasmDeadKeySupport *deadKeySupport);
 
     Qt::Key key;
     QFlags<Qt::KeyboardModifier> modifiers;

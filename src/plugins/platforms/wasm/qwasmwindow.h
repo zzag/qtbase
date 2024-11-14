@@ -122,9 +122,9 @@ private:
     void applyWindowState();
     void commitParent(QWasmWindowTreeNode *parent);
 
-    void handleKeyEvent(const emscripten::val &event);
+    void handleKeyEvent(const KeyEvent &event);
     bool processKey(const KeyEvent &event);
-    void handleKeyForInputContextEvent(const emscripten::val &event);
+    void handleKeyForInputContextEvent(EventType eventType, const emscripten::val &event);
     bool processKeyForInputContext(const KeyEvent &event);
     void handlePointerEvent(const PointerEvent &event);
     bool processPointer(const PointerEvent &event);

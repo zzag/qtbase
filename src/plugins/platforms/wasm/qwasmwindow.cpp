@@ -113,16 +113,16 @@ QWasmWindow::QWasmWindow(QWindow *w, QWasmDeadKeySupport *deadKeySupport,
     if (wasmInput) {
         m_keyDownCallbackForInputContext =
             std::make_unique<qstdweb::EventCallback>(wasmInput->m_inputElement, "keydown",
-            [this](emscripten::val event) { this->handleKeyForInputContextEvent(event); });
+            [this](emscripten::val event) { this->handleKeyForInputContextEvent(EventType::KeyDown, event); });
         m_keyUpCallbackForInputContext =
             std::make_unique<qstdweb::EventCallback>(wasmInput->m_inputElement, "keyup",
-            [this](emscripten::val event) { this->handleKeyForInputContextEvent(event); });
+            [this](emscripten::val event) { this->handleKeyForInputContextEvent(EventType::KeyUp, event); });
     }
 
     m_keyDownCallback = std::make_unique<qstdweb::EventCallback>(m_window, "keydown",
-        [this](emscripten::val event) { this->handleKeyEvent(event); });
+        [this](emscripten::val event) { this->handleKeyEvent(KeyEvent(EventType::KeyDown, event, m_deadKeySupport)); });
     m_keyUpCallback =std::make_unique<qstdweb::EventCallback>(m_window, "keyup",
-        [this](emscripten::val event) { this->handleKeyEvent(event); });
+        [this](emscripten::val event) {this->handleKeyEvent(KeyEvent(EventType::KeyUp, event, m_deadKeySupport)); });
 
     setParent(parent());
 }
@@ -489,12 +489,12 @@ void QWasmWindow::commitParent(QWasmWindowTreeNode *parent)
     m_commitedParent = parent;
 }
 
-void QWasmWindow::handleKeyEvent(const emscripten::val &event)
+void QWasmWindow::handleKeyEvent(const KeyEvent &event)
 {
     qCDebug(qLcQpaWasmInputContext) << "processKey as KeyEvent";
-    if (processKey(*KeyEvent::fromWebWithDeadKeyTranslation(event, m_deadKeySupport)))
-        event.call<void>("preventDefault");
-    event.call<void>("stopPropagation");
+    if (processKey(event))
+        event.webEvent.call<void>("preventDefault");
+    event.webEvent.call<void>("stopPropagation");
 }
 
 bool QWasmWindow::processKey(const KeyEvent &event)
@@ -517,7 +517,7 @@ bool QWasmWindow::processKey(const KeyEvent &event)
             : result;
 }
 
-void QWasmWindow::handleKeyForInputContextEvent(const emscripten::val &event)
+void QWasmWindow::handleKeyForInputContextEvent(EventType eventType, const emscripten::val &event)
 {
     //
     // Things to consider:
@@ -558,7 +558,7 @@ void QWasmWindow::handleKeyForInputContextEvent(const emscripten::val &event)
     }
 
     qCDebug(qLcQpaWasmInputContext) << "processKey as KeyEvent";
-    if (processKeyForInputContext(*KeyEvent::fromWebWithDeadKeyTranslation(event, m_deadKeySupport)))
+    if (processKeyForInputContext(KeyEvent(eventType, event, m_deadKeySupport)))
         event.call<void>("preventDefault");
     event.call<void>("stopImmediatePropagation");
 }
