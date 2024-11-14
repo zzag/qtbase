@@ -308,7 +308,12 @@ public:
     }
     ~QThreadData();
 
-    static Q_AUTOTEST_EXPORT QThreadData *current();
+    static QThreadData *current()
+    {
+        if (QThreadData *data = currentThreadData()) Q_LIKELY_BRANCH
+            return data;
+        return createCurrentThreadData();
+    }
     static void clearCurrentThreadData();
     static QThreadData *get2(QThread *thread)
     { Q_ASSERT_X(thread != nullptr, "QThread", "internal error"); return thread->d_func()->data; }
@@ -363,6 +368,10 @@ public:
     bool canWait = true;
     bool isAdopted = false;
     bool requiresCoreApplication = true;
+
+private:
+    static Q_AUTOTEST_EXPORT QThreadData *currentThreadData() noexcept Q_DECL_PURE_FUNCTION;
+    static Q_AUTOTEST_EXPORT QThreadData *createCurrentThreadData();
 };
 
 class QScopedScopeLevelCounter

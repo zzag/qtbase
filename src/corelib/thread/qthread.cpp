@@ -1119,12 +1119,16 @@ void QThread::setTerminationEnabled(bool)
 // No threads: so we can just use static variables
 Q_CONSTINIT static QThreadData *data = nullptr;
 
-QThreadData *QThreadData::current()
+QThreadData *QThreadData::currentThreadData() noexcept
 {
-    if (!data) {
-        data = new QThreadData;
-        data->thread = new QAdoptedThread(data);
-    }
+    return data;
+}
+
+QThreadData *QThreadData::createCurrentThreadData()
+{
+    Q_ASSERT(!currentThreadData());
+    data = new QThreadData;
+    data->thread = new QAdoptedThread(data);
     return data;
 }
 

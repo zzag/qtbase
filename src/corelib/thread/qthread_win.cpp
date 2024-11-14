@@ -96,11 +96,14 @@ void QThreadData::clearCurrentThreadData()
     set_thread_data(nullptr);
 }
 
-QThreadData *QThreadData::current()
+QThreadData *QThreadData::currentThreadData() noexcept
 {
-    if (QThreadData *data = get_thread_data(); Q_LIKELY(data))
-        return data;
+    return get_thread_data();
+}
 
+QThreadData *QThreadData::createCurrentThreadData()
+{
+    Q_ASSERT(!currentThreadData());
     std::unique_ptr data = std::make_unique<QThreadData>();
 
     // This needs to be called prior to new QAdoptedThread() to avoid
