@@ -617,7 +617,7 @@ bool QWasmWindow::processPointer(const PointerEvent &event)
 
 void QWasmWindow::handleWheelEvent(const emscripten::val &event)
 {
-    if (processWheel(*WheelEvent::fromWeb(event)))
+    if (processWheel(WheelEvent(EventType::Wheel, event)))
         event.call<void>("preventDefault");
 }
 

@@ -153,8 +153,6 @@ struct DragEvent : public MouseEvent
 
 struct WheelEvent : public MouseEvent
 {
-    static std::optional<WheelEvent> fromWeb(emscripten::val webEvent);
-
     WheelEvent(EventType type, emscripten::val webEvent);
 
     DeltaMode deltaMode;

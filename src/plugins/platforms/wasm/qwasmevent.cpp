@@ -228,18 +228,4 @@ WheelEvent::WheelEvent(EventType type, emscripten::val event) : MouseEvent(type,
     webkitDirectionInvertedFromDevice = event["webkitDirectionInvertedFromDevice"].as<bool>();
 }
 
-std::optional<WheelEvent> WheelEvent::fromWeb(emscripten::val event)
-{
-    const auto eventType = ([&event]() -> std::optional<EventType> {
-        const auto eventTypeString = event["type"].as<std::string>();
-
-        if (eventTypeString == "wheel")
-            return EventType::Wheel;
-        return std::nullopt;
-    })();
-    if (!eventType)
-        return std::nullopt;
-    return WheelEvent(*eventType, event);
-}
-
 QT_END_NAMESPACE
