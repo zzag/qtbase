@@ -93,16 +93,6 @@ Event::Event(EventType type, emscripten::val webEvent)
 {
 }
 
-Event::~Event() = default;
-
-Event::Event(const Event &other) = default;
-
-Event::Event(Event &&other) = default;
-
-Event &Event::operator=(const Event &other) = default;
-
-Event &Event::operator=(Event &&other) = default;
-
 KeyEvent::KeyEvent(EventType type, emscripten::val event) : Event(type, event)
 {
     const auto code = event["code"].as<std::string>();
@@ -119,16 +109,6 @@ KeyEvent::KeyEvent(EventType type, emscripten::val event) : Event(type, event)
     if (key == Qt::Key_Tab)
         text = "\t";
 }
-
-KeyEvent::~KeyEvent() = default;
-
-KeyEvent::KeyEvent(const KeyEvent &other) = default;
-
-KeyEvent::KeyEvent(KeyEvent &&other) = default;
-
-KeyEvent &KeyEvent::operator=(const KeyEvent &other) = default;
-
-KeyEvent &KeyEvent::operator=(KeyEvent &&other) = default;
 
 std::optional<KeyEvent> KeyEvent::fromWebWithDeadKeyTranslation(emscripten::val event,
                                                                 QWasmDeadKeySupport *deadKeySupport)
@@ -167,16 +147,6 @@ MouseEvent::MouseEvent(EventType type, emscripten::val event) : Event(type, even
     modifiers = KeyboardModifier::getForEvent(event);
 }
 
-MouseEvent::~MouseEvent() = default;
-
-MouseEvent::MouseEvent(const MouseEvent &other) = default;
-
-MouseEvent::MouseEvent(MouseEvent &&other) = default;
-
-MouseEvent &MouseEvent::operator=(const MouseEvent &other) = default;
-
-MouseEvent &MouseEvent::operator=(MouseEvent &&other) = default;
-
 PointerEvent::PointerEvent(EventType type, emscripten::val event) : MouseEvent(type, event)
 {
     pointerId = event["pointerId"].as<int>();
@@ -199,16 +169,6 @@ PointerEvent::PointerEvent(EventType type, emscripten::val event) : MouseEvent(t
     isPrimary = event["isPrimary"].as<bool>();
 }
 
-PointerEvent::~PointerEvent() = default;
-
-PointerEvent::PointerEvent(const PointerEvent &other) = default;
-
-PointerEvent::PointerEvent(PointerEvent &&other) = default;
-
-PointerEvent &PointerEvent::operator=(const PointerEvent &other) = default;
-
-PointerEvent &PointerEvent::operator=(PointerEvent &&other) = default;
-
 DragEvent::DragEvent(EventType type, emscripten::val event, QWindow *window)
     : MouseEvent(type, event), dataTransfer(event["dataTransfer"]), targetWindow(window)
 {
@@ -224,16 +184,6 @@ DragEvent::DragEvent(EventType type, emscripten::val event, QWindow *window)
         return Qt::IgnoreAction;
     })();
 }
-
-DragEvent::~DragEvent() = default;
-
-DragEvent::DragEvent(const DragEvent &other) = default;
-
-DragEvent::DragEvent(DragEvent &&other) = default;
-
-DragEvent &DragEvent::operator=(const DragEvent &other) = default;
-
-DragEvent &DragEvent::operator=(DragEvent &&other) = default;
 
 std::optional<DragEvent> DragEvent::fromWeb(emscripten::val event, QWindow *targetWindow)
 {
@@ -290,16 +240,6 @@ WheelEvent::WheelEvent(EventType type, emscripten::val event) : MouseEvent(type,
 
     webkitDirectionInvertedFromDevice = event["webkitDirectionInvertedFromDevice"].as<bool>();
 }
-
-WheelEvent::~WheelEvent() = default;
-
-WheelEvent::WheelEvent(const WheelEvent &other) = default;
-
-WheelEvent::WheelEvent(WheelEvent &&other) = default;
-
-WheelEvent &WheelEvent::operator=(const WheelEvent &other) = default;
-
-WheelEvent &WheelEvent::operator=(WheelEvent &&other) = default;
 
 std::optional<WheelEvent> WheelEvent::fromWeb(emscripten::val event)
 {

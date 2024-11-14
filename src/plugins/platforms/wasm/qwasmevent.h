@@ -127,11 +127,6 @@ QFlags<Qt::KeyboardModifier> getForEvent<EmscriptenKeyboardEvent>(
 struct Event
 {
     Event(EventType type, emscripten::val webEvent);
-    ~Event();
-    Event(const Event &other);
-    Event(Event &&other);
-    Event &operator=(const Event &other);
-    Event &operator=(Event &&other);
 
     emscripten::val webEvent;
     EventType type;
@@ -144,11 +139,6 @@ struct KeyEvent : public Event
     fromWebWithDeadKeyTranslation(emscripten::val webEvent, QWasmDeadKeySupport *deadKeySupport);
 
     KeyEvent(EventType type, emscripten::val webEvent);
-    ~KeyEvent();
-    KeyEvent(const KeyEvent &other);
-    KeyEvent(KeyEvent &&other);
-    KeyEvent &operator=(const KeyEvent &other);
-    KeyEvent &operator=(KeyEvent &&other);
 
     Qt::Key key;
     QFlags<Qt::KeyboardModifier> modifiers;
@@ -160,11 +150,6 @@ struct KeyEvent : public Event
 struct MouseEvent : public Event
 {
     MouseEvent(EventType type, emscripten::val webEvent);
-    ~MouseEvent();
-    MouseEvent(const MouseEvent &other);
-    MouseEvent(MouseEvent &&other);
-    MouseEvent &operator=(const MouseEvent &other);
-    MouseEvent &operator=(MouseEvent &&other);
 
     static constexpr Qt::MouseButton buttonFromWeb(int webButton) {
         switch (webButton) {
@@ -212,11 +197,6 @@ struct MouseEvent : public Event
 struct PointerEvent : public MouseEvent
 {
     PointerEvent(EventType type, emscripten::val webEvent);
-    ~PointerEvent();
-    PointerEvent(const PointerEvent &other);
-    PointerEvent(PointerEvent &&other);
-    PointerEvent &operator=(const PointerEvent &other);
-    PointerEvent &operator=(PointerEvent &&other);
 
     PointerType pointerType;
     int pointerId;
@@ -235,11 +215,6 @@ struct DragEvent : public MouseEvent
     static std::optional<DragEvent> fromWeb(emscripten::val webEvent, QWindow *targetQWindow);
 
     DragEvent(EventType type, emscripten::val webEvent, QWindow *targetQWindow);
-    ~DragEvent();
-    DragEvent(const DragEvent &other);
-    DragEvent(DragEvent &&other);
-    DragEvent &operator=(const DragEvent &other);
-    DragEvent &operator=(DragEvent &&other);
 
     void cancelDragStart();
     void acceptDragOver();
@@ -255,11 +230,6 @@ struct WheelEvent : public MouseEvent
     static std::optional<WheelEvent> fromWeb(emscripten::val webEvent);
 
     WheelEvent(EventType type, emscripten::val webEvent);
-    ~WheelEvent();
-    WheelEvent(const WheelEvent &other);
-    WheelEvent(WheelEvent &&other);
-    WheelEvent &operator=(const WheelEvent &other);
-    WheelEvent &operator=(WheelEvent &&other);
 
     DeltaMode deltaMode;
     bool webkitDirectionInvertedFromDevice;
