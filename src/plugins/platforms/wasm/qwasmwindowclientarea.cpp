@@ -32,40 +32,37 @@ ClientArea::ClientArea(QWasmWindow *window, QWasmScreen *screen, emscripten::val
         [this](emscripten::val event){ processPointer(PointerEvent(EventType::PointerCancel, event)); }
     );
 
-        element.call<void>("setAttribute", emscripten::val("draggable"), emscripten::val("true"));
-
-        m_dragStartCallback = std::make_unique<qstdweb::EventCallback>(
-                    element, "dragstart", [this](emscripten::val webEvent) {
-                            webEvent.call<void>("preventDefault");
-                            auto event = *DragEvent::fromWeb(webEvent, m_window->window());
-                            QWasmDrag::instance()->onNativeDragStarted(&event);
-                        });
-        m_dragOverCallback = std::make_unique<qstdweb::EventCallback>(
-                    element, "dragover", [this](emscripten::val webEvent) {
-                            webEvent.call<void>("preventDefault");
-                            auto event = *DragEvent::fromWeb(webEvent, m_window->window());
-                            QWasmDrag::instance()->onNativeDragOver(&event);
-                        });
-        m_dropCallback = std::make_unique<qstdweb::EventCallback>(
-                    element, "drop", [this](emscripten::val webEvent) {
-                            webEvent.call<void>("preventDefault");
-                            auto event = *DragEvent::fromWeb(webEvent, m_window->window());
-                            QWasmDrag::instance()->onNativeDrop(&event);
-                        });
-        m_dragEndCallback = std::make_unique<qstdweb::EventCallback>(
-                    element, "dragend", [this](emscripten::val webEvent) {
-                            webEvent.call<void>("preventDefault");
-                            auto event = *DragEvent::fromWeb(webEvent, m_window->window());
-                            QWasmDrag::instance()->onNativeDragFinished(&event);
-                        });
-
-        m_dragLeaveCallback = std::make_unique<qstdweb::EventCallback>(
-                    element, "dragleave", [this](emscripten::val webEvent) {
-                            webEvent.call<void>("preventDefault");
-                            auto event = *DragEvent::fromWeb(webEvent, m_window->window());
-                            QWasmDrag::instance()->onNativeDragLeave(&event);
-                        });
-
+    element.call<void>("setAttribute", emscripten::val("draggable"), emscripten::val("true"));
+    m_dragStartCallback = std::make_unique<qstdweb::EventCallback>(element, "dragstart",
+        [this](emscripten::val event) {
+            DragEvent dragEvent(EventType::DragStart, event, m_window->window());
+            QWasmDrag::instance()->onNativeDragStarted(&dragEvent);
+        }
+    );
+    m_dragOverCallback = std::make_unique<qstdweb::EventCallback>(element, "dragover",
+        [this](emscripten::val event) {
+            DragEvent dragEvent(EventType::DragOver, event, m_window->window());
+            QWasmDrag::instance()->onNativeDragOver(&dragEvent);
+        }
+    );
+    m_dropCallback = std::make_unique<qstdweb::EventCallback>(element, "drop",
+        [this](emscripten::val event) {
+            DragEvent dragEvent(EventType::Drop, event, m_window->window());
+            QWasmDrag::instance()->onNativeDrop(&dragEvent);
+        }
+    );
+    m_dragEndCallback = std::make_unique<qstdweb::EventCallback>(element, "dragend",
+        [this](emscripten::val event) {
+            DragEvent dragEvent(EventType::DragEnd, event, m_window->window());
+            QWasmDrag::instance()->onNativeDragFinished(&dragEvent);
+        }
+    );
+    m_dragLeaveCallback = std::make_unique<qstdweb::EventCallback>(element, "dragleave",
+        [this](emscripten::val event) {
+            DragEvent dragEvent(EventType::DragLeave, event, m_window->window());
+            QWasmDrag::instance()->onNativeDragLeave(&dragEvent);
+        }
+    );
 }
 
 void ClientArea::processPointer(const PointerEvent &event)

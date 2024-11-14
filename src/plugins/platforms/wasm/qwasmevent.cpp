@@ -193,27 +193,6 @@ DragEvent::DragEvent(EventType type, emscripten::val event, QWindow *window)
     })();
 }
 
-std::optional<DragEvent> DragEvent::fromWeb(emscripten::val event, QWindow *targetWindow)
-{
-    const auto eventType = ([&event]() -> std::optional<EventType> {
-        const auto eventTypeString = event["type"].as<std::string>();
-        if (eventTypeString == "dragend")
-            return EventType::DragEnd;
-        if (eventTypeString == "dragover")
-            return EventType::DragOver;
-        if (eventTypeString == "dragstart")
-            return EventType::DragStart;
-        if (eventTypeString == "drop")
-            return EventType::Drop;
-        if (eventTypeString == "dragleave")
-            return EventType::DragLeave;
-        return std::nullopt;
-    })();
-    if (!eventType)
-        return std::nullopt;
-    return DragEvent(*eventType, event, targetWindow);
-}
-
 void DragEvent::cancelDragStart()
 {
     Q_ASSERT_X(type == EventType::DragStart, Q_FUNC_INFO, "Only supported for DragStart");

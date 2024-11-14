@@ -140,8 +140,6 @@ struct PointerEvent : public MouseEvent
 
 struct DragEvent : public MouseEvent
 {
-    static std::optional<DragEvent> fromWeb(emscripten::val webEvent, QWindow *targetQWindow);
-
     DragEvent(EventType type, emscripten::val webEvent, QWindow *targetQWindow);
 
     void cancelDragStart();
