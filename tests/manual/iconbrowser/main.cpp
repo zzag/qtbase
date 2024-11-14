@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: LicenseRef-Qt-Commercial OR GPL-3.0-only
 
 #include <QtWidgets>
+#include <QtCore/QCommandLineParser>
 
 #include <QtWidgets/private/qapplication_p.h>
 #include <QtGui/qpa/qplatformtheme.h>
@@ -497,9 +498,15 @@ public:
         connect(lineEdit, &QLineEdit::textChanged,
                 this, &IconInspector::updateIcon);
 
+        button = new QToolButton;
+        button->setCheckable(true);
+
         QVBoxLayout *vbox = new QVBoxLayout;
+        QHBoxLayout *hbox = new QHBoxLayout;
         vbox->addStretch(10);
-        vbox->addWidget(lineEdit);
+        hbox->addWidget(lineEdit);
+        hbox->addWidget(button);
+        vbox->addLayout(hbox);
         setLayout(vbox);
     }
 
@@ -508,6 +515,18 @@ protected:
     {
         QPainter painter(this);
         painter.fillRect(event->rect(), palette().window());
+
+        // some fonts use icon names as ligatures
+        if (const QString themeName = QIcon::themeName(); !themeName.isEmpty()) {
+            const QFont themeFont(themeName, 24);
+            if (QFontInfo(themeFont).family() == themeName) {
+                painter.save();
+                painter.setFont(themeFont);
+                painter.drawText(rect(), icon.name());
+                painter.restore();
+            }
+        }
+
         if (!icon.isNull()) {
             const QString modeLabels[] = { u"Normal"_s, u"Disabled"_s, u"Active"_s, u"Selected"_s};
             const QString stateLabels[] = { u"On"_s, u"Off"_s};
@@ -555,10 +574,12 @@ protected:
         QFrame::paintEvent(event);
     }
 private:
+    QToolButton *button;
     QIcon icon;
     void updateIcon(const QString &iconName)
     {
         icon = QIcon::fromTheme(iconName);
+        button->setIcon(icon);
         update();
     }
 };
@@ -566,6 +587,21 @@ private:
 int main(int argc, char* argv[])
 {
     QApplication app(argc, argv);
+
+    QApplication::setApplicationVersion(QT_VERSION_STR);
+    QApplication::setApplicationName(QLatin1String("IconBrowser Manual Test"));
+    QApplication::setOrganizationName(QLatin1String("QtProject"));
+
+    QCommandLineParser parser;
+    parser.setApplicationDescription(QApplication::applicationName());
+    parser.addHelpOption();
+    parser.addVersionOption();
+    QCommandLineOption themeOption({u"theme"_s, u"t"_s},
+                                   u"The name of the icon theme"_s, u"theme"_s);
+    parser.addOption(themeOption);
+    parser.process(app);
+    if (const QString theme = parser.value(themeOption); !theme.isEmpty())
+        QIcon::setThemeName(theme);
 
 #ifdef ICONBROWSER_RESOURCE
     Q_INIT_RESOURCE(icons);

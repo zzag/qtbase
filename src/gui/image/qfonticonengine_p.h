@@ -22,6 +22,8 @@
 
 QT_BEGIN_NAMESPACE
 
+using glyph_t = quint32;
+
 class Q_GUI_EXPORT QFontIconEngine : public QIconEngine
 {
 public:
@@ -30,6 +32,8 @@ public:
 
     QString iconName() override;
     bool isNull() override;
+    QString key() const override;
+    QIconEngine *clone() const override;
 
     QList<QSize> availableSizes(QIcon::Mode, QIcon::State) override;
     QSize actualSize(const QSize &size, QIcon::Mode mode, QIcon::State state) override;
@@ -39,6 +43,7 @@ public:
 
 protected:
     virtual QString string() const;
+    virtual glyph_t glyph() const;
 
 private:
     static constexpr quint64 calculateCacheKey(QIcon::Mode mode, QIcon::State state)
@@ -50,6 +55,8 @@ private:
     const QFont m_iconFont;
     mutable QPixmap m_pixmap;
     mutable quint64 m_pixmapCacheKey = {};
+    static constexpr glyph_t uninitializedGlyph = std::numeric_limits<glyph_t>::max();
+    mutable glyph_t m_glyph = uninitializedGlyph;
 };
 
 QT_END_NAMESPACE

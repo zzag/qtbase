@@ -11,7 +11,11 @@
 
 #include <QtGui/qfontdatabase.h>
 #include <QtGui/qpainter.h>
+#include <QtGui/qpainterpath.h>
 #include <QtGui/qpalette.h>
+
+#include <QtGui/private/qfont_p.h>
+#include <QtGui/private/qfontengine_p.h>
 
 QT_BEGIN_NAMESPACE
 
@@ -25,6 +29,16 @@ QFontIconEngine::QFontIconEngine(const QString &iconName, const QFont &font)
 
 QFontIconEngine::~QFontIconEngine() = default;
 
+QIconEngine *QFontIconEngine::clone() const
+{
+    return new QFontIconEngine(m_iconName, m_iconFont);
+}
+
+QString QFontIconEngine::key() const
+{
+    return u"QFontIconEngine("_s + m_iconFont.key() + u')';
+}
+
 QString QFontIconEngine::iconName()
 {
     return m_iconName;
@@ -33,13 +47,15 @@ QString QFontIconEngine::iconName()
 bool QFontIconEngine::isNull()
 {
     const QString text = string();
-    if (text.isEmpty())
-        return true;
-    const QChar c0 = text.at(0);
-    const QFontMetrics fontMetrics(m_iconFont);
-    if (c0.category() == QChar::Other_Surrogate && text.size() > 1)
-        return !fontMetrics.inFontUcs4(QChar::surrogateToUcs4(c0, text.at(1)));
-    return !fontMetrics.inFont(c0);
+    if (!text.isEmpty()) {
+        const QChar c0 = text.at(0);
+        const QFontMetrics fontMetrics(m_iconFont);
+        if (c0.isHighSurrogate() && text.size() > 1)
+            return !fontMetrics.inFontUcs4(QChar::surrogateToUcs4(c0, text.at(1)));
+        return !fontMetrics.inFont(c0);
+    }
+
+    return glyph() == 0;
 }
 
 QList<QSize> QFontIconEngine::availableSizes(QIcon::Mode, QIcon::State)
@@ -84,33 +100,73 @@ void QFontIconEngine::paint(QPainter *painter, const QRect &rect, QIcon::Mode mo
     painter->save();
     QFont renderFont(m_iconFont);
     renderFont.setPixelSize(rect.height());
-    painter->setFont(renderFont);
 
+    QColor color = Qt::black;
     QPalette palette;
     switch (mode) {
     case QIcon::Active:
-        painter->setPen(palette.color(QPalette::Active, QPalette::Text));
+        color = palette.color(QPalette::Active, QPalette::Text);
         break;
     case QIcon::Normal:
-        painter->setPen(palette.color(QPalette::Active, QPalette::Text));
+        color = palette.color(QPalette::Active, QPalette::Text);
         break;
     case QIcon::Disabled:
-        painter->setPen(palette.color(QPalette::Disabled, QPalette::Text));
+        color = palette.color(QPalette::Disabled, QPalette::Text);
         break;
     case QIcon::Selected:
-        painter->setPen(palette.color(QPalette::Active, QPalette::HighlightedText));
+        color = palette.color(QPalette::Active, QPalette::HighlightedText);
         break;
     }
 
     const QString text = string();
+    if (!text.isEmpty()) {
+        painter->setFont(renderFont);
+        painter->setPen(color);
+        painter->drawText(rect, Qt::AlignCenter, text);
+    } else if (glyph_t glyphIndex = glyph()) {
+        QFontEngine *engine = QFontPrivate::get(renderFont)->engineForScript(QChar::Script_Common);
 
-    painter->drawText(rect, Qt::AlignCenter, text);
+        const glyph_metrics_t gm = engine->boundingBox(glyphIndex);
+        const int glyph_x = qFloor(gm.x.toReal());
+        const int glyph_y = qFloor(gm.y.toReal());
+        const int glyph_width = qCeil((gm.x + gm.width).toReal()) - glyph_x;
+        const int glyph_height = qCeil((gm.y + gm.height).toReal()) - glyph_y;
+
+        QPainterPath path;
+        if (glyph_width > 0 && glyph_height > 0) {
+            QFixedPoint pt(QFixed(-glyph_x), QFixed(-glyph_y));
+            path.setFillRule(Qt::WindingFill);
+            engine->addGlyphsToPath(&glyphIndex, &pt, 1, &path, {});
+            // make the glyph fit tightly into rect
+            const QRectF pathBoundingRect = path.boundingRect();
+            // center the glyph inside the rect
+            const QPointF topLeft = rect.topLeft() - pathBoundingRect.topLeft()
+                            + (QPointF(rect.width(), rect.height())
+                                - QPointF(pathBoundingRect.width(), pathBoundingRect.height())) / 2;
+            painter->translate(topLeft);
+
+            painter->setRenderHint(QPainter::Antialiasing);
+            painter->setPen(Qt::NoPen);
+            painter->setBrush(color);
+            painter->drawPath(path);
+        }
+    }
     painter->restore();
 }
 
 QString QFontIconEngine::string() const
 {
     return {};
+}
+
+glyph_t QFontIconEngine::glyph() const
+{
+    if (m_glyph == uninitializedGlyph) {
+        QFontEngine *engine = QFontPrivate::get(m_iconFont)->engineForScript(QChar::Script_Common);
+        if (engine)
+            m_glyph = engine->findGlyph(QLatin1StringView(m_iconName.toLatin1()));
+    }
+    return m_glyph;
 }
 
 QT_END_NAMESPACE
