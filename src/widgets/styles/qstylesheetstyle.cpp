@@ -612,7 +612,6 @@ public:
         return csz;
     }
 
-    bool hasStyleHint(QLatin1StringView sh) const { return styleHints.contains(sh); }
     QVariant styleHint(QLatin1StringView sh) const { return styleHints.value(sh); }
 
     void fixupBorder(int);
@@ -5257,11 +5256,12 @@ int QStyleSheetStyle::pixelMetric(PixelMetric m, const QStyleOption *opt, const 
     case PM_TabBarIconSize:
     case PM_MessageBoxIconSize:
     case PM_ButtonIconSize:
-    case PM_SmallIconSize:
-        if (rule.hasStyleHint("icon-size"_L1))
-            return rule.styleHint("icon-size"_L1).toSize().width();
+    case PM_SmallIconSize: {
+        const auto styleHint = rule.styleHint("icon-size"_L1);
+        if (styleHint.isValid() && styleHint.canConvert<QSize>())
+            return styleHint.toSize().width();
         break;
-
+    }
     case PM_DockWidgetTitleMargin: {
         QRenderRule subRule = renderRule(w, opt, PseudoElement_DockWidgetTitle);
         if (!subRule.hasBox())
@@ -5664,9 +5664,9 @@ QIcon QStyleSheetStyle::standardIcon(StandardPixmap standardIcon, const QStyleOp
     RECURSION_GUARD(return baseStyle()->standardIcon(standardIcon, opt, w))
     const auto s = propertyNameForStandardPixmap(standardIcon);
     if (!s.isEmpty()) {
-        QRenderRule rule = renderRule(w, opt);
-        if (rule.hasStyleHint(s))
-            return qvariant_cast<QIcon>(rule.styleHint(s));
+        const auto styleHint = renderRule(w, opt).styleHint(s);
+        if (styleHint.isValid() && styleHint.canConvert<QIcon>())
+            return qvariant_cast<QIcon>(styleHint);
     }
     return baseStyle()->standardIcon(standardIcon, opt, w);
 }
@@ -5682,9 +5682,9 @@ QPixmap QStyleSheetStyle::standardPixmap(StandardPixmap standardPixmap, const QS
     RECURSION_GUARD(return baseStyle()->standardPixmap(standardPixmap, opt, w))
     const auto s = propertyNameForStandardPixmap(standardPixmap);
     if (!s.isEmpty()) {
-        QRenderRule rule = renderRule(w, opt);
-        if (rule.hasStyleHint(s)) {
-            QIcon icon = qvariant_cast<QIcon>(rule.styleHint(s));
+        const auto styleHint = renderRule(w, opt).styleHint(s);
+        if (styleHint.isValid() && styleHint.canConvert<QIcon>()) {
+            QIcon icon = qvariant_cast<QIcon>(styleHint);
             return icon.pixmap(QSize(16, 16), QStyleHelper::getDpr(w));
         }
     }
@@ -5802,8 +5802,10 @@ int QStyleSheetStyle::styleHint(StyleHint sh, const QStyleOption *opt, const QWi
             break;
         default: break;
     }
-    if (!s.isEmpty() && rule.hasStyleHint(s)) {
-        return rule.styleHint(s).toInt();
+    if (!s.isEmpty()) {
+        const auto styleHint = rule.styleHint(s);
+        if (styleHint.isValid() && styleHint.canConvert<int>())
+            return styleHint.toInt();
     }
 
     return baseStyle()->styleHint(sh, opt, w, shret);
