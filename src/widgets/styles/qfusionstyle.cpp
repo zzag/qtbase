@@ -2506,7 +2506,7 @@ void QFusionStyle::drawComplexControl(ComplexControl control, const QStyleOption
                                        % QLatin1StringView(comboBox->editable ? "-editable" : "")
                                        % QLatin1StringView(isEnabled ? "-enabled" : "")
                                        % QLatin1StringView(!comboBox->frame ? "-frameless" : "");
-            QCachedPainter cp(painter, "spinbox"_L1, option);
+            QCachedPainter cp(painter, pixmapName, option);
             if (cp.needsPainting()) {
                 const QRect pixmapRect = cp.pixmapRect();
                 QStyleOptionComboBox comboBoxCopy = *comboBox;
