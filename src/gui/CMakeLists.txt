@@ -465,6 +465,7 @@ qt_internal_extend_target(Gui CONDITION WIN32
         ../3rdparty/D3D12MemoryAllocator/D3D12MemAlloc.h
         ../3rdparty/D3D12MemoryAllocator/D3D12MemAlloc.cpp
         rhi/qdxgivsyncservice_p.h rhi/qdxgivsyncservice.cpp
+        rhi/qdxgihdrinfo_p.h rhi/qdxgihdrinfo.cpp
         text/windows/qwindowsfontdatabase.cpp text/windows/qwindowsfontdatabase_p.h
         text/windows/qwindowsfontdatabasebase.cpp text/windows/qwindowsfontdatabasebase_p.h
         text/windows/qwindowsfontengine.cpp text/windows/qwindowsfontengine_p.h
