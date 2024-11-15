@@ -118,8 +118,9 @@ bool QProgressBarPrivate::repaintRequired() const
 
     const int totalSteps = maximum - minimum;
 
-    const int currentPercentage = (value - minimum) * 100 / totalSteps;
-    const int lastPaintedPercentage = (lastPaintedValue - minimum) * 100 / totalSteps;
+    const int currentPercentage = totalSteps ? (value - minimum) * 100 / totalSteps : 0;
+    const int lastPaintedPercentage = totalSteps ? (lastPaintedValue - minimum) * 100 / totalSteps
+                                                 : 0;
 
     const int percentageChangeConstant = 1;
     const bool percentageChanged = (qAbs(currentPercentage - lastPaintedPercentage) >= percentageChangeConstant);
