@@ -3,30 +3,9 @@
 
 # Android template files
 
-set(build_gradle "build.gradle")
-if(QT_FEATURE_developer_build)
-    file(READ "${CMAKE_CURRENT_SOURCE_DIR}/${build_gradle}" build_gradle_in)
-    string(REGEX REPLACE
-        "\n *//noinspection GradleDependency\n"
-        "\n"
-        build_gradle_out
-        "${build_gradle_in}"
-    )
-    qt_configure_file(
-        OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/${build_gradle}"
-        CONTENT "${build_gradle_out}"
-    )
-else()
-    configure_file(
-        "${CMAKE_CURRENT_SOURCE_DIR}/${build_gradle}"
-        "${CMAKE_CURRENT_BINARY_DIR}/${build_gradle}"
-        COPYONLY
-    )
-endif()
-
 set(template_files
     "${CMAKE_CURRENT_SOURCE_DIR}/AndroidManifest.xml"
-    "${CMAKE_CURRENT_BINARY_DIR}/${build_gradle}")
+    "${CMAKE_CURRENT_SOURCE_DIR}/build.gradle")
 
 set(template_directories
     "${CMAKE_CURRENT_SOURCE_DIR}/res")
