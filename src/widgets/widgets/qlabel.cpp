@@ -307,6 +307,7 @@ void QLabel::setPixmap(const QPixmap &pixmap)
     if (d->icon && d->icon->availableSizes().contains(pixmap.size()) &&
         d->icon->pixmap(pixmap.size()).cacheKey() == pixmap.cacheKey())
         return;
+    d->clearContents();
     d->icon = QIcon(pixmap);
     d->pixmapSize = pixmap.deviceIndependentSize().toSize();
     d->updateLabel();
