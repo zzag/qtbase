@@ -2598,17 +2598,16 @@ void QFusionStyle::drawComplexControl(ComplexControl control, const QStyleOption
             bool ticksAbove = slider->tickPosition & QSlider::TicksAbove;
             bool ticksBelow = slider->tickPosition & QSlider::TicksBelow;
             const QColor activeHighlight = d->highlight(option->palette);
-            QBrush oldBrush = painter->brush();
-            QPen oldPen = painter->pen();
-            QColor shadowAlpha(Qt::black);
-            shadowAlpha.setAlpha(10);
-            QColor outline;
-            if (option->state & State_HasFocus && option->state & State_KeyboardFocusChange)
-                outline = d->highlightedOutline(option->palette);
-            else
-                outline = d->outline(option->palette);
+            const QBrush oldBrush = painter->brush();
+            const QPen oldPen = painter->pen();
+            const auto oldRenderHints = painter->renderHints();
+            const QColor shadowAlpha(0, 0, 0, 10); // Qt::black with 4% opacity
+            const QColor outline = (option->state & State_HasFocus
+                                    && option->state & State_KeyboardFocusChange)
+                                 ? d->highlightedOutline(option->palette)
+                                 : d->outline(option->palette);
 
-
+            painter->setRenderHint(QPainter::Antialiasing, true);
             if ((option->subControls & SC_SliderGroove) && groove.isValid()) {
                 // draw background groove
                 QCachedPainter cp(painter, "slider_groove"_L1, option, groove.size(), groove);
@@ -2671,7 +2670,6 @@ void QFusionStyle::drawComplexControl(ComplexControl control, const QStyleOption
                     if (qGray(grooveOutline.rgb()) > qGray(highlightedoutline.rgb()))
                         grooveOutline = highlightedoutline;
 
-                    cpBlue->setRenderHint(QPainter::Antialiasing, true);
                     cpBlue->translate(0.5, 0.5);
                     cpBlue->setPen(QPen(grooveOutline));
                     gradient.setColorAt(0, activeHighlight);
@@ -2757,7 +2755,6 @@ void QFusionStyle::drawComplexControl(ComplexControl control, const QStyleOption
                     QRect r = pixmapRect.adjusted(1, 1, -2, -2);
                     QLinearGradient gradient = qt_fusion_gradient(gradRect, d->buttonColor(option->palette),horizontal ? TopDown : FromLeft);
 
-                    cp->setRenderHint(QPainter::Antialiasing, true);
                     cp->translate(0.5, 0.5);
 
                     cp->setPen(Qt::NoPen);
@@ -2783,6 +2780,7 @@ void QFusionStyle::drawComplexControl(ComplexControl control, const QStyleOption
             }
             painter->setBrush(oldBrush);
             painter->setPen(oldPen);
+            painter->setRenderHints(oldRenderHints);
         }
         break;
 #endif // QT_CONFIG(slider)
