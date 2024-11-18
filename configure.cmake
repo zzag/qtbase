@@ -584,6 +584,10 @@ qt_feature("private_tests" PRIVATE
     LABEL "Developer build: private_tests"
     CONDITION QT_FEATURE_developer_build
 )
+qt_feature("doc_snippets" PRIVATE
+    LABEL "Developer build: doc_snippets"
+    AUTODETECT QT_FEATURE_developer_build
+)
 qt_feature_definition("developer-build" "QT_BUILD_INTERNAL")
 qt_feature_config("developer-build" QMAKE_PUBLIC_QT_CONFIG
     NAME "private_tests"
