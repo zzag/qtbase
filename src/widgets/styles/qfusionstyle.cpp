@@ -2870,6 +2870,9 @@ int QFusionStyle::pixelMetric(PixelMetric metric, const QStyleOption *option, co
     case PM_DockWidgetTitleBarButtonMargin:
         val = 2;
         break;
+    case PM_ButtonMargin:
+        val = 4;
+        break;
     case PM_TitleBarButtonSize:
         val = 19;
         break;
