@@ -164,7 +164,6 @@ template <int Idx, typename T> struct UintDataEntry
 {
     T entry;
     constexpr UintDataEntry(T &&entry_) : entry(std::move(entry_)) {}
-    static constexpr int metaTypeCount() { return decltype(T::metaTypes())::Count; }
 };
 
 // This storage type is designed similar to libc++'s std::tuple, in that it
@@ -190,19 +189,6 @@ template <int... Idx, typename... T> struct UintDataStorage<std::integer_sequenc
             invoke(static_cast<const UintDataEntry<Idx, T> &>(*this))...
         };
         (void) dummy;
-    }
-
-    static constexpr int metaTypeCount()
-    {
-        // same as:
-        //   return (0 + ... + UintDataEntry<Idx, T>::metaTypeCount());
-        // but not using the fold expression to avoid exceeding compiler limits
-        // (calculation done using int to get compile-time overflow checking)
-        int total = 0;
-        int counts[] = { 0, UintDataEntry<Idx, T>::metaTypeCount()... };
-        for (int n : counts)
-            total += n;
-        return total;
     }
 };
 } // namespace detail
