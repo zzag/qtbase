@@ -2617,13 +2617,6 @@ struct QRemovePointerLike<Pointer<T>> \
 QT_FOR_EACH_AUTOMATIC_TEMPLATE_SMART_POINTER(Q_REMOVE_POINTER_LIKE_IMPL)
 #undef Q_REMOVE_POINTER_LIKE_IMPL
 
-template<typename T, typename ForceComplete_>
-struct TypeAndForceComplete
-{
-    using type = T;
-    using ForceComplete = ForceComplete_;
-};
-
 template<typename T>
 constexpr const QMetaTypeInterface *qMetaTypeInterfaceForType()
 {
@@ -2632,18 +2625,21 @@ constexpr const QMetaTypeInterface *qMetaTypeInterfaceForType()
     return &QMetaTypeInterfaceWrapper<Ty>::metaType;
 }
 
-template<typename Unique, typename TypeCompletePair>
+// Relaxed vesion of the above, used by moc-generated code to create the
+// metatype array without requiring types to be complete and allowing
+// references. Unique is passed to is_complete and must be a different unique
+// type; if it is void, this function is equal to qMetaTypeInterfaceForType()
+// above.
+template<typename Unique, typename T>
 constexpr const QMetaTypeInterface *qTryMetaTypeInterfaceForType()
 {
-    using T = typename TypeCompletePair::type;
-    using ForceComplete = typename TypeCompletePair::ForceComplete;
     using Ty = typename MetatypeDecay<T>::type;
     using Tz = typename QRemovePointerLike<Ty>::type;
 
     if constexpr (std::is_void_v<Tz>) {
         // early out to avoid expanding the rest of the templates
         return &QMetaTypeInterfaceWrapper<Ty>::metaType;
-    } else if constexpr (ForceComplete::value) {
+    } else if constexpr (std::is_void_v<Unique>) {
         checkTypeIsSuitableForMetaType<Ty>();
         return &QMetaTypeInterfaceWrapper<Ty>::metaType;
     } else if constexpr (std::is_reference_v<Tz>) {

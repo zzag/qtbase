@@ -699,7 +699,7 @@ void tst_MocHelpers::uintArray()
     using Dummy = QString;
     using QtMocHelpers::NoType;
     using namespace QtMocConstants;
-    constexpr auto mo = QtMocHelpers::metaObjectData<void, void>(PropertyAccessInStaticMetaCall,
+    constexpr auto mo = QtMocHelpers::metaObjectData<tst_MocHelpers, tst_MocHelpers>(PropertyAccessInStaticMetaCall,
             dummyStringData,
             QtMocHelpers::UintData{
                 QtMocHelpers::RevisionedSignalData<void()>(1, 2, QtMocConstants::AccessPublic, 0x509,
@@ -747,7 +747,7 @@ void tst_MocHelpers::uintArray()
     checkMethods(data, metaTypes);
     checkConstructors(data, metaTypes);
     QMetaType self(metaTypes[data[6] + data[8]]);
-    QCOMPARE(self, QMetaType::fromType<void>());
+    QCOMPARE(self, QMetaType::fromType<tst_MocHelpers>());
 }
 
 QTEST_MAIN(tst_MocHelpers)

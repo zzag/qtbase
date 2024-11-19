@@ -127,7 +127,6 @@ template <typename Prop, typename Value> inline bool setProperty(Prop &property,
 }
 
 struct NoType {};
-template <typename T> struct ForceCompleteMetaTypes {};
 
 namespace detail {
 template<typename Enum> constexpr int payloadSizeForEnum()
@@ -150,30 +149,15 @@ template <uint H, uint P> struct UintDataBlock
 
 // By default, we allow metatypes for incomplete types to be stored in the
 // metatype array, but we provide a way to require them to be complete by using
-// ForceCompleteMetaTypes in either the Unique type (used by moc if
-// --require-complete-types is passed or some internal heuristic for QML
-// matches) or in the type itself, used below for properties and enums.
-template <typename T> struct TypeMustBeComplete : std::false_type {};
-template <typename T> struct TypeMustBeComplete<ForceCompleteMetaTypes<T>> : std::true_type {};
-// template <> struct TypeMustBeComplete<void> : std::true_type {};
-
-template <typename Unique, typename T, typename RequireComplete = TypeMustBeComplete<Unique>>
-struct TryMetaTypeInterfaceForType
-{
-    static constexpr const QtPrivate::QMetaTypeInterface *type() noexcept
-    {
-        using namespace QtPrivate;
-        using Query = TypeAndForceComplete<T, RequireComplete>;
-        return qTryMetaTypeInterfaceForType<Unique, Query>();
-    }
+// void as the Unique type (used by moc if --require-complete-types is passed
+// or some internal heuristic for QML matches) or by using the enum below, for
+// properties and enums.
+enum TypeCompletenessForMetaType : bool {
+    TypeMayBeIncomplete = false,
+    TypeMustBeComplete = true,
 };
 
-template <typename Unique, typename T, typename RequireComplete>
-struct TryMetaTypeInterfaceForType<Unique, ForceCompleteMetaTypes<T>, RequireComplete> :
-        TryMetaTypeInterfaceForType<void, T, std::true_type>
-{};
-
-template <typename... T> struct MetaTypeList
+template <bool TypeMustBeComplete, typename... T> struct MetaTypeList
 {
     static constexpr int count() { return sizeof...(T); }
     template <typename Unique, typename Result> static constexpr void
@@ -181,8 +165,9 @@ template <typename... T> struct MetaTypeList
     {
         if constexpr (count()) {
             using namespace QtPrivate;
+            using U = std::conditional_t<TypeMustBeComplete, void, Unique>;
             const QMetaTypeInterface *metaTypes[] = {
-                TryMetaTypeInterfaceForType<Unique, T>::type()...
+                qTryMetaTypeInterfaceForType<U, T>()...
             };
             for (const QMetaTypeInterface *mt : metaTypes)
                 result.relocatingData.metaTypes[metatypeoffset++] = mt;
@@ -315,7 +300,7 @@ template <typename PropertyType> struct PropertyData : detail::UintDataBlock<5, 
     }
 
     static constexpr auto metaTypes()
-    { return detail::MetaTypeList<ForceCompleteMetaTypes<PropertyType>>{}; }
+    { return detail::MetaTypeList<detail::TypeMustBeComplete, PropertyType>{}; }
 
     static constexpr void adjustOffsets(uint *, uint, uint, uint) noexcept {}
 };
@@ -371,7 +356,7 @@ public:
     }
 
     static constexpr auto metaTypes()
-    { return detail::MetaTypeList<ForceCompleteMetaTypes<Enum>>{}; }
+    { return detail::MetaTypeList<detail::TypeMustBeComplete, Enum>{}; }
 
     static constexpr void
     adjustOffsets(uint *ptr, uint dataoffset, uint payloadoffset, uint metatypeoffset) noexcept
@@ -402,11 +387,11 @@ struct FunctionData<Ret (Args...), ExtraFlags>
                     "NoType return type used on a non-constructor");
             static_assert((ExtraFlags & MethodIsConst) == 0,
                     "Constructors cannot be const");
-            return detail::MetaTypeList<Args...>{};
+            return detail::MetaTypeList<detail::TypeMayBeIncomplete, Args...>{};
         } else {
             static_assert((ExtraFlags & MethodConstructor) != MethodConstructor,
                     "Constructors must use NoType as return type");
-            return detail::MetaTypeList<Ret, Args...>{};
+            return detail::MetaTypeList<detail::TypeMayBeIncomplete, Ret, Args...>{};
         }
     }
 

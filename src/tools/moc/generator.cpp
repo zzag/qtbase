@@ -329,9 +329,9 @@ void Generator::generateCode()
         metaObjectFlags = "QMC::PropertyAccessInStaticMetaCall";
     }
     {
-        QByteArray tagType = "qt_meta_tag_" + qualifiedClassNameIdentifier +  "_t";
-        if (requireCompleteness)
-            tagType = "QtMocHelpers::ForceCompleteMetaTypes<" + tagType + '>';
+        QByteArray tagType = QByteArrayLiteral("void");
+        if (!requireCompleteness)
+            tagType = "qt_meta_tag_" + qualifiedClassNameIdentifier +  "_t";
         fprintf(out, "    return QtMocHelpers::metaObjectData<%s, %s>(%s, qt_stringData,\n"
                      "            qt_methods, qt_properties, qt_enums%s);\n"
                      "}\n",
