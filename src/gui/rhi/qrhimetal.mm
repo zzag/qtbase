@@ -1862,7 +1862,21 @@ void QRhiMetal::setViewport(QRhiCommandBuffer *cb, const QRhiViewport &viewport)
 {
     QMetalCommandBuffer *cbD = QRHI_RES(QMetalCommandBuffer, cb);
     Q_ASSERT(cbD->recordingPass == QMetalCommandBuffer::RenderPass);
-    const QSize outputSize = cbD->currentTarget->pixelSize();
+    QSize outputSize = cbD->currentTarget->pixelSize();
+
+    // If we have a shading rate map check and use the output size as given by the "screenSize"
+    // call. This is important for the viewport to be correct when using a shading rate map, as
+    // the pixel size of the target will likely be smaller then what will be rendered to the output.
+    // This is specifically needed for visionOS.
+    if (cbD->currentTarget->resourceType() == QRhiResource::TextureRenderTarget) {
+        QRhiTextureRenderTarget *rt = static_cast<QRhiTextureRenderTarget *>(cbD->currentTarget);
+        if (QRhiShadingRateMap *srm = rt->description().shadingRateMap()) {
+            if (id<MTLRasterizationRateMap> rateMap = QRHI_RES(QMetalShadingRateMap, srm)->d->rateMap) {
+                auto screenSize = [rateMap screenSize];
+                outputSize = QSize(screenSize.width, screenSize.height);
+            }
+        }
+    }
 
     // x,y is top-left in MTLViewportRect but bottom-left in QRhiViewport
     float x, y, w, h;
