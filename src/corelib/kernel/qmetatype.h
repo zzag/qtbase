@@ -2695,27 +2695,10 @@ constexpr const QMetaObject *QMetaType::metaObject() const
     return d_ptr && d_ptr->metaObjectFn ? d_ptr->metaObjectFn(d_ptr) : nullptr;
 }
 
-template<typename... T>
-constexpr const QtPrivate::QMetaTypeInterface *const qt_metaTypeArray[] = {
-    /*
-       Unique in qTryMetaTypeInterfaceForType does not have to be unique here
-       as we require _all_ types here to be actually complete.
-       We just want to have the additional type processing that exist in
-       QtPrivate::qTryMetaTypeInterfaceForType as opposed to the normal
-       QtPrivate::qMetaTypeInterfaceForType used in QMetaType::fromType
-    */
-    QtPrivate::qTryMetaTypeInterfaceForType<void, QtPrivate::TypeAndForceComplete<T, std::true_type>>()...
-};
-
 constexpr const char *QMetaType::name() const
 {
     return d_ptr ? d_ptr->name : nullptr;
 }
-
-template<typename Unique,typename... T>
-constexpr const QtPrivate::QMetaTypeInterface *const qt_incomplete_metaTypeArray[] = {
-    QtPrivate::qTryMetaTypeInterfaceForType<Unique, T>()...
-};
 
 inline size_t qHash(QMetaType type, size_t seed = 0)
 {
