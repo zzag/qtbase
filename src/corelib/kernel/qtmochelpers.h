@@ -590,9 +590,7 @@ constexpr auto metaObjectData(uint flags, const Strings &strings,
     dataoffset += enums.dataSize();
 
     // the meta type referring to the object itself
-    result.relocatingData.metaTypes[metatypeoffset++] =
-            QtPrivate::qTryMetaTypeInterfaceForType<void,
-                QtPrivate::TypeAndForceComplete<ObjectType, std::true_type>>();
+    result.relocatingData.metaTypes[metatypeoffset++] = QMetaType::fromType<ObjectType>().iface();
 
     data[4] = methods.count();
     data[5] = methods.count() ? dataoffset : 0;

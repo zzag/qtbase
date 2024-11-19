@@ -766,9 +766,9 @@ public:
     static void unregisterMetaType(QMetaType type);
 
 #if QT_VERSION < QT_VERSION_CHECK(7, 0, 0)
-    const QtPrivate::QMetaTypeInterface *iface() { return d_ptr; }
+    constexpr const QtPrivate::QMetaTypeInterface *iface() { return d_ptr; }
 #endif
-    const QtPrivate::QMetaTypeInterface *iface() const { return d_ptr; }
+    constexpr const QtPrivate::QMetaTypeInterface *iface() const { return d_ptr; }
 
 private:
     static bool isDefaultConstructible(const QtPrivate::QMetaTypeInterface *) noexcept Q_DECL_PURE_FUNCTION;
