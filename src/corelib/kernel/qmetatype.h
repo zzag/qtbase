@@ -2602,21 +2602,19 @@ QT_FOR_EACH_STATIC_CORE_TEMPLATE(QT_METATYPE_DECLARE_EXTERN_TEMPLATE_ITER)
 #endif
 
 template<typename T>
-struct qRemovePointerLike
+struct QRemovePointerLike
 {
     using type = std::remove_pointer_t<T>;
 };
 
 #define Q_REMOVE_POINTER_LIKE_IMPL(Pointer) \
 template <typename T> \
-struct qRemovePointerLike<Pointer<T>> \
+struct QRemovePointerLike<Pointer<T>> \
 { \
     using type = T; \
 };
 
 QT_FOR_EACH_AUTOMATIC_TEMPLATE_SMART_POINTER(Q_REMOVE_POINTER_LIKE_IMPL)
-template<typename T>
-using qRemovePointerLike_t = typename qRemovePointerLike<T>::type;
 #undef Q_REMOVE_POINTER_LIKE_IMPL
 
 template<typename T, typename ForceComplete_>
@@ -2640,7 +2638,7 @@ constexpr const QMetaTypeInterface *qTryMetaTypeInterfaceForType()
     using T = typename TypeCompletePair::type;
     using ForceComplete = typename TypeCompletePair::ForceComplete;
     using Ty = typename MetatypeDecay<T>::type;
-    using Tz = qRemovePointerLike_t<Ty>;
+    using Tz = typename QRemovePointerLike<Ty>::type;
 
     if constexpr (std::is_void_v<Tz>) {
         // early out to avoid expanding the rest of the templates
