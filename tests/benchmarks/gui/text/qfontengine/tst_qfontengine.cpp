@@ -44,3 +44,17 @@ void tst_QFontEngine::glyphName()
         fontEngine->glyphName(candidate.expectedGlyphIndex);
     }
 }
+
+void tst_QFontEngine::findGlyph()
+{
+    QFETCH(const Candidate, candidate);
+    if (!candidate.isFontAvailable())
+        QSKIP("Font is not available");
+
+    const auto fontEngine = candidate.fontEngine();
+    const auto glyphName = candidate.glyphName();
+
+    QBENCHMARK {
+        fontEngine->findGlyph(glyphName);
+    }
+}

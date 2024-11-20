@@ -39,6 +39,7 @@ public:
 
     glyph_t glyphIndex(uint ucs4) const override;
     QString glyphName(glyph_t index) const override;
+    glyph_t findGlyph(QLatin1StringView name) const override;
     int stringToCMap(const QChar *str, int len, QGlyphLayout *glyphs, int *nglyphs, ShaperFlags flags) const override;
     void recalcAdvances(QGlyphLayout *, ShaperFlags) const override;
 

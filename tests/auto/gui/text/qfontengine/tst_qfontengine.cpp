@@ -68,6 +68,8 @@ private slots:
     void glyphIndex();
     void glyphName_data() { data(); }
     void glyphName();
+    void findGlyph_data() { data(); }
+    void findGlyph();
 
 private:
     void setupApplication();
@@ -276,6 +278,20 @@ void tst_QFontEngine::glyphName()
 
     QCOMPARE(fontEngine->glyphName(0), ".notdef");
     QCOMPARE(fontEngine->glyphName(std::numeric_limits<glyph_t>::max()), QString());
+}
+
+void tst_QFontEngine::findGlyph()
+{
+    QFETCH_GLOBAL(const QFontEngine::Type, engineType);
+    QFETCH(const Candidate, candidate);
+    if (!candidate.isFontAvailable())
+        QSKIP("Font is not available");
+
+    const auto fontEngine = candidate.fontEngine();
+    QCOMPARE(fontEngine->type(), engineType);
+    QCOMPARE(fontEngine->findGlyph(candidate.glyphName()), candidate.expectedGlyphIndex);
+
+    QCOMPARE(fontEngine->findGlyph("No such glyph"_L1), 0);
 }
 
 #endif // !define(QFONTENGINE_BENCHMARK)

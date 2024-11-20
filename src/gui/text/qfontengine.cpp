@@ -922,6 +922,49 @@ QString QFontEngine::glyphName(glyph_t index) const
     return result;
 }
 
+glyph_t QFontEngine::findGlyph(QLatin1StringView name) const
+{
+    glyph_t result = 0;
+
+#if QT_CONFIG(harfbuzz)
+    result = queryHarfbuzz(this, [name](hb_font_t *hbFont){
+        // glyph names are all ASCII, so latin1 is fine here.
+        hb_codepoint_t glyph;
+        if (hb_font_get_glyph_from_name(hbFont, name.constData(), name.size(), &glyph))
+            return glyph_t(glyph);
+        return glyph_t(0);
+    });
+#else // if we are here, no point in trying again if we already tried harfbuzz
+    if (!result) {
+        for (glyph_t index = 0; index < uint(glyphCount()); ++index) {
+            if (name == glyphName(index))
+                return index;
+        }
+    }
+#endif
+
+    if (!result) {
+        static constexpr auto gid = "gid"_L1;
+        static constexpr auto uni = "uni"_L1;
+        if (name.startsWith(gid)) {
+            bool ok;
+            result = name.slice(gid.size()).toUInt(&ok);
+            if (ok && result < glyph_t(glyphCount()))
+                return result;
+        } else if (name.startsWith(uni)) {
+            bool ok;
+            const uint ucs4 = name.slice(uni.size()).toUInt(&ok, 16);
+            if (ok) {
+                result = glyphIndex(ucs4);
+                if (result > 0 && result < glyph_t(glyphCount()))
+                    return result;
+            }
+        }
+    }
+
+    return result;
+}
+
 QImage QFontEngine::renderedPathForGlyph(glyph_t glyph, const QColor &color)
 {
     glyph_metrics_t gm = boundingBox(glyph);
@@ -1895,6 +1938,11 @@ QString QFontEngineMulti::glyphName(glyph_t glyph) const
     const int which = highByte(glyph);
     const_cast<QFontEngineMulti *>(this)->ensureEngineAt(which);
     return engine(which)->glyphName(stripped(glyph));
+}
+
+glyph_t QFontEngineMulti::findGlyph(QLatin1StringView name) const
+{
+    return engine(0)->findGlyph(name);
 }
 
 int QFontEngineMulti::stringToCMap(const QChar *str, int len,
