@@ -2687,6 +2687,7 @@ void QFusionStyle::drawComplexControl(ComplexControl control, const QStyleOption
             if (option->subControls & SC_SliderTickmarks) {
                 painter->save();
                 painter->translate(slider->rect.x(), slider->rect.y());
+                painter->setRenderHint(QPainter::Antialiasing, false);
                 painter->setPen(outline);
                 int tickSize = proxy()->pixelMetric(PM_SliderTickmarkOffset, option, widget);
                 int available = proxy()->pixelMetric(PM_SliderSpaceAvailable, slider, widget);
