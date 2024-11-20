@@ -587,6 +587,7 @@ qt_feature("private_tests" PRIVATE
 qt_feature("doc_snippets" PRIVATE
     LABEL "Developer build: doc_snippets"
     AUTODETECT QT_FEATURE_developer_build
+    CONDITION QT_FEATURE_shared
 )
 qt_feature_definition("developer-build" "QT_BUILD_INTERNAL")
 qt_feature_config("developer-build" QMAKE_PUBLIC_QT_CONFIG
