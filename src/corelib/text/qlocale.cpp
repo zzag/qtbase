@@ -4990,13 +4990,14 @@ QStringList QLocale::uiLanguages(TagSeparator separator) const
         if (!name.isEmpty() && language() != C && !uiLanguages.contains(name)) {
             // That uses contains(name) as a cheap pre-test, but there may be an
             // entry that matches this on purging likely subtags.
-            const QLocaleId mine = d->m_data->id().withLikelySubtagsRemoved();
+            const QLocaleId id = d->m_data->id();
+            const QLocaleId mine = id.withLikelySubtagsRemoved();
             const auto isMine = [mine](const QString &entry) {
                 return QLocaleId::fromName(entry).withLikelySubtagsRemoved() == mine;
             };
             if (std::none_of(uiLanguages.constBegin(), uiLanguages.constEnd(), isMine)) {
-                localeIds.prepend(d->m_data->id());
-                uiLanguages.prepend(name);
+                localeIds.prepend(id);
+                uiLanguages.prepend(QString::fromLatin1(id.name(sep)));
             }
         }
     } else

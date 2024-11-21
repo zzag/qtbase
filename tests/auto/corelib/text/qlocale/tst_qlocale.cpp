@@ -4078,6 +4078,8 @@ public:
     {
         switch (type) {
         case UILanguages:
+            if (m_name == u"en-Latn")
+                return QVariant(QStringList{u"en-NO"_s});
             if (m_name == u"en-DE") // QTBUG-104930: simulate macOS's list not including m_name.
                 return QVariant(QStringList{u"en-GB"_s, u"de-DE"_s});
             if (m_name == u"en-Dsrt-GB")
@@ -4134,6 +4136,10 @@ void tst_QLocale::mySystemLocale_data()
         << u"no"_s << QLocale::NorwegianBokmal
         << QStringList{u"no"_s, u"nb-Latn-NO"_s, u"nb-NO"_s, u"en-US"_s, u"en-Latn-US"_s, u"en"_s,
                        u"nb"_s, u"nb-Latn-NO"_s, u"nb-NO"_s, u"nb-Latn"_s, u"en-Latn"_s};
+    QTest::addRow("en-Latn") // Android crash
+        << u"en-Latn"_s << QLocale::English
+        << QStringList{u"en-Latn"_s, u"en-Latn-US"_s, u"en-US"_s, u"en"_s,
+                       u"en-NO"_s, u"en-Latn-NO"_s};
 
     QTest::addRow("catalan")
         << u"ca"_s << QLocale::Catalan
