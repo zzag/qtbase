@@ -258,6 +258,10 @@ void tst_Android::testFullScreenDimensions()
         QTRY_COMPARE(screen->availableGeometry().width(), expectedWidth);
 
         int expectedHeight = appSize.getField<jint>("y") - insetsHeight;
+        if (QNativeInterface::QAndroidApplication::sdkVersion() == __ANDROID_API_V__){
+            QEXPECT_FAIL("",
+                "Geometry height mismatch on Android 15. Reported: QTBUG-131338", Continue);
+        }
         QTRY_COMPARE(screen->availableGeometry().height(), expectedHeight);
 
         QTRY_COMPARE(screen->geometry().width(), realSize.getField<jint>("x"));
