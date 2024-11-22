@@ -2872,7 +2872,7 @@ int QFusionStyle::pixelMetric(PixelMetric metric, const QStyleOption *option, co
         val = 2;
         break;
     case PM_ButtonMargin:
-        val = 4;
+        val = 6;
         break;
     case PM_TitleBarButtonSize:
         val = 19;
