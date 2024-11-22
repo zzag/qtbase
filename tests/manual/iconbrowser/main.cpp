@@ -322,12 +322,26 @@ class IconModel : public QAbstractItemModel
         u"weather-snow"_s,
         u"weather-storm"_s,
     };
+
+    const QStringList fileIconTypes = {
+        u"Computer"_s,
+        u"Desktop"_s,
+        u"Trashcan"_s,
+        u"Network"_s,
+        u"Drive"_s,
+        u"Folder"_s,
+        u"File"_s
+    };
+
+    QAbstractFileIconProvider m_fileIconProvider;
 public:
     using QAbstractItemModel::QAbstractItemModel;
 
     enum Columns {
         Name,
-        Style,
+        StyleIcon,
+        StylePixmap,
+        File,
         Theme,
         Icon
     };
@@ -363,14 +377,13 @@ public:
         const Columns column = Columns(index.column());
         if (!index.isValid() || row >= rowCount(index.parent()) || column >= columnCount(index.parent()))
             return {};
-        const bool fromIcon = row < themedIcons.size();
-        if (!fromIcon)
-            row -= themedIcons.size();
+
         switch (role) {
         case Qt::DisplayRole:
-            if (fromIcon) {
-                return themedIcons.at(row);
-            } else {
+            switch (index.column()) {
+            case StylePixmap:
+            case StyleIcon:
+            case Theme: {
                 const QMetaObject *styleMO = &QStyle::staticMetaObject;
                 const int pixmapIndex = styleMO->indexOfEnumerator("StandardPixmap");
                 Q_ASSERT(pixmapIndex >= 0);
@@ -378,23 +391,36 @@ public:
                 const QString pixmapName = QString::fromUtf8(pixmapEnum.key(row));
                 return QVariant(pixmapName);
             }
+            case File:
+                return row < fileIconTypes.size() ? fileIconTypes.at(row) : QVariant();
+            default:
+                return themedIcons.at(row);
+            }
             break;
         case Qt::DecorationRole:
             switch (index.column()) {
             case Name:
                 break;
-            case Style:
-                if (fromIcon)
+            case StylePixmap:
+                if (row >= themedIcons.size())
+                    break;
+                return QIcon(QApplication::style()->standardPixmap(QStyle::StandardPixmap(row)));
+            case StyleIcon:
+                if (row >= themedIcons.size())
                     break;
                 return QApplication::style()->standardIcon(QStyle::StandardPixmap(row));
             case Theme:
-                if (fromIcon)
+                if (row >= themedIcons.size())
                     break;
-                return QIcon(QApplicationPrivate::platformTheme()->standardPixmap(QPlatformTheme::StandardPixmap(row), {36, 36}));
+                return QIcon(QApplicationPrivate::platformTheme()->standardPixmap(QPlatformTheme::StandardPixmap(row), {64, 64}));
             case Icon:
-                if (fromIcon)
+                if (row < themedIcons.size())
                     return QIcon::fromTheme(themedIcons.at(row));
                 break;
+            case File:
+                if (row >= fileIconTypes.size())
+                    break;
+                return m_fileIconProvider.icon(QAbstractFileIconProvider::IconType(row));
             }
             break;
         default:
@@ -412,12 +438,16 @@ public:
                 switch (section) {
                 case Name:
                     return "Name";
-                case Style:
-                    return "Style";
+                case StylePixmap:
+                    return "Style::standardPixmap";
+                case StyleIcon:
+                    return "Style::standardIcon";
                 case Theme:
                     return "Theme";
                 case Icon:
-                    return"Icon";
+                    return "Icon";
+                case File:
+                    return "File";
                 }
             }
         }
@@ -547,8 +577,10 @@ int main(int argc, char* argv[])
     widget.setTabPosition(QTabWidget::West);
     widget.addTab(new IconInspector, "Inspect");
     widget.addTab(new IconView<IconModel::Icon>(&model), "QIcon::fromTheme");
-    widget.addTab(new IconView<IconModel::Style>(&model), "QStyle");
+    widget.addTab(new IconView<IconModel::StylePixmap>(&model), "QStyle::standardPixmap");
+    widget.addTab(new IconView<IconModel::StyleIcon>(&model), "QStyle::standardIcon");
     widget.addTab(new IconView<IconModel::Theme>(&model), "QPlatformTheme");
+    widget.addTab(new IconView<IconModel::File>(&model), "QAbstractFileIconProvider");
 
 #ifdef QT_QUICKWIDGETS_LIB
     QQuickWidget *quickBrowser = new QQuickWidget;
