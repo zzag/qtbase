@@ -38,6 +38,7 @@ static_assert(QTypeTraits::has_ostream_operator_v<QDebug, int>);
 static_assert(QTypeTraits::has_ostream_operator_v<QDebug, QMetaType>);
 static_assert(QTypeTraits::has_ostream_operator_v<QDebug, QList<int>>);
 static_assert(QTypeTraits::has_ostream_operator_v<QDebug, QMap<int, QString>>);
+static_assert(QTypeTraits::has_ostream_operator_v<QDebug, std::multiset<int>>);
 static_assert(QTypeTraits::has_ostream_operator_v<QDebug, std::set<int>>);
 static_assert(QTypeTraits::has_ostream_operator_v<QDebug, std::tuple<int, QString, QMap<int, QString>>>);
 static_assert(QTypeTraits::has_ostream_operator_v<QDebug, std::unordered_map<int, QString>>);
@@ -88,6 +89,7 @@ private slots:
     void qDebugQStringView() const;
     void qDebugQUtf8StringView() const;
     void qDebugQLatin1String() const;
+    void qDebugStdMultiSet() const;
     void qDebugStdPair() const;
     void qDebugStdSet() const;
     void qDebugStdTuple() const;
@@ -700,6 +702,33 @@ void tst_QDebug::qDebugQLatin1String() const
 
     qDebug() << string;
     QCOMPARE(s_msg, QString("\"\\nSm\\u00F8rg\\u00E5sbord\\\\\""));
+}
+
+void tst_QDebug::qDebugStdMultiSet() const
+{
+    QByteArray file, function;
+    int line = 0;
+    MessageHandlerSetter mhs(myMessageHandler);
+
+    {
+        QDebug d = qDebug();
+        std::multiset<int> multiset{1, 2, 3, 2, 1};
+        d.nospace().noquote() << multiset;
+    }
+#ifndef QT_NO_MESSAGELOGCONTEXT
+    file = __FILE__; line = __LINE__ - 5; function = Q_FUNC_INFO;
+#endif
+    QCOMPARE(s_msgType, QtDebugMsg);
+    QCOMPARE(s_msg, "std::multiset(1, 1, 2, 2, 3)"_L1);
+    QCOMPARE(s_file, file);
+    QCOMPARE(s_line, line);
+    QCOMPARE(s_function, function);
+
+    qDebug() << std::multiset<std::string>{"apple", "banana", "cherry", "banana", "apple"};
+    QCOMPARE(s_msg, "std::multiset(\"apple\", \"apple\", \"banana\", \"banana\", \"cherry\")"_L1);
+
+    qDebug() << std::multiset<int>{};
+    QCOMPARE(s_msg, "std::multiset()"_L1);
 }
 
 void tst_QDebug::qDebugStdPair() const

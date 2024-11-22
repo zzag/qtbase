@@ -440,6 +440,12 @@ inline QDebugIfHasDebugStream<Key, T> operator<<(QDebug debug, const std::multim
 }
 
 template <typename Key, typename Compare, typename Alloc>
+inline QDebug operator<<(QDebug debug, const std::multiset<Key, Compare, Alloc> &multiset)
+{
+    return QtPrivate::printSequentialContainer(std::move(debug), "std::multiset", multiset);
+}
+
+template <typename Key, typename Compare, typename Alloc>
 inline QDebug operator<<(QDebug debug, const std::set<Key, Compare, Alloc>& set)
 {
     return QtPrivate::printSequentialContainer(std::move(debug), "std::set", set);

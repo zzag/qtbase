@@ -1189,6 +1189,15 @@ QDebug &QDebug::putTupleLikeImplImpl(const char *ns, const char *what,
 */
 
 /*!
+    \fn template <typename Key, typename Compare, typename Alloc> QDebug operator<<(QDebug debug, const std::multiset<Key, Compare, Alloc> &multiset)
+    \relates QDebug
+    \since 6.9
+
+    Writes the contents of \a multiset to \a debug. The \c Key type
+    needs to support streaming into QDebug.
+*/
+
+/*!
     \fn template <typename Key, typename Compare, typename Alloc> QDebug operator<<(QDebug debug, const std::set<Key, Compare, Alloc> &set)
     \relates QDebug
     \since 6.9
