@@ -864,7 +864,7 @@ class QLocaleXmlWriter (object):
             data: dict[str, str|tuple[str|None, str|None, str|None]] = naming[iana]
             self.__openTag('zoneNames', name=iana)
             if 'exemplarCity' in data:
-                self.inTag('exemplar', data['exemplarCity'])
+                self.safeInTag('exemplar', data['exemplarCity'])
             for form in ('short', 'long'):
                 if form in data:
                     self.__writeZoneForms(form, data[form])
