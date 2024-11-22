@@ -500,24 +500,6 @@ void QFusionStyle::drawPrimitive(PrimitiveElement elem,
     }
         painter->restore();
         break;
-    case PE_FrameDockWidget:
-
-        painter->save();
-    {
-        QColor softshadow = option->palette.window().color().darker(120);
-
-        const QRect &rect = option->rect;
-        painter->setPen(softshadow);
-        painter->drawRect(rect.adjusted(0, 0, -1, -1));
-        painter->setPen(QPen(option->palette.light(), 1));
-        painter->drawLine(QPoint(rect.left() + 1, rect.top() + 1), QPoint(rect.left() + 1, rect.bottom() - 1));
-        painter->setPen(QPen(option->palette.window().color().darker(120)));
-        painter->drawLine(QPoint(rect.left() + 1, rect.bottom() - 1), QPoint(rect.right() - 2, rect.bottom() - 1));
-        painter->drawLine(QPoint(rect.right() - 1, rect.top() + 1), QPoint(rect.right() - 1, rect.bottom() - 1));
-
-    }
-        painter->restore();
-        break;
     case PE_PanelButtonTool:
         painter->save();
         if ((option->state & State_Enabled || option->state & State_On) || !(option->state & State_AutoRaise)) {
@@ -538,23 +520,27 @@ void QFusionStyle::drawPrimitive(PrimitiveElement elem,
         proxy()->drawControl(CE_Splitter, &dockWidgetHandle, painter, widget);
     }
         break;
+    case PE_FrameDockWidget:
     case PE_FrameWindow:
-        painter->save();
     {
+        painter->save();
         const QRect &rect = option->rect;
-        painter->setPen(QPen(outline.darker(150)));
+        const QColor col = (elem == PE_FrameWindow) ? outline.darker(150)
+                                                    : option->palette.window().color().darker(120);
+        painter->setPen(col);
         painter->drawRect(rect.adjusted(0, 0, -1, -1));
         painter->setPen(QPen(option->palette.light(), 1));
-        painter->drawLine(QPoint(rect.left() + 1, rect.top() + 1),
-                          QPoint(rect.left() + 1, rect.bottom() - 1));
+        painter->drawLine(rect.left() + 1, rect.top() + 1,
+                          rect.left() + 1, rect.bottom() - 1);
         painter->setPen(QPen(option->palette.window().color().darker(120)));
-        painter->drawLine(QPoint(rect.left() + 1, rect.bottom() - 1),
-                          QPoint(rect.right() - 2, rect.bottom() - 1));
-        painter->drawLine(QPoint(rect.right() - 1, rect.top() + 1),
-                          QPoint(rect.right() - 1, rect.bottom() - 1));
-    }
+        const QLine lines[2] = {{rect.left() + 1, rect.bottom() - 1,
+                                 rect.right() - 2, rect.bottom() - 1},
+                                {rect.right() - 1, rect.top() + 1,
+                                 rect.right() - 1, rect.bottom() - 1}};
+        painter->drawLines(lines, 2);
         painter->restore();
         break;
+    }
     case PE_FrameLineEdit:
     {
         const QRect &r = option->rect;
