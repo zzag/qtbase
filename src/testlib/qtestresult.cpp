@@ -302,7 +302,7 @@ bool QTestResult::verify(bool statement, const char *statementStr,
 {
     QTEST_ASSERT(statementStr);
 
-    char msg[maxMsgLen];
+    Q_DECL_UNINITIALIZED char msg[maxMsgLen];
     msg[0] = '\0';
 
     if (QTestLog::verboseLevel() >= 2) {
@@ -431,7 +431,7 @@ static bool compareHelper(bool success, const char *failureMsg,
                           const char *file, int line,
                           bool hasValues = true)
 {
-    char msg[maxMsgLen];
+    Q_DECL_UNINITIALIZED char msg[maxMsgLen];
     msg[0] = '\0';
 
     QTEST_ASSERT(expected);
@@ -473,7 +473,7 @@ static bool compareHelper(bool success, const char *failureMsg,
                           const char *file, int line)
 {
     const size_t maxMsgLen = 1024;
-    char msg[maxMsgLen];
+    Q_DECL_UNINITIALIZED char msg[maxMsgLen];
     msg[0] = '\0';
 
     QTEST_ASSERT(expected);
@@ -695,7 +695,7 @@ bool QTestResult::reportResult(bool success, const void *lhs, const void *rhs,
                                QTest::ComparisonOperation op, const char *file, int line,
                                const char *failureMessage)
 {
-    char msg[maxMsgLen];
+    Q_DECL_UNINITIALIZED char msg[maxMsgLen];
     msg[0] = '\0';
 
     QTEST_ASSERT(lhsExpr);
