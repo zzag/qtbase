@@ -1997,8 +1997,11 @@ int QFontEngineMulti::stringToCMap(const QChar *str, int len,
     int glyph_pos = 0;
     QStringIterator it(str, str + len);
 
-    int lastFallback = -1;
+#if defined(QT_NO_EMOJISEGMENTER)
     char32_t previousUcs4 = 0;
+#endif
+
+    int lastFallback = -1;
     while (it.hasNext()) {
         const char32_t ucs4 = it.peekNext();
 
@@ -2057,6 +2060,7 @@ int QFontEngineMulti::stringToCMap(const QChar *str, int len,
                 }
             }
 
+#if defined(QT_NO_EMOJISEGMENTER)
             // For variant-selectors, they are modifiers to the previous character. If we
             // end up with different font selections for the selector and the character it
             // modifies, we try applying the selector font to the preceding character as well
@@ -2095,11 +2099,15 @@ int QFontEngineMulti::stringToCMap(const QChar *str, int len,
                     }
                 }
             }
+#endif
         }
 
         it.advance();
         ++glyph_pos;
+
+#if defined(QT_NO_EMOJISEGMENTER)
         previousUcs4 = ucs4;
+#endif
     }
 
     *nglyphs = glyph_pos;
