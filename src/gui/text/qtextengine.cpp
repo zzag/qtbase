@@ -1956,7 +1956,6 @@ namespace {
 
 void QTextEngine::itemize() const
 {
-    static bool disableEmojiSegmenter = qEnvironmentVariableIntValue("QT_DISABLE_EMOJI_SEGMENTER") > 0;
     validate();
     if (layoutData->items.size())
         return;
@@ -1987,6 +1986,9 @@ void QTextEngine::itemize() const
     }
 
 #if !defined(QT_NO_EMOJISEGMENTER)
+    static const bool sDisableEmojiSegmenter = qEnvironmentVariableIntValue("QT_DISABLE_EMOJI_SEGMENTER") > 0;
+    const bool disableEmojiSegmenter = sDisableEmojiSegmenter || option.flags().testFlag(QTextOption::DisableEmojiParsing);
+
     QVarLengthArray<CharacterCategory> categorizedString;
     if (!disableEmojiSegmenter) {
         // Parse emoji sequences
