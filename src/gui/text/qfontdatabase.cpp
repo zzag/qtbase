@@ -2734,17 +2734,23 @@ QFontEngine *QFontDatabasePrivate::findFont(const QFontDef &req,
             if (script > QChar::Script_Common)
                 fallbacks += QString(); // Find the first font matching the specified script.
 
-            auto findMatchingFallback = [&](int xscript) {
+            auto findMatchingFallback = [&fallbacks,
+                                         &index,
+                                         &multi,
+                                         &fontCache,
+                                         &blackListed,
+                                         &request](int lookupScript, int cacheScript) {
+                QFontEngine *engine = nullptr;
                 for (int i = 0; !engine && i < fallbacks.size(); i++) {
                     QFontDef def = request;
 
                     def.families = QStringList(fallbacks.at(i));
-                    QFontCache::Key key(def, xscript, multi ? 1 : 0);
+                    QFontCache::Key key(def, cacheScript, multi ? 1 : 0);
                     engine = fontCache->findEngine(key);
                     if (!engine) {
                         QtFontDesc desc;
                         do {
-                            index = match(xscript,
+                            index = match(lookupScript,
                                           def,
                                           def.families.constFirst(),
                                           ""_L1,
@@ -2755,7 +2761,12 @@ QFontEngine *QFontDatabasePrivate::findFont(const QFontDef &req,
                                 QFontDef loadDef = def;
                                 if (loadDef.families.isEmpty())
                                     loadDef.families = QStringList(desc.family->name);
-                                engine = loadEngine(xscript, loadDef, desc.family, desc.foundry, desc.style, desc.size);
+                                engine = loadEngine(cacheScript,
+                                                    loadDef,
+                                                    desc.family,
+                                                    desc.foundry,
+                                                    desc.style,
+                                                    desc.size);
                                 if (engine)
                                     initFontDef(desc, loadDef, &engine->fontDef, multi);
                                 else
@@ -2764,15 +2775,20 @@ QFontEngine *QFontDatabasePrivate::findFont(const QFontDef &req,
                         } while (index >= 0 && !engine);
                     }
                 }
+
+                return engine;
             };
 
-            findMatchingFallback(multi && script != QFontDatabasePrivate::Script_Emoji ? QChar::Script_Common: script);
+            engine = findMatchingFallback(multi && script != QFontDatabasePrivate::Script_Emoji
+                                          ? QChar::Script_Common
+                                          : script,
+                                          script);
 
             // If we are looking for a color font and there are no color fonts on the system,
             // we will end up here, for one final pass. This is a rare occurrence so we accept
             // and extra pass on the fallbacks for this.
             if (!engine && script == QFontDatabasePrivate::Script_Emoji)
-                findMatchingFallback(QChar::Script_Common);
+                engine = findMatchingFallback(QChar::Script_Common, script);
         }
 
         if (!engine) {
