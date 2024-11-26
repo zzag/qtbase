@@ -86,6 +86,22 @@ private:
     friend Q_GUI_EXPORT QDataStream &operator>>(QDataStream &, QPen &);
     friend Q_GUI_EXPORT QDataStream &operator<<(QDataStream &, const QPen &);
 
+    bool isSolidDefaultLine() const noexcept;
+
+    friend bool comparesEqual(const QPen &lhs, QColor rhs) noexcept
+    {
+        return lhs.brush() == rhs && lhs.isSolidDefaultLine();
+    }
+    Q_DECLARE_EQUALITY_COMPARABLE(QPen, QColor)
+
+    friend bool comparesEqual(const QPen &lhs, Qt::PenStyle rhs)
+    {
+        if (rhs == Qt::NoPen)
+            return lhs.style() == Qt::NoPen;
+        return lhs == QPen(rhs); // allocates
+    }
+    Q_DECLARE_EQUALITY_COMPARABLE_NON_NOEXCEPT(QPen, Qt::PenStyle)
+
 public:
     using DataPtr = QExplicitlySharedDataPointer<QPenPrivate>;
 

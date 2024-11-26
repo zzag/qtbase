@@ -199,8 +199,8 @@ QPenPrivate::QPenPrivate(const QBrush &_brush, qreal _width, Qt::PenStyle penSty
     joinStyle = _joinStyle;
 }
 
-static const Qt::PenCapStyle qpen_default_cap = Qt::SquareCap;
-static const Qt::PenJoinStyle qpen_default_join = Qt::BevelJoin;
+static constexpr Qt::PenCapStyle qpen_default_cap = Qt::SquareCap;
+static constexpr Qt::PenJoinStyle qpen_default_join = Qt::BevelJoin;
 
 class QPenDataHolder
 {
@@ -769,7 +769,16 @@ void QPen::setCosmetic(bool cosmetic)
     d->cosmetic = cosmetic;
 }
 
-
+/*!
+    \internal
+*/
+bool QPen::isSolidDefaultLine() const noexcept
+{
+    return d->style == Qt::SolidLine && d->width == 1
+        && d->capStyle == qpen_default_cap && d->joinStyle == qpen_default_join
+        && qFuzzyCompare(d->dashOffset, 0) && qFuzzyCompare(d->miterLimit, 2)
+        && d->cosmetic == false;
+}
 
 /*!
     \fn bool QPen::operator!=(const QPen &pen) const
