@@ -254,7 +254,7 @@ void tst_QProgressBar::setMinMaxRepaint()
         QTRY_VERIFY(pbar.repainted);
     }
 }
-#endif //Q_OS_MAC
+#endif // Q_OS_MACOS
 
 void tst_QProgressBar::sizeHint()
 {
@@ -263,7 +263,7 @@ void tst_QProgressBar::sizeHint()
     bar.setMaximum(10);
     bar.setValue(5);
 
-    //test if the sizeHint is big enough
+    // test if the sizeHint is big enough
     QFontMetrics fm = bar.fontMetrics();
     QStyleOptionProgressBar opt;
     bar.initStyleOption(&opt);
@@ -362,7 +362,7 @@ void tst_QProgressBar::task245201_testChangeStyleAndDelete()
     QTest::qWait(10);
 
     delete bar;
-    QTest::qWait(100); //should not crash
+    QTest::qWait(100); // should not crash
     delete style;
     delete style2;
 }
