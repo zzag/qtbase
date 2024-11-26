@@ -984,6 +984,14 @@ qt_feature("wasm-exceptions" PUBLIC
 qt_feature_definition("wasm-exceptions" "QT_WASM_EXCEPTIONS" VALUE "1")
 qt_feature_config("wasm-exceptions" QMAKE_PRIVATE_CONFIG)
 
+qt_feature("wasm-jspi" PUBLIC
+    LABEL "WebAssembly JSPI"
+    PURPOSE "Enables WebAssembly JavaScript Promise Integration (JSPI)"
+    AUTODETECT OFF
+)
+qt_feature_definition("wasm-jspi" "QT_WASM_JSPI" VALUE "1")
+qt_feature_config("wasm-jspi" QMAKE_PRIVATE_CONFIG)
+
 qt_feature("localtime_r" PRIVATE
     LABEL "localtime_r()"
     CONDITION TEST_localtime_r
@@ -1312,6 +1320,10 @@ qt_configure_add_summary_entry(
 )
 qt_configure_add_summary_entry(
     ARGS "wasm-exceptions"
+    CONDITION ( TEST_architecture_arch STREQUAL wasm )
+)
+qt_configure_add_summary_entry(
+    ARGS "wasm-jspi"
     CONDITION ( TEST_architecture_arch STREQUAL wasm )
 )
 qt_configure_add_summary_section(NAME "Target compiler supports")
