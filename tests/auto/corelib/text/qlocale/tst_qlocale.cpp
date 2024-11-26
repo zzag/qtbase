@@ -390,17 +390,17 @@ void tst_QLocale::ctor_match_land()
 
 void tst_QLocale::defaulted_ctor()
 {
-    QLocale default_locale = QLocale::system();
-    QLocale::Language default_lang = default_locale.language();
-    QLocale::Territory default_country = default_locale.territory();
+    QLocale priorDefault;
+    QLocale::Language defaultLanguage = priorDefault.language();
+    QLocale::Territory defaultTerritory = priorDefault.territory();
 
-    qDebug("Default: %s/%s", QLocale::languageToString(default_lang).toUtf8().constData(),
-            QLocale::territoryToString(default_country).toUtf8().constData());
+    qDebug("Default: %s/%s", QLocale::languageToString(defaultLanguage).toUtf8().constData(),
+            QLocale::territoryToString(defaultTerritory).toUtf8().constData());
 
     {
         QLocale l;
-        QCOMPARE(l.language(), default_lang);
-        QCOMPARE(l.territory(), default_country);
+        QCOMPARE(l.language(), defaultLanguage);
+        QCOMPARE(l.territory(), defaultTerritory);
     }
 
     {
@@ -423,10 +423,10 @@ void tst_QLocale::defaulted_ctor()
         QCOMPARE(l.territory(), exp_country); \
     } while (false)
 
-    TEST_CTOR(AnyLanguage, AnyTerritory, default_lang, default_country);
+    TEST_CTOR(AnyLanguage, AnyTerritory, defaultLanguage, defaultTerritory);
     TEST_CTOR(C, AnyTerritory, QLocale::C, QLocale::AnyTerritory);
-    TEST_CTOR(Aymara, AnyTerritory, default_lang, default_country);
-    TEST_CTOR(Aymara, France, default_lang, default_country);
+    TEST_CTOR(Aymara, AnyTerritory, defaultLanguage, defaultTerritory);
+    TEST_CTOR(Aymara, France, defaultLanguage, defaultTerritory);
 
     TEST_CTOR(English, AnyTerritory, QLocale::English, QLocale::UnitedStates);
     TEST_CTOR(English, UnitedStates, QLocale::English, QLocale::UnitedStates);
