@@ -3775,6 +3775,42 @@ void QPainter::setBrush(Qt::BrushStyle style)
 }
 
 /*!
+    \overload
+    \since 6.9
+
+    Sets the painter's brush to a solid brush with the specified
+    \a color.
+*/
+
+void QPainter::setBrush(QColor color)
+{
+    Q_D(QPainter);
+    if (!d->engine) {
+        qWarning("QPainter::setBrush: Painter not active");
+        return;
+    }
+
+    const QColor actualColor = color.isValid() ? color : QColor(Qt::black);
+    if (d->state->brush == actualColor)
+        return;
+    d->state->brush = actualColor;
+    if (d->extended)
+        d->extended->brushChanged();
+    else
+        d->state->dirtyFlags |= QPaintEngine::DirtyBrush;
+}
+
+/*!
+    \fn void QPainter::setBrush(Qt::GlobalColor color)
+    \overload
+    \since 6.9
+
+    Sets the painter's brush to a solid brush with the specified
+    \a color.
+*/
+
+
+/*!
     Returns the painter's current brush.
 
     \sa QPainter::setBrush(), {QPainter#Settings}{Settings}
