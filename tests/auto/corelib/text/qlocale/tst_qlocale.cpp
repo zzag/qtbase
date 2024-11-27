@@ -161,16 +161,12 @@ private slots:
     void lcsToCode();
     void codeToLcs();
 
-    // *** ORDER-DEPENDENCY *** (This Is Bad.)
-    // Test order is determined by order of declaration here: *all* tests that
-    // QLocale::setDefault() *must* appear *after* all other tests !
-    void defaulted_ctor(); // This one must be the first of these.
+    void defaulted_ctor();
     void legacyNames();
     void unixLocaleName_data();
     void unixLocaleName();
     void testNames_data();
     void testNames();
-    // DO NOT add tests here unless they QLocale::setDefault(); see above.
 private:
     QString m_decimal, m_thousand, m_sdate, m_ldate, m_time;
     QString m_sysapp;
@@ -391,6 +387,9 @@ void tst_QLocale::ctor_match_land()
 void tst_QLocale::defaulted_ctor()
 {
     QLocale priorDefault;
+    const auto restoreDefault = qScopeGuard([priorDefault]() {
+        QLocale::setDefault(priorDefault);
+    });
     QLocale::Language defaultLanguage = priorDefault.language();
     QLocale::Territory defaultTerritory = priorDefault.territory();
 
@@ -501,6 +500,7 @@ void tst_QLocale::defaulted_ctor()
     TEST_CTOR(Swedish, AnyTerritory, QLocale::Swedish, QLocale::Sweden);
     TEST_CTOR(Uzbek, AnyTerritory, QLocale::Uzbek, QLocale::Uzbekistan);
 
+#undef CHECK_DEFAULT
 #undef TEST_CTOR
 #define TEST_CTOR(req_lc, exp_lang, exp_country) \
     do { \
@@ -512,7 +512,6 @@ void tst_QLocale::defaulted_ctor()
         QCOMPARE(qHash(l), qHash(m)); \
     } while (false)
 
-    QLocale::setDefault(QLocale(QLocale::C));
     const QString empty;
 
     TEST_CTOR("C", C, AnyTerritory);
@@ -583,7 +582,6 @@ void tst_QLocale::defaulted_ctor()
     TEST_CTOR("ru_Cyrl", Russian, CyrillicScript, RussianFederation);
 
 #undef TEST_CTOR
-#undef CHECK_DEFAULT
 }
 
 #if QT_CONFIG(process)
@@ -746,8 +744,6 @@ void tst_QLocale::systemLocale()
 
 void tst_QLocale::legacyNames()
 {
-    QLocale::setDefault(QLocale(QLocale::C));
-
 #define TEST_CTOR(req_lc, exp_lang, exp_country) \
     do { \
         const QLocale l(req_lc); \
@@ -821,8 +817,8 @@ void tst_QLocale::unixLocaleName_data()
     ADDROW("C_any", C, AnyTerritory, "C");
     ADDROW("en_any", English, AnyTerritory, "en_US");
     ADDROW("en_GB", English, UnitedKingdom, "en_GB");
-    ADDROW("ay_GB", Aymara, UnitedKingdom, "C");
 #undef ADDROW
+    QTest::newRow("ay_GB") << QLocale::Aymara << QLocale::UnitedKingdom << QLocale().name();
 }
 
 void tst_QLocale::unixLocaleName()
@@ -835,8 +831,6 @@ void tst_QLocale::unixLocaleName()
         QString copy = expect;
         return copy.replace(u'_', ch);
     };
-
-    QLocale::setDefault(QLocale(QLocale::C));
 
     const QLocale locale(lang, land);
     QCOMPARE(locale.name(), expect);
@@ -3072,8 +3066,6 @@ void tst_QLocale::testNames_data()
 {
     QTest::addColumn<QLocale::Language>("language");
     QTest::addColumn<QLocale::Territory>("country");
-
-    QLocale::setDefault(QLocale(QLocale::C)); // Ensures predictable fall-backs
 
 #ifdef QT_BUILD_INTERNAL
     bool ok = QLocaleData::allLocaleDataRows([](qsizetype index, const QLocaleData &item) {
