@@ -1363,9 +1363,11 @@ void tst_QMimeDatabase::installNewLocalMimeType()
     if (QTest::currentTestFailed())
         return;
 
-    comment();
-    if (QTest::currentTestFailed())
-        return;
+    if (m_hasFreedesktopOrg) {
+        comment();
+        if (QTest::currentTestFailed())
+            return;
+    }
 
     mimeTypeForFileWithContent();
     if (QTest::currentTestFailed())
