@@ -516,7 +516,9 @@ void tst_QDom::setGetAttributes()
     QDomElement rootNode = doc.createElement("Root");
     doc.appendChild(rootNode);
 
-    const QLocale oldLocale = QLocale();
+    const auto restoreDefault = qScopeGuard([prior = QLocale()]() {
+        QLocale::setDefault(prior);
+    });
     QLocale::setDefault(QLocale::German); // decimal separator != '.'
 
     const QString qstringVal("QString");
@@ -582,8 +584,6 @@ void tst_QDom::setGetAttributes()
     QVERIFY(nsNode.attributeNS("namespace", "doubleVal1").toDouble(&bOk) == doubleVal1 && bOk);
     QVERIFY(nsNode.attributeNS("namespace", "doubleVal2").toDouble(&bOk) == doubleVal2 && bOk);
     QVERIFY(nsNode.attributeNS("namespace", "doubleVal3").toDouble(&bOk) == doubleVal3 && bOk);
-
-    QLocale::setDefault(oldLocale);
 }
 
 
