@@ -54,20 +54,7 @@ template <int Count, size_t StringSize> struct StringData
     constexpr StringData() = default;
 };
 
-namespace detail {
-template <uint Idx, typename String> struct StringRefEntry;
-template <uint Idx, uint N> struct StringRefEntry<Idx, char[N]>
-{
-    static constexpr uint index() noexcept { return Idx; }
-    static constexpr uint size() noexcept { return N; }
-    const char *string;
-};
-} // namespace detail
-
-template <typename Seq, typename... Strings> struct StringRefStorage;
-template <uint... Idx, typename... Strings>
-struct StringRefStorage<std::integer_sequence<uint, Idx...>, Strings...> :
-        detail::StringRefEntry<Idx, Strings>...
+template <typename... Strings> struct StringRefStorage
 {
     static constexpr size_t stringSizeHelper() noexcept
     {
@@ -75,34 +62,32 @@ struct StringRefStorage<std::integer_sequence<uint, Idx...>, Strings...> :
         //   return (0 + ... + std::extent_v<Strings>);
         // but not using the fold expression to avoid exceeding compiler limits
         size_t total = 0;
-        uint sizes[] = { std::extent_v<Strings>... };
-        for (uint n : sizes)
+        int sizes[] = { std::extent_v<Strings>... };
+        for (int n : sizes)
             total += n;
-        return total;
+        return size_t(total);
     }
 
     static constexpr int StringCount = sizeof...(Strings);
     static constexpr size_t StringSize = stringSizeHelper();
     static_assert(StringSize <= MaxStringSize, "Meta Object data is too big");
+    const char *inputs[StringCount];
 
     constexpr StringRefStorage(const Strings &... strings) noexcept
-        : detail::StringRefEntry<Idx, Strings>{strings}...
-    {}
+        : inputs{ strings... }
+    { }
 
     constexpr void
     writeTo(uint (&offsets)[2 * StringCount], char (&data)[StringSize]) const noexcept
     {
-        const char *inputs[] = {
-            (static_cast<const detail::StringRefEntry<Idx, Strings> *>(this)->string)...
-        };
-        uint sizes[] = { std::extent_v<Strings>... };
+        int sizes[] = { std::extent_v<Strings>... };
 
         uint offset = 0;
         char *output = data;
         for (size_t i = 0; i < sizeof...(Strings); ++i) {
             // copy the input string, including the terminating null
-            uint len = sizes[i];
-            for (uint j = 0; j < len; ++j)
+            int len = sizes[i];
+            for (int j = 0; j < len; ++j)
                 output[offset + j] = inputs[i][j];
             offsets[2 * i] = offset + sizeof(offsets);
             offsets[2 * i + 1] = len - 1;
@@ -117,10 +102,6 @@ struct StringRefStorage<std::integer_sequence<uint, Idx...>, Strings...> :
         return result;
     }
 };
-
-// CTAD deduction guide to provide the std::integer_sequence
-template <typename... Strings> StringRefStorage(const Strings &...) ->
-    StringRefStorage<std::make_integer_sequence<uint, sizeof...(Strings)>, Strings...>;
 
 template <uint... Nx> constexpr auto stringData(const char (&...strings)[Nx])
 {
