@@ -3763,9 +3763,7 @@ void QPainter::setBrush(Qt::BrushStyle style)
         qWarning("QPainter::setBrush: Painter not active");
         return;
     }
-    if (d->state->brush.style() == style &&
-        (style == Qt::NoBrush
-         || (style == Qt::SolidPattern && d->state->brush.color() == QColor(0, 0, 0))))
+    if (d->state->brush == style)
         return;
     d->state->brush = QBrush(Qt::black, style);
     if (d->extended)
