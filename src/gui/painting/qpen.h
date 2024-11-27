@@ -41,6 +41,9 @@ public:
     QT_MOVE_ASSIGNMENT_OPERATOR_IMPL_VIA_PURE_SWAP(QPen)
     void swap(QPen &other) noexcept { d.swap(other.d); }
 
+    QPen &operator=(QColor color);
+    QPen &operator=(Qt::PenStyle style);
+
     Qt::PenStyle style() const;
     void setStyle(Qt::PenStyle);
 

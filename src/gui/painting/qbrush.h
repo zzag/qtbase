@@ -49,6 +49,10 @@ public:
     inline void swap(QBrush &other) noexcept
     { d.swap(other.d); }
 
+    QBrush &operator=(Qt::BrushStyle style);
+    QBrush &operator=(QColor color);
+    QBrush &operator=(Qt::GlobalColor color) { return operator=(QColor(color)); }
+
     operator QVariant() const;
 
     inline Qt::BrushStyle style() const;

@@ -345,6 +345,47 @@ QPen &QPen::operator=(const QPen &p) noexcept
 */
 
 /*!
+    \overload
+    \since 6.9
+
+    Makes this pen a solid pen with the given color, and default
+    cap and join styles, and returns a reference to \e this pen.
+*/
+QPen &QPen::operator=(QColor color)
+{
+    detach();
+    d->brush = color;
+    d->width = 1;
+    d->style = Qt::SolidLine;
+    d->capStyle = qpen_default_cap;
+    d->joinStyle = qpen_default_join;
+
+    return *this;
+}
+
+/*!
+    \overload
+    \since 6.9
+
+    Makes this pen a solid, black pen with default cap and join styles,
+    and returns a reference to \e this pen.
+*/
+QPen &QPen::operator=(Qt::PenStyle style)
+{
+    detach();
+    if (style == Qt::NoPen) {
+        d = nullPenInstance()->pen;
+    } else {
+        d->brush = Qt::black;
+        d->width = 1;
+        d->style = style;
+        d->capStyle = qpen_default_cap;
+        d->joinStyle = qpen_default_join;
+    }
+    return *this;
+}
+
+/*!
    Returns the pen as a QVariant.
 */
 QPen::operator QVariant() const
