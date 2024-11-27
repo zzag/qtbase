@@ -3622,12 +3622,11 @@ void QPainter::setPen(const QColor &color)
         return;
     }
 
-    QPen pen(color.isValid() ? color : QColor(Qt::black));
-
-    if (d->state->pen == pen)
+    const QColor actualColor = color.isValid() ? color : QColor(Qt::black);
+    if (d->state->pen == actualColor)
         return;
 
-    d->state->pen = pen;
+    d->state->pen = actualColor;
     if (d->extended)
         d->extended->penChanged();
     else
@@ -3686,12 +3685,10 @@ void QPainter::setPen(Qt::PenStyle style)
         return;
     }
 
-    QPen pen = QPen(style);
-
-    if (d->state->pen == pen)
+    if (d->state->pen == style)
         return;
 
-    d->state->pen = pen;
+    d->state->pen = style;
 
     if (d->extended)
         d->extended->penChanged();
