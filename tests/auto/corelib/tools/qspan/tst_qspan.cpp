@@ -228,12 +228,14 @@ void tst_QSpan::check_nonempty_span(QSpan<T, N> s, qsizetype expectedSize) const
             check_empty_span_incl_subspans(s.template subspan<1>());
         }
         check_empty_span_incl_subspans(s.subspan(1));
+        check_empty_span_incl_subspans(s.chopped(1));
     } else {
         // don't run into Mandates: Offset >= Extent
         if constexpr (N > 1) { // incl. N == std::dynamic_extent
             check_nonempty_span(s.template subspan<1>(), expectedSize - 1);
         }
         check_nonempty_span(s.subspan(1), expectedSize - 1);
+        check_nonempty_span(s.chopped(1), expectedSize - 1);
     }
 }
 
@@ -296,6 +298,11 @@ void tst_QSpan::check_empty_span_incl_subspans(QSpan<T, N> s) const
         const auto ss = s.subspan(0, 0);
         check_empty_span(ss);
         QCOMPARE_EQ(ss.data(), s.data());
+    }
+    {
+        const auto cd = s.chopped(0);
+        check_empty_span(cd);
+        QCOMPARE_EQ(cd.data(), s.data());
     }
 }
 

@@ -606,7 +606,7 @@
 
     \sa {first-t}{first<N>()}, last(QSpan<T,E>::size_type), subspan(QSpan<T,E>::size_type),
         subspan(QSpan<T,E>::size_type, QSpan<T,E>::size_type)
-    \sa sliced()
+    \sa sliced(), chopped()
 */
 
 /*!
@@ -622,7 +622,7 @@
     size() >= \a n), otherwise the behavior is undefined.
 
     \sa last(), first(QSpan<T,E>::size_type), subspan(QSpan<T,E>::size_type),
-        subspan(QSpan<T,E>::size_type, QSpan<T,E>::size_type), sliced()
+        subspan(QSpan<T,E>::size_type, QSpan<T,E>::size_type), sliced(), chopped()
 */
 
 /*!
@@ -642,7 +642,7 @@
     These functions do the same thing: subspan() is provided for STL
     compatibility and sliced() is provided for Qt compatibility.
 
-    \sa subspan(), first(QSpan<T,E>::size_type), last(QSpan<T,E>::size_type)
+    \sa subspan(), first(QSpan<T,E>::size_type), last(QSpan<T,E>::size_type), chopped()
 */
 
 /*!
@@ -662,7 +662,24 @@
     These functions do the same thing: subspan() is provided for STL
     compatibility and sliced() is provided for Qt compatibility.
 
-    \sa subspan(), first(QSpan<T,E>::size_type), last(QSpan<T,E>::size_type)
+    \sa subspan(), first(QSpan<T,E>::size_type), last(QSpan<T,E>::size_type), chopped()
+*/
+
+/*!
+    \fn template <typename T, size_t E> auto QSpan<T,E>::chopped(qsizetype n) const
+    \since 6.9
+
+    Returns a \l{variable-fixed-spans}{variable-sized} span of size size() - \a
+    n referencing the first size() - \a n elements of this span.
+
+    Same as \c{first(size() - n)}.
+
+    \a n must be non-negative.
+
+    This span must hold at least \a n elements (\c{E} >= \a n \e{and} size() >=
+    \a n), otherwise the behavior is undefined.
+
+    \sa subspan(), first(QSpan<T,E>::size_type), last(QSpan<T,E>::size_type),
 */
 
 /*!

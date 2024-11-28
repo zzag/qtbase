@@ -429,6 +429,7 @@ public:
     // nullary first()/last() clash with first<>() and last<>(), so they're not provided for QSpan
     [[nodiscard]] constexpr QSpan<T> sliced(size_type pos) const { return subspan(pos); }
     [[nodiscard]] constexpr QSpan<T> sliced(size_type pos, size_type n) const { return subspan(pos, n); }
+    [[nodiscard]] constexpr QSpan<T> chopped(size_type n) const { verify(0, n); return first(size() - n); }
 
 private:
     // [span.objectrep]
