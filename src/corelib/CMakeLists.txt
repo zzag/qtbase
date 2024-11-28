@@ -311,7 +311,6 @@ qt_internal_add_module(Core
         tools/qsize.cpp tools/qsize.h
         tools/qsmallbytearray_p.h
         tools/qspan.h
-        tools/qspan_p.h
         tools/qstack.h
         tools/qtaggedpointer.h
         tools/qtools_p.h
