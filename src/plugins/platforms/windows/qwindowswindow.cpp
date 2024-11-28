@@ -283,7 +283,7 @@ static inline RECT RECTfromQRect(const QRect &rect)
     return result;
 }
 
-static LRESULT WndProcTitleBar(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
+static LRESULT WINAPI WndProcTitleBar(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
     HWND parentHwnd = reinterpret_cast<HWND>(GetWindowLongPtr(hwnd, GWL_HWNDPARENT));
     QWindowsWindow* platformWindow = QWindowsContext::instance()->findPlatformWindow(parentHwnd);
