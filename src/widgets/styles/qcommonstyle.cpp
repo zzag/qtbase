@@ -801,12 +801,12 @@ void QCommonStyle::drawPrimitive(PrimitiveElement pe, const QStyleOption *opt, Q
                 if (!(opt->state & State_Enabled)) {
                     const int ofs = qRound(1 * dpr);
                     imagePainter.translate(ofs, ofs);
-                    imagePainter.setBrush(opt->palette.light().color());
+                    imagePainter.setBrush(opt->palette.light());
                     imagePainter.setPen(opt->palette.light().color());
                     imagePainter.drawPolygon(poly.data(), int(poly.size()));
                     imagePainter.drawPoints(poly.data(), int(poly.size()));
                     imagePainter.translate(-ofs, -ofs);
-                    imagePainter.setBrush(opt->palette.mid().color());
+                    imagePainter.setBrush(opt->palette.mid());
                     imagePainter.setPen(opt->palette.mid().color());
                 }
                 imagePainter.drawPolygon(poly.data(), int(poly.size()));

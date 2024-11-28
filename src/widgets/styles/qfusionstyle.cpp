@@ -1346,7 +1346,7 @@ void QFusionStyle::drawControl(ControlElement element, const QStyleOption *optio
             bool dis = !(mbi->state & State_Enabled);
 
             if (act) {
-                painter->setBrush(option->palette.highlight().color());
+                painter->setBrush(option->palette.highlight());
                 painter->setPen(QPen(highlightOutline));
                 painter->drawRect(rect.adjusted(0, 0, -1, -1));
 

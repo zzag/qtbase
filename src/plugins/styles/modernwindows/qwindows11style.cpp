@@ -832,7 +832,7 @@ void QWindows11Style::drawPrimitive(PrimitiveElement element, const QStyleOption
 
             painter->setFont(assetFont);
             painter->setPen(option->palette.highlightedText().color());
-            painter->setBrush(option->palette.highlightedText().color());
+            painter->setBrush(option->palette.highlightedText());
             if (option->state & State_On)
                 painter->drawText(clipRect, Qt::AlignVCenter | Qt::AlignLeft,"\uE73E");
             else if (option->state & State_NoChange)
