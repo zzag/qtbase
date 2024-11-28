@@ -1688,12 +1688,8 @@ public:
     bool insertIfNotContains(Key k, const T &f)
     {
         const QWriteLocker locker(&lock);
-        const qsizetype oldSize = map.size();
-        auto &e = map[k];
-        if (map.size() == oldSize) // already present
-            return false;
-        e = f;
-        return true;
+        auto r = map.tryEmplace(k, f);
+        return r.inserted;
     }
 
     const T *function(Key k) const
