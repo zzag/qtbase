@@ -70,17 +70,8 @@ macro(qt_internal_get_android_platform_version out_var android_platform)
     string(REGEX REPLACE ".*-([0-9]+)$" "\\1" ${out_var} "${android_platform}")
 endmacro()
 
-# Locate the highest available platform
-file(GLOB android_platforms
-    LIST_DIRECTORIES true
-    RELATIVE "${ANDROID_SDK_ROOT}/platforms"
-    "${ANDROID_SDK_ROOT}/platforms/*")
-# If list is not empty
-if(android_platforms)
-    qt_internal_sort_android_platforms(android_platforms ${android_platforms})
-    list(REVERSE android_platforms)
-    list(GET android_platforms 0 android_platform_latest)
-
+_qt_internal_detect_latest_android_platform(android_platform_latest)
+if(android_platform_latest)
     qt_internal_get_android_platform_version(latest_platform_version
         "${android_platform_latest}")
     qt_internal_get_android_platform_version(required_platform_version

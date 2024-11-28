@@ -280,6 +280,7 @@ function(qt_internal_get_qt_build_public_helpers out_var)
     set(${out_var}
         QtFeature
         QtFeatureCommon
+        QtPublicAndroidHelpers
         QtPublicAppleHelpers
         QtPublicCMakeHelpers
         QtPublicCMakeVersionHelpers
