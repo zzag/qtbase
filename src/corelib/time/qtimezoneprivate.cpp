@@ -622,7 +622,7 @@ static QList<QByteArray> selectAvailable(QList<QByteArrayView> &&desired,
     return result;
 }
 
-QList<QByteArray> QTimeZonePrivate::availableTimeZoneIds(QLocale::Territory territory) const
+QList<QByteArrayView> QTimeZonePrivate::matchingTimeZoneIds(QLocale::Territory territory) const
 {
     // Default fall-back mode: use the CLDR data to find zones for this territory.
     QList<QByteArrayView> regions;
@@ -643,10 +643,15 @@ QList<QByteArray> QTimeZonePrivate::availableTimeZoneIds(QLocale::Territory terr
             }
         }
     }
-    return selectAvailable(std::move(regions), availableTimeZoneIds());
+    return regions;
 }
 
-QList<QByteArray> QTimeZonePrivate::availableTimeZoneIds(int offsetFromUtc) const
+QList<QByteArray> QTimeZonePrivate::availableTimeZoneIds(QLocale::Territory territory) const
+{
+    return selectAvailable(matchingTimeZoneIds(territory), availableTimeZoneIds());
+}
+
+QList<QByteArrayView> QTimeZonePrivate::matchingTimeZoneIds(int offsetFromUtc) const
 {
     // Default fall-back mode: use the zoneTable to find offsets of know zones.
     QList<QByteArrayView> offsets;
@@ -661,7 +666,12 @@ QList<QByteArray> QTimeZonePrivate::availableTimeZoneIds(int offsetFromUtc) cons
             }
         }
     }
-    return selectAvailable(std::move(offsets), availableTimeZoneIds());
+    return offsets;
+}
+
+QList<QByteArray> QTimeZonePrivate::availableTimeZoneIds(int offsetFromUtc) const
+{
+    return selectAvailable(matchingTimeZoneIds(offsetFromUtc), availableTimeZoneIds());
 }
 
 #ifndef QT_NO_DATASTREAM
