@@ -4325,7 +4325,7 @@ void tst_QWidget::restoreGeometryFromInvalidArray()
 void tst_QWidget::saveRestoreGeometry()
 {
 #ifdef Q_OS_MACOS
-    QSKIP("QTBUG-52974");
+    QSKIP("macOS fails to restore from fullscreen");
 #endif
 
     if (m_platform == QStringLiteral("wayland"))
@@ -4353,7 +4353,7 @@ void tst_QWidget::saveRestoreGeometry()
     {
         QWidget widget;
         widget.setWindowFlags(Qt::X11BypassWindowManagerHint);
-        widget.setWindowTitle(QLatin1String(QTest::currentTestFunction()));
+        widget.setWindowTitle(QTest::currentTestFunction());
 
         QVERIFY(widget.restoreGeometry(savedGeometry));
         widget.showNormal();
@@ -4384,7 +4384,7 @@ void tst_QWidget::saveRestoreGeometry()
         widget.setWindowState(widget.windowState() | Qt::WindowFullScreen);
         QTRY_VERIFY((widget.windowState() & Qt::WindowFullScreen));
         QVERIFY(widget.restoreGeometry(savedGeometry));
-        QTRY_VERIFY(!(widget.windowState() & Qt::WindowFullScreen));
+        QTRY_VERIFY(!(widget.windowState() & Qt::WindowFullScreen)); // macOS fails here
         QTRY_COMPARE(widget.geometry(), geom);
 
         //Restore to full screen
@@ -4409,7 +4409,7 @@ void tst_QWidget::saveRestoreGeometry()
         geom = widget.geometry();
         widget.setWindowState(widget.windowState() | Qt::WindowMaximized);
         QTRY_VERIFY((widget.windowState() & Qt::WindowMaximized));
-        QTRY_VERIFY(widget.geometry() != geom);
+        QTRY_COMPARE_NE(widget.geometry(), geom);
         QVERIFY(widget.restoreGeometry(savedGeometry));
         QTRY_COMPARE(widget.geometry(), geom);
 
