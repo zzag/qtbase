@@ -219,6 +219,8 @@ private slots:
     void lower();
     void stackUnder();
     void testContentsPropagation();
+    void restoreGeometryFromInvalidArray_data();
+    void restoreGeometryFromInvalidArray();
     void saveRestoreGeometry();
     void restoreVersion1Geometry_data();
     void restoreVersion1Geometry();
@@ -4302,6 +4304,24 @@ void tst_QWidget::testContentsPropagation()
     saveGeometry() and restoreGeometry() works.
 */
 
+void tst_QWidget::restoreGeometryFromInvalidArray_data()
+{
+    QTest::addColumn<QByteArray>("array");
+    QTest::addRow("empty") << QByteArray();
+    QTest::addRow("one") << QByteArray("a");
+    QTest::addRow("two") << QByteArray("ab");
+    QTest::addRow("three") << QByteArray("abc");
+    QTest::addRow("four") << QByteArray("abca");
+    QTest::addRow("many") << QByteArray("lksdfkj938ao18lkjo8wqdfmkfsdfjlkm");
+}
+
+void tst_QWidget::restoreGeometryFromInvalidArray()
+{
+    QFETCH(const QByteArray, array);
+    QWidget widget;
+    QVERIFY(!widget.restoreGeometry(array));
+}
+
 void tst_QWidget::saveRestoreGeometry()
 {
 #ifdef Q_OS_MACOS
@@ -4334,20 +4354,6 @@ void tst_QWidget::saveRestoreGeometry()
         QWidget widget;
         widget.setWindowFlags(Qt::X11BypassWindowManagerHint);
         widget.setWindowTitle(QLatin1String(QTest::currentTestFunction()));
-
-        const QByteArray empty;
-        const QByteArray one("a");
-        const QByteArray two("ab");
-        const QByteArray three("abc");
-        const QByteArray four("abca");
-        const QByteArray garbage("abcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabc");
-
-        QVERIFY(!widget.restoreGeometry(empty));
-        QVERIFY(!widget.restoreGeometry(one));
-        QVERIFY(!widget.restoreGeometry(two));
-        QVERIFY(!widget.restoreGeometry(three));
-        QVERIFY(!widget.restoreGeometry(four));
-        QVERIFY(!widget.restoreGeometry(garbage));
 
         QVERIFY(widget.restoreGeometry(savedGeometry));
         widget.showNormal();
