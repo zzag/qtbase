@@ -149,7 +149,7 @@ void tst_QTimeZone::createTest()
 {
     const QTimeZone tz("Pacific/Auckland");
 
-    if (debug)
+    if constexpr (debug)
         printTimeZone(tz);
 
     // If the tz is not valid then skip as is probably using the UTC backend which is tested later
@@ -961,7 +961,7 @@ void tst_QTimeZone::checkOffset()
 
 void tst_QTimeZone::availableTimeZoneIds()
 {
-    if (debug) {
+    if constexpr (debug) {
         qDebug() << "";
         qDebug() << "Available Time Zones" ;
         qDebug() << QTimeZone::availableTimeZoneIds();
@@ -1017,7 +1017,7 @@ void tst_QTimeZone::stressTest()
         testZone.nextTransition(highDate2);
         testZone.previousTransition(highDate1);
         testZone.previousTransition(highDate2);
-        if (debug) {
+        if constexpr (debug) {
             // This could take a long time, depending on platform and database
             qDebug() << "Stress test calculating transistions for" << testZone.id();
             testZone.transitions(lowDate1, highDate1);
@@ -1363,7 +1363,7 @@ void tst_QTimeZone::icuTest()
     QVERIFY(tzp.isValid());
 
     // Only test names in debug mode, names used can vary by ICU version installed
-    if (debug) {
+    if constexpr (debug) {
         // Test display names by type
         QLocale enUS("en_US");
         ZONE_DNAME_CHECK(StandardTime, LongName, "Central European Standard Time");
@@ -1440,7 +1440,7 @@ void tst_QTimeZone::tzTest()
     // Test display names by type, either ICU or abbreviation only
     QLocale enUS("en_US");
     // Only test names in debug mode, names used can vary by ICU version installed
-    if (debug) {
+    if constexpr (debug) {
 #if QT_CONFIG(icu)
         ZONE_DNAME_CHECK(StandardTime, LongName, "Central European Standard Time");
         ZONE_DNAME_CHECK(StandardTime, ShortName, "GMT+01:00");
@@ -1614,7 +1614,7 @@ void tst_QTimeZone::macTest()
     QVERIFY(tzp.isValid());
 
     // Only test names in debug mode, names used can vary by version
-    if (debug) {
+    if constexpr (debug) {
         // Test display names by type
         QLocale enUS("en_US");
         ZONE_DNAME_CHECK(StandardTime, LongName, "Central European Standard Time");
@@ -1659,7 +1659,7 @@ void tst_QTimeZone::winTest()
 
     // Test default constructor
     QWinTimeZonePrivate tzpd;
-    if (debug)
+    if constexpr (debug)
         qDebug() << "System ID = " << tzpd.id()
                  << tzpd.displayName(QTimeZone::StandardTime, QTimeZone::LongName, QLocale())
                  << tzpd.displayName(QTimeZone::GenericTime, QTimeZone::LongName, QLocale());
@@ -1674,7 +1674,7 @@ void tst_QTimeZone::winTest()
     QVERIFY(tzp.isValid());
 
     // Only test names in debug mode, names used can vary by version
-    if (debug) {
+    if constexpr (debug) {
         // Test display names by type
         QLocale enUS("en_US");
         ZONE_DNAME_CHECK(StandardTime, LongName, "W. Europe Standard Time");
