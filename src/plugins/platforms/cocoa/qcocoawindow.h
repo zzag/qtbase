@@ -247,6 +247,8 @@ public: // for QNSView
     int m_registerTouchCount = 0;
     bool m_resizableTransientParent = false;
 
+    QMacKeyValueObserver m_safeAreaInsetsObserver;
+    void updateSafeAreaMarginsIfNeeded();
     QMargins m_lastReportedSafeAreaMargins;
 
     static const int NoAlertRequest;

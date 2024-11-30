@@ -132,6 +132,15 @@ void QCocoaWindow::initialize()
 
         setMask(QHighDpi::toNativeLocalRegion(window()->mask(), window()));
 
+        m_safeAreaInsetsObserver = QMacKeyValueObserver(
+            m_view, @"safeAreaInsets", [this] {
+                // Defer to next runloop pass, so that any changes to the
+                // margins during resizing have settled down.
+                QMetaObject::invokeMethod(this, [this]{
+                    updateSafeAreaMarginsIfNeeded();
+                }, Qt::QueuedConnection);
+            }, NSKeyValueObservingOptionNew);
+
     } else {
         // Pick up essential foreign window state
         QPlatformWindow::setGeometry(QRectF::fromCGRect(m_view.frame).toRect());
@@ -151,6 +160,8 @@ QCocoaWindow::~QCocoaWindow()
     QMacAutoReleasePool pool;
     [m_nsWindow makeFirstResponder:nil];
     [m_nsWindow setContentView:nil];
+
+    m_safeAreaInsetsObserver = {};
 
     // Remove from superview only if we have a Qt window parent,
     // as we don't want to affect window container foreign windows.
@@ -344,6 +355,14 @@ QMargins QCocoaWindow::safeAreaMargins() const
     };
 
     return (screenSafeAreaMargins | viewSafeAreaMargins).toMargins();
+}
+
+void QCocoaWindow::updateSafeAreaMarginsIfNeeded()
+{
+    if (safeAreaMargins() != m_lastReportedSafeAreaMargins) {
+        m_lastReportedSafeAreaMargins = safeAreaMargins();
+        QWindowSystemInterface::handleSafeAreaMarginsChanged(window());
+    }
 }
 
 bool QCocoaWindow::startSystemMove()
@@ -1521,10 +1540,7 @@ void QCocoaWindow::handleGeometryChange()
     QWindowSystemInterface::handleGeometryChange(window(), newGeometry);
 
     // Changing the window geometry may affect the safe area margins
-    if (safeAreaMargins() != m_lastReportedSafeAreaMargins) {
-        m_lastReportedSafeAreaMargins = safeAreaMargins();
-        QWindowSystemInterface::handleSafeAreaMarginsChanged(window());
-    }
+    updateSafeAreaMarginsIfNeeded();
 
     // Guard against processing window system events during QWindow::setGeometry
     // calls, which Qt and Qt applications do not expect.
