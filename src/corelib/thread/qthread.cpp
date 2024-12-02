@@ -550,6 +550,27 @@ uint QThread::stackSize() const
 }
 
 /*!
+    \enum QThread::QualityOfService
+    \since 6.9
+
+    This enum describes the quality of service level of a thread, and provides
+    the scheduler with information about the kind of work that the thread
+    performs. On platforms with different CPU profiles, or with the ability to
+    clock certain cores of a CPU down, this allows the scheduler to select or
+    configure a CPU core with suitable performance and energy characteristics
+    for the thread.
+
+    \value Auto The default value, leaving it to the scheduler to decide which
+                CPU core to run the thread on.
+    \value High The scheduler should run this thread to a high-performance CPU
+                core.
+    \value Eco  The scheduler should run this thread to an energy-efficient CPU
+                core.
+
+    \sa Priority, serviceLevel()
+*/
+
+/*!
     \since 6.9
 
     Set the Quality of Service level of the thread object to \a serviceLevel.
