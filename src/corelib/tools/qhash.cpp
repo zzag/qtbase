@@ -2302,10 +2302,10 @@ size_t qHash(long double key, size_t seed) noexcept
     \inmodule QtCore
     \since 6.9
     \ingroup tools
-    \brief The TryEmplaceResult class is used to represent the result of a tryEmplace operation.
+    \brief The TryEmplaceResult class is used to represent the result of a tryEmplace() operation.
 
     The \c{TryEmplaceResult} class is used in QHash to represent the result
-    of a tryEmplace operation. It holds an \l{iterator} to the newly
+    of a tryEmplace() operation. It holds an \l{iterator} to the newly
     created item, or to the pre-existing item that prevented the insertion, and
     a boolean, \l{inserted}, denoting whether the insertion took place.
 
