@@ -115,7 +115,7 @@ private:
 #if QT_CONFIG(tabletevent)
     QPointingDevice *m_pencilDevice = nullptr;
 #endif
-    QIOSServices *m_platformServices;
+    mutable QIOSServices *m_platformServices = nullptr;
     mutable QPlatformAccessibility *m_accessibility;
     QFactoryLoader *m_optionalPlugins;
 #if !defined(Q_OS_TVOS) && !defined(Q_OS_VISIONOS)
