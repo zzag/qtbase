@@ -16,13 +16,13 @@
 #include "qwasmintegration.h"
 #include "qwasmkeytranslator.h"
 #include "qwasmwindow.h"
-#include "qwasmwindowclientarea.h"
 #include "qwasmscreen.h"
 #include "qwasmcompositor.h"
 #include "qwasmevent.h"
 #include "qwasmeventdispatcher.h"
 #include "qwasmaccessibility.h"
 #include "qwasmclipboard.h"
+#include "qwasmdrag.h"
 
 #include <iostream>
 #include <sstream>
@@ -65,8 +65,6 @@ QWasmWindow::QWasmWindow(QWindow *w, QWasmDeadKeySupport *deadKeySupport,
     m_nonClientArea = std::make_unique<NonClientArea>(this, m_decoratedWindow);
     m_nonClientArea->titleBar()->setTitle(window()->title());
 
-    m_clientArea = std::make_unique<ClientArea>(this, compositor->screen(), m_window);
-
     m_window.set("className", "qt-window");
     m_decoratedWindow.call<void>("appendChild", m_window);
 
@@ -100,12 +98,64 @@ QWasmWindow::QWasmWindow(QWindow *w, QWasmDeadKeySupport *deadKeySupport,
 
     m_flags = window()->flags();
 
+    registerEventHandlers();
+
+    setParent(parent());
+}
+
+void QWasmWindow::registerEventHandlers()
+{
+    m_pointerDownCallback = std::make_unique<qstdweb::EventCallback>(m_window, "pointerdown",
+        [this](emscripten::val event){ processPointer(PointerEvent(EventType::PointerDown, event)); }
+    );
+    m_pointerMoveCallback = std::make_unique<qstdweb::EventCallback>(m_window, "pointermove",
+        [this](emscripten::val event){ processPointer(PointerEvent(EventType::PointerMove, event)); }
+    );
+    m_pointerUpCallback = std::make_unique<qstdweb::EventCallback>(m_window, "pointerup",
+        [this](emscripten::val event){ processPointer(PointerEvent(EventType::PointerUp, event)); }
+    );
+    m_pointerCancelCallback = std::make_unique<qstdweb::EventCallback>(m_window, "pointercancel",
+        [this](emscripten::val event){ processPointer(PointerEvent(EventType::PointerCancel, event)); }
+    );
     m_pointerEnterCallback = std::make_unique<qstdweb::EventCallback>(m_window, "pointerenter",
-        [this](emscripten::val event) { this->handlePointerEvent(PointerEvent(EventType::PointerEnter, event)); }
+        [this](emscripten::val event) { this->handlePointerEnterLeaveEvent(PointerEvent(EventType::PointerEnter, event)); }
     );
     m_pointerLeaveCallback = std::make_unique<qstdweb::EventCallback>(m_window, "pointerleave",
-        [this](emscripten::val event) { this->handlePointerEvent(PointerEvent(EventType::PointerLeave, event)); }
+        [this](emscripten::val event) { this->handlePointerEnterLeaveEvent(PointerEvent(EventType::PointerLeave, event)); }
     );
+
+    m_window.call<void>("setAttribute", emscripten::val("draggable"), emscripten::val("true"));
+    m_dragStartCallback = std::make_unique<qstdweb::EventCallback>(m_window, "dragstart",
+        [this](emscripten::val event) {
+            DragEvent dragEvent(EventType::DragStart, event, window());
+            QWasmDrag::instance()->onNativeDragStarted(&dragEvent);
+        }
+    );
+    m_dragOverCallback = std::make_unique<qstdweb::EventCallback>(m_window, "dragover",
+        [this](emscripten::val event) {
+            DragEvent dragEvent(EventType::DragOver, event, window());
+            QWasmDrag::instance()->onNativeDragOver(&dragEvent);
+        }
+    );
+    m_dropCallback = std::make_unique<qstdweb::EventCallback>(m_window, "drop",
+        [this](emscripten::val event) {
+            DragEvent dragEvent(EventType::Drop, event, window());
+            QWasmDrag::instance()->onNativeDrop(&dragEvent);
+        }
+    );
+    m_dragEndCallback = std::make_unique<qstdweb::EventCallback>(m_window, "dragend",
+        [this](emscripten::val event) {
+            DragEvent dragEvent(EventType::DragEnd, event, window());
+            QWasmDrag::instance()->onNativeDragFinished(&dragEvent);
+        }
+    );
+    m_dragLeaveCallback = std::make_unique<qstdweb::EventCallback>(m_window, "dragleave",
+        [this](emscripten::val event) {
+            DragEvent dragEvent(EventType::DragLeave, event, window());
+            QWasmDrag::instance()->onNativeDragLeave(&dragEvent);
+        }
+    );
+
     m_wheelEventCallback = std::make_unique<qstdweb::EventCallback>( m_window, "wheel",
         [this](emscripten::val event) { this->handleWheelEvent(event); });
 
@@ -123,8 +173,6 @@ QWasmWindow::QWasmWindow(QWindow *w, QWasmDeadKeySupport *deadKeySupport,
         [this](emscripten::val event) { this->handleKeyEvent(KeyEvent(EventType::KeyDown, event, m_deadKeySupport)); });
     m_keyUpCallback =std::make_unique<qstdweb::EventCallback>(m_window, "keyup",
         [this](emscripten::val event) {this->handleKeyEvent(KeyEvent(EventType::KeyUp, event, m_deadKeySupport)); });
-
-    setParent(parent());
 }
 
 QWasmWindow::~QWasmWindow()
@@ -586,13 +634,13 @@ bool QWasmWindow::processKeyForInputContext(const KeyEvent &event)
     return result;
 }
 
-void QWasmWindow::handlePointerEvent(const PointerEvent &event)
+void QWasmWindow::handlePointerEnterLeaveEvent(const PointerEvent &event)
 {
-    if (processPointer(event))
+    if (processPointerEnterLeave(event))
         event.webEvent.call<void>("preventDefault");
 }
 
-bool QWasmWindow::processPointer(const PointerEvent &event)
+bool QWasmWindow::processPointerEnterLeave(const PointerEvent &event)
 {
     if (event.pointerType != PointerType::Mouse && event.pointerType != PointerType::Pen)
         return false;
@@ -613,6 +661,136 @@ bool QWasmWindow::processPointer(const PointerEvent &event)
     }
 
     return false;
+}
+
+void QWasmWindow::processPointer(const PointerEvent &event)
+{
+    switch (event.type) {
+    case EventType::PointerDown:
+        m_window.call<void>("setPointerCapture", event.pointerId);
+        if ((window()->flags() & Qt::WindowDoesNotAcceptFocus)
+                    != Qt::WindowDoesNotAcceptFocus
+            && window()->isTopLevel())
+                window()->requestActivate();
+        break;
+    case EventType::PointerUp:
+        m_window.call<void>("releasePointerCapture", event.pointerId);
+        break;
+    default:
+        break;
+    };
+
+    const bool eventAccepted = deliverPointerEvent(event);
+    if (!eventAccepted && event.type == EventType::PointerDown)
+        QGuiApplicationPrivate::instance()->closeAllPopups();
+    event.webEvent.call<void>("preventDefault");
+    event.webEvent.call<void>("stopPropagation");
+}
+
+bool QWasmWindow::deliverPointerEvent(const PointerEvent &event)
+{
+    const auto pointInScreen = platformScreen()->mapFromLocal(
+        dom::mapPoint(event.target(), platformScreen()->element(), event.localPoint));
+
+    const auto geometryF = platformScreen()->geometry().toRectF();
+    const QPointF targetPointClippedToScreen(
+            qBound(geometryF.left(), pointInScreen.x(), geometryF.right()),
+            qBound(geometryF.top(), pointInScreen.y(), geometryF.bottom()));
+
+    if (event.pointerType == PointerType::Mouse) {
+        const QEvent::Type eventType =
+                MouseEvent::mouseEventTypeFromEventType(event.type, WindowArea::Client);
+
+        return eventType != QEvent::None
+                && QWindowSystemInterface::handleMouseEvent(
+                        window(), QWasmIntegration::getTimestamp(),
+                        window()->mapFromGlobal(targetPointClippedToScreen),
+                        targetPointClippedToScreen, event.mouseButtons, event.mouseButton,
+                        eventType, event.modifiers);
+    }
+
+    if (event.pointerType == PointerType::Pen) {
+        qreal pressure;
+        switch (event.type) {
+            case EventType::PointerDown :
+            case EventType::PointerMove :
+                pressure = event.pressure;
+                break;
+            case EventType::PointerUp :
+                pressure = 0.0;
+                break;
+            default:
+                return false;
+        }
+        // Tilt in the browser is in the range +-90, but QTabletEvent only goes to +-60.
+        qreal xTilt = qBound(-60.0, event.tiltX, 60.0);
+        qreal yTilt = qBound(-60.0, event.tiltY, 60.0);
+        // Barrel rotation is reported as 0 to 359, but QTabletEvent wants a signed value.
+        qreal rotation = event.twist > 180.0 ? 360.0 - event.twist : event.twist;
+        return QWindowSystemInterface::handleTabletEvent(
+            window(), QWasmIntegration::getTimestamp(), platformScreen()->tabletDevice(),
+            window()->mapFromGlobal(targetPointClippedToScreen),
+            targetPointClippedToScreen, event.mouseButtons, pressure, xTilt, yTilt,
+            event.tangentialPressure, rotation, event.modifiers);
+    }
+
+    QWindowSystemInterface::TouchPoint *touchPoint;
+
+    QPointF pointInTargetWindowCoords =
+            QPointF(window()->mapFromGlobal(targetPointClippedToScreen));
+    QPointF normalPosition(pointInTargetWindowCoords.x() / window()->width(),
+                           pointInTargetWindowCoords.y() / window()->height());
+
+    const auto tp = m_pointerIdToTouchPoints.find(event.pointerId);
+    if (event.pointerType != PointerType::Pen && tp != m_pointerIdToTouchPoints.end()) {
+        touchPoint = &tp.value();
+    } else {
+        touchPoint = &m_pointerIdToTouchPoints
+                              .insert(event.pointerId, QWindowSystemInterface::TouchPoint())
+                              .value();
+
+        // Assign touch point id. TouchPoint::id is int, but QGuiApplicationPrivate::processTouchEvent()
+        // will not synthesize mouse events for touch points with negative id; use the absolute value for
+        // the touch point id.
+        touchPoint->id = qAbs(event.pointerId);
+
+        touchPoint->state = QEventPoint::State::Pressed;
+    }
+
+    const bool stationaryTouchPoint = (normalPosition == touchPoint->normalPosition);
+    touchPoint->normalPosition = normalPosition;
+    touchPoint->area = QRectF(targetPointClippedToScreen, QSizeF(event.width, event.height))
+                                   .translated(-event.width / 2, -event.height / 2);
+    touchPoint->pressure = event.pressure;
+
+    switch (event.type) {
+    case EventType::PointerUp:
+        touchPoint->state = QEventPoint::State::Released;
+        break;
+    case EventType::PointerMove:
+        touchPoint->state = (stationaryTouchPoint ? QEventPoint::State::Stationary
+                                                  : QEventPoint::State::Updated);
+        break;
+    default:
+        break;
+    }
+
+    QList<QWindowSystemInterface::TouchPoint> touchPointList;
+    touchPointList.reserve(m_pointerIdToTouchPoints.size());
+    std::transform(m_pointerIdToTouchPoints.begin(), m_pointerIdToTouchPoints.end(),
+                   std::back_inserter(touchPointList),
+                   [](const QWindowSystemInterface::TouchPoint &val) { return val; });
+
+    if (event.type == EventType::PointerUp)
+        m_pointerIdToTouchPoints.remove(event.pointerId);
+
+    return event.type == EventType::PointerCancel
+            ? QWindowSystemInterface::handleTouchCancelEvent(
+                    window(), QWasmIntegration::getTimestamp(), platformScreen()->touchDevice(),
+                    event.modifiers)
+            : QWindowSystemInterface::handleTouchEvent(
+                    window(), QWasmIntegration::getTimestamp(), platformScreen()->touchDevice(),
+                    touchPointList, event.modifiers);
 }
 
 void QWasmWindow::handleWheelEvent(const emscripten::val &event)

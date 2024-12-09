@@ -5,21 +5,21 @@
 #define QWASMWINDOW_H
 
 #include "qwasmintegration.h"
-#include <qpa/qplatformwindow.h>
-#include <qpa/qplatformwindow_p.h>
-#include <emscripten/html5.h>
 #include "qwasmbackingstore.h"
 #include "qwasmscreen.h"
 #include "qwasmcompositor.h"
 #include "qwasmwindownonclientarea.h"
 #include "qwasmwindowstack.h"
 #include "qwasmwindowtreenode.h"
+#include "qwasmevent.h"
 
 #include <QtCore/private/qstdweb_p.h>
-#include "QtGui/qopenglcontext.h"
-#include <QtOpenGL/qopengltextureblitter.h>
+#include <qpa/qwindowsysteminterface.h>
+#include <qpa/qplatformwindow.h>
+#include <qpa/qplatformwindow_p.h>
 
 #include <emscripten/val.h>
+#include <emscripten/html5.h>
 
 #include <memory>
 
@@ -29,7 +29,6 @@ namespace qstdweb {
 class EventCallback;
 }
 
-class ClientArea;
 struct KeyEvent;
 struct PointerEvent;
 class QWasmDeadKeySupport;
@@ -48,6 +47,8 @@ public:
 
     static QWasmWindow *fromWindow(QWindow *window);
     QSurfaceFormat format() const override;
+
+    void registerEventHandlers();
 
     void paint();
     void setZOrder(int order);
@@ -126,8 +127,10 @@ private:
     bool processKey(const KeyEvent &event);
     void handleKeyForInputContextEvent(EventType eventType, const emscripten::val &event);
     bool processKeyForInputContext(const KeyEvent &event);
-    void handlePointerEvent(const PointerEvent &event);
-    bool processPointer(const PointerEvent &event);
+    void handlePointerEnterLeaveEvent(const PointerEvent &event);
+    bool processPointerEnterLeave(const PointerEvent &event);
+    void processPointer(const PointerEvent &event);
+    bool deliverPointerEvent(const PointerEvent &event);
     void handleWheelEvent(const emscripten::val &event);
     bool processWheel(const WheelEvent &event);
 
@@ -144,7 +147,6 @@ private:
     emscripten::val m_context2d = emscripten::val::undefined();
 
     std::unique_ptr<NonClientArea> m_nonClientArea;
-    std::unique_ptr<ClientArea> m_clientArea;
 
     QWasmWindowTreeNode *m_commitedParent = nullptr;
 
@@ -153,12 +155,22 @@ private:
     std::unique_ptr<qstdweb::EventCallback> m_keyDownCallbackForInputContext;
     std::unique_ptr<qstdweb::EventCallback> m_keyUpCallbackForInputContext;
 
+    std::unique_ptr<qstdweb::EventCallback> m_pointerDownCallback;
+    std::unique_ptr<qstdweb::EventCallback> m_pointerMoveCallback;
+    std::unique_ptr<qstdweb::EventCallback> m_pointerUpCallback;
+    std::unique_ptr<qstdweb::EventCallback> m_pointerCancelCallback;
     std::unique_ptr<qstdweb::EventCallback> m_pointerLeaveCallback;
     std::unique_ptr<qstdweb::EventCallback> m_pointerEnterCallback;
 
+    std::unique_ptr<qstdweb::EventCallback> m_dragOverCallback;
+    std::unique_ptr<qstdweb::EventCallback> m_dragStartCallback;
+    std::unique_ptr<qstdweb::EventCallback> m_dragEndCallback;
     std::unique_ptr<qstdweb::EventCallback> m_dropCallback;
+    std::unique_ptr<qstdweb::EventCallback> m_dragLeaveCallback;
 
     std::unique_ptr<qstdweb::EventCallback> m_wheelEventCallback;
+
+    QMap<int, QWindowSystemInterface::TouchPoint> m_pointerIdToTouchPoints;
 
     Qt::WindowStates m_state = Qt::WindowNoState;
     Qt::WindowStates m_previousWindowState = Qt::WindowNoState;
