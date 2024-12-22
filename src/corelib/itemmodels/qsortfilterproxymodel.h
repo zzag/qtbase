@@ -101,6 +101,13 @@ public:
     void setAutoAcceptChildRows(bool accept);
     QBindable<bool> bindableAutoAcceptChildRows();
 
+    enum class Direction {
+        Rows        = 0x01,
+        Columns     = 0x02,
+        Both        = Rows | Columns,
+    };
+    Q_DECLARE_FLAGS(Directions, Direction)
+
 public Q_SLOTS:
     void setFilterRegularExpression(const QString &pattern);
     void setFilterRegularExpression(const QRegularExpression &regularExpression);
@@ -114,9 +121,15 @@ protected:
     virtual bool lessThan(const QModelIndex &source_left, const QModelIndex &source_right) const;
 
     void beginFilterChange();
+    void endFilterChange(Directions directions = Direction::Both);
+#if QT_DEPRECATED_SINCE(6, 13)
+    QT_DEPRECATED_VERSION_X_6_13("Use begin/endFilterChange() instead")
     void invalidateFilter();
+    QT_DEPRECATED_VERSION_X_6_13("Use begin/endFilterChange(QSortFilterProxyModel::Direction::Rows) instead")
     void invalidateRowsFilter();
+    QT_DEPRECATED_VERSION_X_6_13("Use begin/endFilterChange(QSortFilterProxyModel::Direction::Columns) instead")
     void invalidateColumnsFilter();
+#endif
 
 public:
     using QObject::parent;
@@ -174,6 +187,8 @@ private:
     Q_DECLARE_PRIVATE(QSortFilterProxyModel)
     Q_DISABLE_COPY(QSortFilterProxyModel)
 };
+
+Q_DECLARE_OPERATORS_FOR_FLAGS(QSortFilterProxyModel::Directions)
 
 QT_END_NAMESPACE
 
