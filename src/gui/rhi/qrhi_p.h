@@ -418,11 +418,7 @@ public:
         static BufferOp dynamicUpdate(QRhiBuffer *buf, quint32 offset, quint32 size, const void *data)
         {
             BufferOp op = {};
-            op.type = DynamicUpdate;
-            op.buf = buf;
-            op.offset = offset;
-            const int effectiveSize = size ? size : buf->size();
-            op.data.assign(reinterpret_cast<const char *>(data), effectiveSize);
+            changeToDynamicUpdate(&op, buf, offset, size, data);
             return op;
         }
 
@@ -438,11 +434,7 @@ public:
         static BufferOp staticUpload(QRhiBuffer *buf, quint32 offset, quint32 size, const void *data)
         {
             BufferOp op = {};
-            op.type = StaticUpload;
-            op.buf = buf;
-            op.offset = offset;
-            const int effectiveSize = size ? size : buf->size();
-            op.data.assign(reinterpret_cast<const char *>(data), effectiveSize);
+            changeToStaticUpload(&op, buf, offset, size, data);
             return op;
         }
 
