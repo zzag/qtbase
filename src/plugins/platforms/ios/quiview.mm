@@ -395,7 +395,7 @@ inline ulong getTimeStamp(UIEvent *event)
                     // pressure, xTilt, yTilt
                     pressure, qBound(-60.0, altitudeAngle * azimuth.dx, 60.0), qBound(-60.0, altitudeAngle * azimuth.dy, 60.0),
                     // tangentialPressure, rotation, z, modifiers
-                    0, azimuthAngle, 0, Qt::NoModifier);
+                    0, 0, 0, Qt::NoModifier);
             ++i;
         }
     }
