@@ -52,8 +52,15 @@ public:
 
         QtTsan::mutexPreUnlock(this, 0u);
 
-        if (!fastTryUnlock())
-            unlockInternal();
+        if constexpr (FutexAlwaysAvailable) {
+            // we always unlock if we have futexes
+            if (QMutexPrivate *d = d_ptr.fetchAndStoreRelease(nullptr); d != dummyLocked())
+                unlockInternalFutex(d);     // was contended
+        } else {
+            // if we don't have futexes, we can only unlock if not contended
+            if (QMutexPrivate *d; !d_ptr.testAndSetRelease(dummyLocked(), nullptr, d))
+                unlockInternal(d);          // was contended
+        }
 
         QtTsan::mutexPostUnlock(this, 0u);
     }
@@ -81,16 +88,15 @@ private:
             return false;
         return d_ptr.testAndSetAcquire(nullptr, dummyLocked());
     }
-    inline bool fastTryUnlock() noexcept {
-        return d_ptr.testAndSetRelease(dummyLocked(), nullptr);
-    }
 
     void lockInternal() noexcept(FutexAlwaysAvailable);
     bool lockInternal(QDeadlineTimer timeout) noexcept(FutexAlwaysAvailable);
 #if QT_VERSION < QT_VERSION_CHECK(7, 0, 0)
     bool lockInternal(int timeout) noexcept(FutexAlwaysAvailable);
-#endif
     void unlockInternal() noexcept;
+#endif
+    void unlockInternalFutex(void *d) noexcept;
+    void unlockInternal(void *d) noexcept;
 #if QT_CORE_REMOVED_SINCE(6, 9)
     void destroyInternal(QMutexPrivate *d);
 #endif
