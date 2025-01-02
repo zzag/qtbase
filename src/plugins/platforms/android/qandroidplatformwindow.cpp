@@ -138,8 +138,6 @@ void QAndroidPlatformWindow::setSafeAreaMargins(const QMargins safeMargins)
 
 void QAndroidPlatformWindow::setGeometry(const QRect &rect)
 {
-    QPlatformWindow::setGeometry(rect);
-
     if (!isEmbeddingContainer()) {
         Q_ASSERT(m_nativeQtWindow.isValid());
 
