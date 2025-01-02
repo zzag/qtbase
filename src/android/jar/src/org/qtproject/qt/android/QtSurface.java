@@ -22,11 +22,9 @@ class QtSurface extends SurfaceView implements SurfaceHolder.Callback
         setFocusableInTouchMode(false);
         setZOrderMediaOverlay(onTop);
         m_surfaceCallback = surfaceCallback;
-        getHolder().addCallback(this);
-        if (imageDepth == 16)
-            getHolder().setFormat(PixelFormat.RGB_565);
-        else
-            getHolder().setFormat(PixelFormat.RGBA_8888);
+        SurfaceHolder holder = getHolder();
+        holder.setFormat(imageDepth == 16 ? PixelFormat.RGB_565 : PixelFormat.RGBA_8888);
+        holder.addCallback(this);
     }
 
     @Override
