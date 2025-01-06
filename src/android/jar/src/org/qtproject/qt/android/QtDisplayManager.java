@@ -64,7 +64,8 @@ class QtDisplayManager {
 
             @Override
             public void onDisplayChanged(int displayId) {
-                updateRefreshRate(m_activity);
+                QtDisplayManager.updateRefreshRate(m_activity);
+                QtDisplayManager.updateScreenDensity(m_activity);
                 QtDisplayManager.handleScreenChanged(displayId);
             }
 

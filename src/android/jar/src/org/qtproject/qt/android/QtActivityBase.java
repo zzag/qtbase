@@ -179,9 +179,6 @@ public class QtActivityBase extends Activity
         if ((diff & ActivityInfo.CONFIG_LOCALE) != 0)
             QtNative.updateLocale();
 
-        if ((diff & ActivityInfo.CONFIG_DENSITY) != 0)
-            QtDisplayManager.updateScreenDensity(this);
-
         m_prevConfig = new Configuration(newConfig);
     }
 
