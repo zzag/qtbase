@@ -125,6 +125,27 @@ class QtDisplayManager {
         displayManager.unregisterDisplayListener(m_displayListener);
     }
 
+    @SuppressWarnings("deprecation")
+    void setSystemUiVisibilityPreAndroidR(View decorView)
+    {
+        int systemUiVisibility;
+
+        if (m_isFullScreen || m_expandedToCutout) {
+            systemUiVisibility =  View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+                                | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION;
+            if (m_isFullScreen) {
+                systemUiVisibility |=  View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+                                    | View.SYSTEM_UI_FLAG_FULLSCREEN
+                                    | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
+                                    | View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY;
+            }
+        } else {
+            systemUiVisibility = View.SYSTEM_UI_FLAG_VISIBLE;
+        }
+
+        decorView.setSystemUiVisibility(systemUiVisibility);
+    }
+
     void setSystemUiVisibility(boolean isFullScreen, boolean expandedToCutout)
     {
         if (m_isFullScreen == isFullScreen && m_expandedToCutout == expandedToCutout)
@@ -132,6 +153,7 @@ class QtDisplayManager {
 
         m_isFullScreen = isFullScreen;
         m_expandedToCutout = expandedToCutout;
+
         Window window = m_activity.getWindow();
         View decorView = window.getDecorView();
 
@@ -160,25 +182,8 @@ class QtDisplayManager {
                 }
                 insetsControl.setSystemBarsBehavior(sysBarsBehavior);
             }
-
-
         } else {
-            int systemUiVisibility;
-
-            if (m_isFullScreen || m_expandedToCutout) {
-                systemUiVisibility =  View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
-                                    | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION;
-                if (m_isFullScreen) {
-                    systemUiVisibility |=  View.SYSTEM_UI_FLAG_LAYOUT_STABLE
-                                        | View.SYSTEM_UI_FLAG_FULLSCREEN
-                                        | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
-                                        | View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY;
-                }
-            } else {
-                systemUiVisibility = View.SYSTEM_UI_FLAG_VISIBLE;
-            }
-
-            decorView.setSystemUiVisibility(systemUiVisibility);
+            setSystemUiVisibilityPreAndroidR(decorView);
         }
 
         if (!isFullScreen) {
