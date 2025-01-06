@@ -6,6 +6,7 @@ package org.qtproject.qt.android;
 import android.app.Activity;
 import android.content.Context;
 import android.content.res.Configuration;
+import android.content.res.Resources;
 import android.graphics.Rect;
 import android.hardware.display.DisplayManager;
 import android.os.Build;
@@ -34,14 +35,14 @@ class QtDisplayManager {
     // screen methods
     static native void setDisplayMetrics(int screenWidthPixels, int screenHeightPixels,
                                          int availableWidthPixels, int availableHeightPixels,
-                                         double XDpi, double YDpi,
-                                         double density);
+                                         double XDpi, double YDpi);
     static native void handleOrientationChanged(int newRotation, int nativeOrientation);
     static native void handleRefreshRateChanged(float refreshRate);
     static native void handleUiDarkModeChanged(int newUiMode);
     static native void handleScreenAdded(int displayId);
     static native void handleScreenChanged(int displayId);
     static native void handleScreenRemoved(int displayId);
+    static native void handleScreenDensityChanged(double density);
     // screen methods
 
     private boolean m_isFullScreen = false;
@@ -90,6 +91,13 @@ class QtDisplayManager {
         int nativeOrientation = getNativeOrientation(activity, rotation);
         QtDisplayManager.handleOrientationChanged(rotation, nativeOrientation);
         m_previousRotation = rotation;
+    }
+
+    static void updateScreenDensity(Activity activity)
+    {
+        Resources resources = activity == null ? Resources.getSystem() : activity.getResources();
+        double density = resources.getDisplayMetrics().density;
+        QtDisplayManager.handleScreenDensityChanged(density);
     }
 
     private static int getNativeOrientation(Activity activity, int rotation)
@@ -278,13 +286,10 @@ class QtDisplayManager {
 
         final DisplayMetrics displayMetrics = activity.getResources().getDisplayMetrics();
 
-        double density = displayMetrics.density;
-
         Size displaySize = getDisplaySize(activity, QtDisplayManager.getDisplay(activity));
         setDisplayMetrics(displaySize.getWidth(), displaySize.getHeight(),
                           width, height,
-                          getXDpi(displayMetrics), getYDpi(displayMetrics),
-                          density);
+                          getXDpi(displayMetrics), getYDpi(displayMetrics));
     }
 
     static float getXDpi(final DisplayMetrics metrics) {

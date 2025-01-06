@@ -568,12 +568,10 @@ static void terminateQt(JNIEnv *env, jclass /*clazz*/)
 static void setDisplayMetrics(JNIEnv * /*env*/, jclass /*clazz*/,
                               jint screenWidthPixels, jint screenHeightPixels,
                               jint availableWidthPixels, jint availableHeightPixels,
-                              jdouble xdpi, jdouble ydpi,
-                              jdouble density)
+                              jdouble xdpi, jdouble ydpi)
 {
     m_availableWidthPixels = availableWidthPixels;
     m_availableHeightPixels = availableHeightPixels;
-    m_density = density;
 
     const QSize screenSize(screenWidthPixels, screenHeightPixels);
     // available geometry always starts from top left
@@ -713,6 +711,12 @@ static void handleUiDarkModeChanged(JNIEnv */*env*/, jobject /*thiz*/, jint newU
 }
 Q_DECLARE_JNI_NATIVE_METHOD(handleUiDarkModeChanged)
 
+static void handleScreenDensityChanged(JNIEnv */*env*/, jclass /*cls*/, jdouble density)
+{
+    m_density = density;
+}
+Q_DECLARE_JNI_NATIVE_METHOD(handleScreenDensityChanged)
+
 static void onActivityResult(JNIEnv */*env*/, jclass /*cls*/,
                              jint requestCode,
                              jint resultCode,
@@ -795,7 +799,8 @@ static bool registerNatives(QJniEnvironment &env)
                     Q_JNI_NATIVE_METHOD(handleScreenAdded),
                     Q_JNI_NATIVE_METHOD(handleScreenChanged),
                     Q_JNI_NATIVE_METHOD(handleScreenRemoved),
-                    Q_JNI_NATIVE_METHOD(handleUiDarkModeChanged)
+                    Q_JNI_NATIVE_METHOD(handleUiDarkModeChanged),
+                    Q_JNI_NATIVE_METHOD(handleScreenDensityChanged)
             });
 
     success = success

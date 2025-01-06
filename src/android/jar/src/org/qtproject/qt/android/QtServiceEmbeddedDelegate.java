@@ -44,10 +44,10 @@ class QtServiceEmbeddedDelegate implements QtEmbeddedViewInterface, QtNative.App
 
                     QtDisplayManager.setDisplayMetrics(
                             maxWidth, maxHeight, maxWidth, maxHeight,
-                            QtDisplayManager.getXDpi(metrics), QtDisplayManager.getYDpi(metrics),
-                            metrics.density);
+                            QtDisplayManager.getXDpi(metrics), QtDisplayManager.getYDpi(metrics));
 
                     QtDisplayManager.updateRefreshRate(m_service);
+                    QtDisplayManager.handleScreenDensityChanged(metrics.density);
                 });
             }
         }
