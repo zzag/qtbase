@@ -32,8 +32,7 @@ import android.content.res.Resources.Theme;
 class QtDisplayManager {
 
     // screen methods
-    static native void setDisplayMetrics(int screenWidthPixels, int screenHeightPixels,
-                                         int availableWidthPixels, int availableHeightPixels);
+    static native void handleLayoutSizeChanged(int availableWidth, int availableHeight);
     static native void handleOrientationChanged(int newRotation, int nativeOrientation);
     static native void handleRefreshRateChanged(float refreshRate);
     static native void handleUiDarkModeChanged(int newUiMode);
@@ -288,15 +287,6 @@ class QtDisplayManager {
             Rect bounds = windowManager.getMaximumWindowMetrics().getBounds();
             return new Size(bounds.width(), bounds.height());
         }
-    }
-
-    static void setApplicationDisplayMetrics(Activity activity, int width, int height)
-    {
-        if (activity == null)
-            return;
-
-        Size displaySize = getDisplaySize(activity, QtDisplayManager.getDisplay(activity));
-        setDisplayMetrics(displaySize.getWidth(), displaySize.getHeight(), width, height);
     }
 
     @UsedFromNativeCode

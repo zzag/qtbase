@@ -565,24 +565,24 @@ static void terminateQt(JNIEnv *env, jclass /*clazz*/)
     sem_post(&m_exitSemaphore);
 }
 
-static void setDisplayMetrics(JNIEnv * /*env*/, jclass /*clazz*/,
-                              jint screenWidthPixels, jint screenHeightPixels,
-                              jint availableWidthPixels, jint availableHeightPixels)
+static void handleLayoutSizeChanged(JNIEnv * /*env*/, jclass /*clazz*/,
+                                    jint availableWidth, jint availableHeight)
 {
-    m_availableWidthPixels = availableWidthPixels;
-    m_availableHeightPixels = availableHeightPixels;
+    if (m_availableWidthPixels == availableWidth && m_availableHeightPixels == availableHeight)
+        return;
 
-    const QSize screenSize(screenWidthPixels, screenHeightPixels);
-    // available geometry always starts from top left
-    const QRect availableGeometry(0, 0, availableWidthPixels, availableHeightPixels);
+    m_availableWidthPixels = availableWidth;
+    m_availableHeightPixels = availableHeight;
 
     QMutexLocker lock(&m_platformMutex);
+    // available geometry always starts from top left
+    const QRect availableGeometry(0, 0, availableWidth, availableHeight);
     if (m_androidPlatformIntegration)
-        m_androidPlatformIntegration->setScreenSizeParameters(screenSize, availableGeometry);
+        m_androidPlatformIntegration->setAvailableGeometry(availableGeometry);
     else if (QAndroidPlatformScreen::defaultAvailableGeometry().isNull())
         QAndroidPlatformScreen::defaultAvailableGeometry() = availableGeometry;
 }
-Q_DECLARE_JNI_NATIVE_METHOD(setDisplayMetrics)
+Q_DECLARE_JNI_NATIVE_METHOD(handleLayoutSizeChanged)
 
 static void updateApplicationState(JNIEnv */*env*/, jobject /*thiz*/, jint state)
 {
@@ -785,7 +785,7 @@ static bool registerNatives(QJniEnvironment &env)
     success &= env.registerNativeMethods(
             QtJniTypes::Traits<QtJniTypes::QtDisplayManager>::className(),
             {
-                    Q_JNI_NATIVE_METHOD(setDisplayMetrics),
+                    Q_JNI_NATIVE_METHOD(handleLayoutSizeChanged),
                     Q_JNI_NATIVE_METHOD(handleOrientationChanged),
                     Q_JNI_NATIVE_METHOD(handleRefreshRateChanged),
                     Q_JNI_NATIVE_METHOD(handleScreenAdded),

@@ -113,8 +113,7 @@ class QtEmbeddedDelegate extends QtActivityDelegateBase
         if (ready) {
             QtNative.runAction(() -> {
                 DisplayMetrics metrics = Resources.getSystem().getDisplayMetrics();
-                QtDisplayManager.setApplicationDisplayMetrics(m_activity, metrics.widthPixels,
-                                                              metrics.heightPixels);
+                QtDisplayManager.handleLayoutSizeChanged(metrics.widthPixels, metrics.heightPixels);
             });
         }
     }

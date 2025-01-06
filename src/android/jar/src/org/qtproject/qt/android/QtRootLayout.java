@@ -23,10 +23,10 @@ class QtRootLayout extends QtLayout
     protected void onSizeChanged(int w, int h, int oldw, int oldh)
     {
         Activity activity = (Activity) getContext();
-        if (activity == null)
+        if (activity == null || (w == oldw && h == oldh))
             return;
 
-        QtDisplayManager.setApplicationDisplayMetrics(activity, w, h);
+        QtDisplayManager.handleLayoutSizeChanged(w, h);
     }
 
     @Override

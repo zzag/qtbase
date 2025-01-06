@@ -499,10 +499,8 @@ void QAndroidPlatformIntegration::setScreenOrientation(Qt::ScreenOrientation cur
 
 void QAndroidPlatformIntegration::flushPendingUpdates()
 {
-    if (m_primaryScreen) {
-        m_primaryScreen->setSizeParameters(
-            m_primaryScreen->geometry().size(), m_primaryScreen->availableGeometry());
-    }
+    if (m_primaryScreen)
+        m_primaryScreen->setAvailableGeometry(m_primaryScreen->availableGeometry());
 }
 
 #if QT_CONFIG(accessibility)
@@ -542,15 +540,6 @@ void QAndroidPlatformIntegration::updateColorScheme(Qt::ColorScheme colorScheme)
                     [] () { QAndroidPlatformTheme::instance()->updateColorScheme();});
 }
 
-void QAndroidPlatformIntegration::setScreenSizeParameters(const QSize &screenSize,
-                                                          const QRect &availableGeometry)
-{
-    if (m_primaryScreen) {
-        QMetaObject::invokeMethod(m_primaryScreen, "setSizeParameters", Qt::AutoConnection,
-                                  Q_ARG(QSize, screenSize), Q_ARG(QRect, availableGeometry));
-    }
-}
-
 void QAndroidPlatformIntegration::setRefreshRate(qreal refreshRate)
 {
     if (m_primaryScreen)
@@ -581,10 +570,17 @@ void QAndroidPlatformIntegration::handleScreenChanged(int displayId)
     if (it == m_screens.end() || it->second == nullptr) {
         handleScreenAdded(displayId);
     }
-    // We do not do anything more here as handling of change of
-    // rotation and refresh rate is done in QtActivityDelegate java class
-    // which calls QAndroidPlatformIntegration::setOrientation, and
-    // QAndroidPlatformIntegration::setRefreshRate accordingly.
+
+    if (QAndroidPlatformScreen *screen = it->second) {
+        QSize size = QAndroidPlatformScreen::sizeForDisplayId(displayId);
+        if (screen->geometry().size() != size) {
+            screen->setPhysicalSizeFromPixels(size);
+            screen->setSize(size);
+        }
+    }
+
+    // We do not do handle changes in rotation, refresh rate and density
+    // as they are done under QtDisplayManager.
 }
 
 void QAndroidPlatformIntegration::handleScreenRemoved(int displayId)
