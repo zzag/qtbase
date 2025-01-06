@@ -571,15 +571,12 @@ static void terminateQt(JNIEnv *env, jclass /*clazz*/)
     sem_post(&m_exitSemaphore);
 }
 
-static void setDisplayMetrics(JNIEnv * /*env*/, jclass /*clazz*/, jint screenWidthPixels,
-                              jint screenHeightPixels, jint availableLeftPixels,
-                              jint availableTopPixels, jint availableWidthPixels,
-                              jint availableHeightPixels, jdouble xdpi, jdouble ydpi,
+static void setDisplayMetrics(JNIEnv * /*env*/, jclass /*clazz*/,
+                              jint screenWidthPixels, jint screenHeightPixels,
+                              jint availableWidthPixels, jint availableHeightPixels,
+                              jdouble xdpi, jdouble ydpi,
                               jdouble scaledDensity, jdouble density)
 {
-    Q_UNUSED(availableLeftPixels)
-    Q_UNUSED(availableTopPixels)
-
     m_availableWidthPixels = availableWidthPixels;
     m_availableHeightPixels = availableHeightPixels;
     m_scaledDensity = scaledDensity;
