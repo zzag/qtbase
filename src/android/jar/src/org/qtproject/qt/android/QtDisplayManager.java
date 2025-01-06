@@ -33,10 +33,9 @@ class QtDisplayManager {
 
     // screen methods
     static native void setDisplayMetrics(int screenWidthPixels, int screenHeightPixels,
-                                                int availableLeftPixels, int availableTopPixels,
-                                                int availableWidthPixels, int availableHeightPixels,
-                                                double XDpi, double YDpi, double scaledDensity,
-                                                double density);
+                                         int availableWidthPixels, int availableHeightPixels,
+                                         double XDpi, double YDpi, double scaledDensity,
+                                         double density);
     static native void handleOrientationChanged(int newRotation, int nativeOrientation);
     static native void handleRefreshRateChanged(float refreshRate);
     static native void handleUiDarkModeChanged(int newUiMode);
@@ -277,28 +276,16 @@ class QtDisplayManager {
         if (activity == null)
             return;
 
-        final WindowInsets rootInsets = activity.getWindow().getDecorView().getRootWindowInsets();
-
-        int insetLeft;
-        int insetTop;
-
-        if (android.os.Build.VERSION.SDK_INT < Build.VERSION_CODES.R) {
-            insetLeft = rootInsets.getStableInsetLeft();
-            insetTop = rootInsets.getStableInsetTop();
-        } else {
-            insetLeft = rootInsets.getInsetsIgnoringVisibility(WindowInsets.Type.systemBars()).left;
-            insetTop = rootInsets.getInsetsIgnoringVisibility(WindowInsets.Type.systemBars()).top;
-        }
-
         final DisplayMetrics displayMetrics = activity.getResources().getDisplayMetrics();
 
         double density = displayMetrics.density;
         double scaledDensity = displayMetrics.scaledDensity;
 
         Size displaySize = getDisplaySize(activity, QtDisplayManager.getDisplay(activity));
-        setDisplayMetrics(displaySize.getWidth(), displaySize.getHeight(), insetLeft, insetTop,
-                width, height, getXDpi(displayMetrics), getYDpi(displayMetrics),
-                scaledDensity, density);
+        setDisplayMetrics(displaySize.getWidth(), displaySize.getHeight(),
+                          width, height,
+                          getXDpi(displayMetrics), getYDpi(displayMetrics),
+                          scaledDensity, density);
     }
 
     static float getXDpi(final DisplayMetrics metrics) {
