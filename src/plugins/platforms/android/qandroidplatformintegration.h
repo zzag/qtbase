@@ -99,9 +99,6 @@ public:
     QStringList themeNames() const override;
     QPlatformTheme *createPlatformTheme(const QString &name) const override;
 
-    static void setDefaultDisplayMetrics(int availableLeft, int availableTop, int availableWidth,
-                                         int availableHeight, int physicalWidth, int physicalHeight,
-                                         int screenWidth, int screenHeight);
     static void setScreenOrientation(Qt::ScreenOrientation currentOrientation,
                                      Qt::ScreenOrientation nativeOrientation);
 
@@ -125,10 +122,6 @@ private:
     QThread *m_mainThread;
 
     static Qt::ColorScheme m_colorScheme;
-
-    static QRect m_defaultAvailableGeometry;
-    static QSize m_defaultPhysicalSize;
-    static QSize m_defaultScreenSize;
 
     static Qt::ScreenOrientation m_orientation;
     static Qt::ScreenOrientation m_nativeOrientation;

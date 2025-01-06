@@ -46,10 +46,6 @@ QT_BEGIN_NAMESPACE
 
 using namespace Qt::StringLiterals;
 
-Q_CONSTINIT QSize QAndroidPlatformIntegration::m_defaultScreenSize = QSize(320, 455);
-Q_CONSTINIT QRect QAndroidPlatformIntegration::m_defaultAvailableGeometry = QRect(0, 0, 320, 455);
-Q_CONSTINIT QSize QAndroidPlatformIntegration::m_defaultPhysicalSize = QSize(50, 71);
-
 Qt::ScreenOrientation QAndroidPlatformIntegration::m_orientation = Qt::PrimaryOrientation;
 Qt::ScreenOrientation QAndroidPlatformIntegration::m_nativeOrientation = Qt::PrimaryOrientation;
 
@@ -494,17 +490,6 @@ QPlatformTheme *QAndroidPlatformIntegration::createPlatformTheme(const QString &
     return 0;
 }
 
-void QAndroidPlatformIntegration::setDefaultDisplayMetrics(int availableLeft, int availableTop,
-                                                           int availableWidth, int availableHeight,
-                                                           int physicalWidth, int physicalHeight,
-                                                           int screenWidth, int screenHeight)
-{
-    m_defaultAvailableGeometry = QRect(availableLeft, availableTop,
-                                       availableWidth, availableHeight);
-    m_defaultPhysicalSize = QSize(physicalWidth, physicalHeight);
-    m_defaultScreenSize = QSize(screenWidth, screenHeight);
-}
-
 void QAndroidPlatformIntegration::setScreenOrientation(Qt::ScreenOrientation currentOrientation,
                                                        Qt::ScreenOrientation nativeOrientation)
 {
@@ -515,8 +500,8 @@ void QAndroidPlatformIntegration::setScreenOrientation(Qt::ScreenOrientation cur
 void QAndroidPlatformIntegration::flushPendingUpdates()
 {
     if (m_primaryScreen) {
-        m_primaryScreen->setSizeParameters(m_defaultPhysicalSize, m_defaultScreenSize,
-                                           m_defaultAvailableGeometry);
+        m_primaryScreen->setSizeParameters(m_primaryScreen->physicalSize().toSize(),
+                m_primaryScreen->geometry().size(), m_primaryScreen->availableGeometry());
     }
 }
 

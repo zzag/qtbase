@@ -20,6 +20,7 @@
 #include "qandroidplatformdialoghelpers.h"
 #include "qandroidplatformintegration.h"
 #include "qandroidplatformclipboard.h"
+#include "qandroidplatformscreen.h"
 #include "qandroidplatformwindow.h"
 
 #include <android/api-level.h>
@@ -70,7 +71,6 @@ static Main m_main = nullptr;
 static void *m_mainLibraryHnd = nullptr;
 static QList<QByteArray> m_applicationParams;
 static sem_t m_exitSemaphore, m_terminateSemaphore;
-
 
 static QAndroidPlatformIntegration *m_androidPlatformIntegration = nullptr;
 
@@ -580,14 +580,11 @@ static void setDisplayMetrics(JNIEnv * /*env*/, jclass /*clazz*/,
                              qRound(double(screenHeightPixels) / ydpi * 25.4));
 
     QMutexLocker lock(&m_platformMutex);
-    if (!m_androidPlatformIntegration) {
-        QAndroidPlatformIntegration::setDefaultDisplayMetrics(
-                availableGeometry.left(), availableGeometry.top(), availableGeometry.width(),
-                availableGeometry.height(), physicalSize.width(), physicalSize.height(),
-                screenSize.width(), screenSize.height());
-    } else {
-        m_androidPlatformIntegration->setScreenSizeParameters(physicalSize, screenSize,
-                                                              availableGeometry);
+    if (m_androidPlatformIntegration) {
+        m_androidPlatformIntegration->setScreenSizeParameters(
+                physicalSize, screenSize, availableGeometry);
+    } else if (QAndroidPlatformScreen::defaultAvailableGeometry().isNull()) {
+        QAndroidPlatformScreen::defaultAvailableGeometry() = availableGeometry;
     }
 }
 Q_DECLARE_JNI_NATIVE_METHOD(setDisplayMetrics)

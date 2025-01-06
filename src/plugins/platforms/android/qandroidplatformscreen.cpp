@@ -63,10 +63,6 @@ Q_DECLARE_JNI_CLASS(DisplayMode, "android/view/Display$Mode")
 QAndroidPlatformScreen::QAndroidPlatformScreen(const QJniObject &displayObject)
     : QObject(), QPlatformScreen()
 {
-    m_availableGeometry = QAndroidPlatformIntegration::m_defaultAvailableGeometry;
-    m_size = QAndroidPlatformIntegration::m_defaultScreenSize;
-    m_physicalSize = QAndroidPlatformIntegration::m_defaultPhysicalSize;
-
     // Raster only apps should set QT_ANDROID_RASTER_IMAGE_DEPTH to 16
     // is way much faster than 32
     if (qEnvironmentVariableIntValue("QT_ANDROID_RASTER_IMAGE_DEPTH") == 16) {
@@ -92,6 +88,7 @@ QAndroidPlatformScreen::QAndroidPlatformScreen(const QJniObject &displayObject)
                                     "getDisplaySize", context,
                                     displayObject.object<QtJniTypes::Display>());
     m_size = QSize(sizeObj.callMethod<int>("getWidth"), sizeObj.callMethod<int>("getHeight"));
+    m_availableGeometry = defaultAvailableGeometry();
 
     const auto resources = context.callMethod<QtJniTypes::Resources>("getResources");
     const auto metrics = resources.callMethod<QtJniTypes::DisplayMetrics>("getDisplayMetrics");
@@ -323,5 +320,11 @@ Qt::ScreenOrientation QAndroidPlatformScreen::orientation() const
 Qt::ScreenOrientation QAndroidPlatformScreen::nativeOrientation() const
 {
     return QAndroidPlatformIntegration::m_nativeOrientation;
+}
+
+QRect &QAndroidPlatformScreen::defaultAvailableGeometry()
+{
+    static QRect defaultAvailableGeometry;
+    return defaultAvailableGeometry;
 }
 QT_END_NAMESPACE

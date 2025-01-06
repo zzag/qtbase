@@ -48,6 +48,8 @@ public:
     void topVisibleWindowChanged();
     int displayId() const override;
 
+    static QRect &defaultAvailableGeometry();
+
 public slots:
     void setPhysicalSize(const QSize &size);
     void setAvailableGeometry(const QRect &rect);
