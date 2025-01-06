@@ -43,7 +43,6 @@ namespace QtAndroid
     QWindow *windowFromId(int windowId);
     int availableWidthPixels();
     int availableHeightPixels();
-    double scaledDensity();
     double pixelDensity();
     jobject assets();
     AAssetManager *assetManager();

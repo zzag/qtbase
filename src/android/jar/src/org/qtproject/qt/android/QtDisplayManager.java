@@ -34,7 +34,7 @@ class QtDisplayManager {
     // screen methods
     static native void setDisplayMetrics(int screenWidthPixels, int screenHeightPixels,
                                          int availableWidthPixels, int availableHeightPixels,
-                                         double XDpi, double YDpi, double scaledDensity,
+                                         double XDpi, double YDpi,
                                          double density);
     static native void handleOrientationChanged(int newRotation, int nativeOrientation);
     static native void handleRefreshRateChanged(float refreshRate);
@@ -279,13 +279,12 @@ class QtDisplayManager {
         final DisplayMetrics displayMetrics = activity.getResources().getDisplayMetrics();
 
         double density = displayMetrics.density;
-        double scaledDensity = displayMetrics.scaledDensity;
 
         Size displaySize = getDisplaySize(activity, QtDisplayManager.getDisplay(activity));
         setDisplayMetrics(displaySize.getWidth(), displaySize.getHeight(),
                           width, height,
                           getXDpi(displayMetrics), getYDpi(displayMetrics),
-                          scaledDensity, density);
+                          density);
     }
 
     static float getXDpi(final DisplayMetrics metrics) {

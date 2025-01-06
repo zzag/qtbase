@@ -76,7 +76,6 @@ static QAndroidPlatformIntegration *m_androidPlatformIntegration = nullptr;
 
 static int m_availableWidthPixels  = 0;
 static int m_availableHeightPixels = 0;
-static double m_scaledDensity = 0;
 static double m_density = 1.0;
 
 static AndroidAssetsFileEngineHandler *m_androidAssetsFileEngineHandler = nullptr;
@@ -152,11 +151,6 @@ namespace QtAndroid
     int availableHeightPixels()
     {
         return m_availableHeightPixels;
-    }
-
-    double scaledDensity()
-    {
-        return m_scaledDensity;
     }
 
     double pixelDensity()
@@ -575,11 +569,10 @@ static void setDisplayMetrics(JNIEnv * /*env*/, jclass /*clazz*/,
                               jint screenWidthPixels, jint screenHeightPixels,
                               jint availableWidthPixels, jint availableHeightPixels,
                               jdouble xdpi, jdouble ydpi,
-                              jdouble scaledDensity, jdouble density)
+                              jdouble density)
 {
     m_availableWidthPixels = availableWidthPixels;
     m_availableHeightPixels = availableHeightPixels;
-    m_scaledDensity = scaledDensity;
     m_density = density;
 
     const QSize screenSize(screenWidthPixels, screenHeightPixels);
