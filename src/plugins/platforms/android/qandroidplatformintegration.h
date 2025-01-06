@@ -70,8 +70,7 @@ public:
     // a better control over "geometry changed" event handling. Technically
     // they are no longer used and can be removed. Not doing it now, because
     // I'm not sure if it might be helpful to have them or not.
-    void setScreenSizeParameters(const QSize &physicalSize, const QSize &screenSize,
-                                 const QRect &availableGeometry);
+    void setScreenSizeParameters(const QSize &screenSize, const QRect &availableGeometry);
     void setRefreshRate(qreal refreshRate);
     bool isVirtualDesktop() { return true; }
 

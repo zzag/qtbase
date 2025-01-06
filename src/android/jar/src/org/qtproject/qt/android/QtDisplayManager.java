@@ -34,8 +34,7 @@ class QtDisplayManager {
 
     // screen methods
     static native void setDisplayMetrics(int screenWidthPixels, int screenHeightPixels,
-                                         int availableWidthPixels, int availableHeightPixels,
-                                         double XDpi, double YDpi);
+                                         int availableWidthPixels, int availableHeightPixels);
     static native void handleOrientationChanged(int newRotation, int nativeOrientation);
     static native void handleRefreshRateChanged(float refreshRate);
     static native void handleUiDarkModeChanged(int newUiMode);
@@ -285,20 +284,18 @@ class QtDisplayManager {
         if (activity == null)
             return;
 
-        final DisplayMetrics displayMetrics = activity.getResources().getDisplayMetrics();
-
         Size displaySize = getDisplaySize(activity, QtDisplayManager.getDisplay(activity));
-        setDisplayMetrics(displaySize.getWidth(), displaySize.getHeight(),
-                          width, height,
-                          getXDpi(displayMetrics), getYDpi(displayMetrics));
+        setDisplayMetrics(displaySize.getWidth(), displaySize.getHeight(), width, height);
     }
 
+    @UsedFromNativeCode
     static float getXDpi(final DisplayMetrics metrics) {
         if (metrics.xdpi < android.util.DisplayMetrics.DENSITY_LOW)
             return android.util.DisplayMetrics.DENSITY_LOW;
         return metrics.xdpi;
     }
 
+    @UsedFromNativeCode
     static float getYDpi(final DisplayMetrics metrics) {
         if (metrics.ydpi < android.util.DisplayMetrics.DENSITY_LOW)
             return android.util.DisplayMetrics.DENSITY_LOW;

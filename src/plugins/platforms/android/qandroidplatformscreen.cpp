@@ -92,14 +92,14 @@ QAndroidPlatformScreen::QAndroidPlatformScreen(const QJniObject &displayObject)
 
     const auto resources = context.callMethod<QtJniTypes::Resources>("getResources");
     const auto metrics = resources.callMethod<QtJniTypes::DisplayMetrics>("getDisplayMetrics");
-    const float xdpi = metrics.getField<float>("xdpi");
-    const float ydpi = metrics.getField<float>("ydpi");
+    m_xdpi = QtJniTypes::QtDisplayManager::callStaticMethod<jfloat>("getXDpi", metrics);
+    m_ydpi = QtJniTypes::QtDisplayManager::callStaticMethod<jfloat>("getYDpi", metrics);
 
     // Potentially densityDpi could be used instead of xpdi/ydpi to do the calculation,
     // but the results are not consistent with devices specs.
     // (https://issuetracker.google.com/issues/194120500)
-    m_physicalSize.setWidth(qRound(m_size.width() / xdpi * 25.4));
-    m_physicalSize.setHeight(qRound(m_size.height() / ydpi * 25.4));
+    m_physicalSize.setWidth(qRound(m_size.width() / m_xdpi * 25.4));
+    m_physicalSize.setHeight(qRound(m_size.height() / m_ydpi * 25.4));
 
     if (QNativeInterface::QAndroidApplication::sdkVersion() >= 23) {
         const QJniObject currentMode = displayObject.callObjectMethod<QtJniTypes::DisplayMode>("getMode");
@@ -219,13 +219,13 @@ void QAndroidPlatformScreen::setSize(const QSize &size)
     QWindowSystemInterface::handleScreenGeometryChange(QPlatformScreen::screen(), geometry(), availableGeometry());
 }
 
-void QAndroidPlatformScreen::setSizeParameters(const QSize &physicalSize, const QSize &size,
-                                               const QRect &availableGeometry)
+void QAndroidPlatformScreen::setSizeParameters(const QSize &size, const QRect &availableGeometry)
 {
     // The goal of this method is to set all geometry-related parameters
     // at the same time and generate only one screen geometry change event.
-    m_physicalSize = physicalSize;
     m_size = size;
+    m_physicalSize = QSize(qRound(double(size.width()) / m_xdpi * 25.4),
+                           qRound(double(size.height()) / m_ydpi * 25.4));
     // If available geometry has changed, the event will be handled in
     // setAvailableGeometry. Otherwise we need to explicitly handle it to
     // retain the behavior, because setSize() does the handling unconditionally.

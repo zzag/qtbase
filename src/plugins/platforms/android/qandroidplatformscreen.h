@@ -54,8 +54,7 @@ public slots:
     void setPhysicalSize(const QSize &size);
     void setAvailableGeometry(const QRect &rect);
     void setSize(const QSize &size);
-    void setSizeParameters(const QSize &physicalSize, const QSize &size,
-                           const QRect &availableGeometry);
+    void setSizeParameters(const QSize &size, const QRect &availableGeometry);
     void setRefreshRate(qreal refreshRate);
     void setOrientation(Qt::ScreenOrientation orientation);
 
@@ -71,6 +70,8 @@ protected:
     QList<Mode> m_modes;
     int m_currentMode = 0;
     int m_displayId = -1;
+    int m_xdpi;
+    int m_ydpi;
 
 private:
     QDpi logicalDpi() const override;

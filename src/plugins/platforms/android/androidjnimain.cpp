@@ -567,8 +567,7 @@ static void terminateQt(JNIEnv *env, jclass /*clazz*/)
 
 static void setDisplayMetrics(JNIEnv * /*env*/, jclass /*clazz*/,
                               jint screenWidthPixels, jint screenHeightPixels,
-                              jint availableWidthPixels, jint availableHeightPixels,
-                              jdouble xdpi, jdouble ydpi)
+                              jint availableWidthPixels, jint availableHeightPixels)
 {
     m_availableWidthPixels = availableWidthPixels;
     m_availableHeightPixels = availableHeightPixels;
@@ -576,16 +575,12 @@ static void setDisplayMetrics(JNIEnv * /*env*/, jclass /*clazz*/,
     const QSize screenSize(screenWidthPixels, screenHeightPixels);
     // available geometry always starts from top left
     const QRect availableGeometry(0, 0, availableWidthPixels, availableHeightPixels);
-    const QSize physicalSize(qRound(double(screenWidthPixels) / xdpi * 25.4),
-                             qRound(double(screenHeightPixels) / ydpi * 25.4));
 
     QMutexLocker lock(&m_platformMutex);
-    if (m_androidPlatformIntegration) {
-        m_androidPlatformIntegration->setScreenSizeParameters(
-                physicalSize, screenSize, availableGeometry);
-    } else if (QAndroidPlatformScreen::defaultAvailableGeometry().isNull()) {
+    if (m_androidPlatformIntegration)
+        m_androidPlatformIntegration->setScreenSizeParameters(screenSize, availableGeometry);
+    else if (QAndroidPlatformScreen::defaultAvailableGeometry().isNull())
         QAndroidPlatformScreen::defaultAvailableGeometry() = availableGeometry;
-    }
 }
 Q_DECLARE_JNI_NATIVE_METHOD(setDisplayMetrics)
 

@@ -500,8 +500,8 @@ void QAndroidPlatformIntegration::setScreenOrientation(Qt::ScreenOrientation cur
 void QAndroidPlatformIntegration::flushPendingUpdates()
 {
     if (m_primaryScreen) {
-        m_primaryScreen->setSizeParameters(m_primaryScreen->physicalSize().toSize(),
-                m_primaryScreen->geometry().size(), m_primaryScreen->availableGeometry());
+        m_primaryScreen->setSizeParameters(
+            m_primaryScreen->geometry().size(), m_primaryScreen->availableGeometry());
     }
 }
 
@@ -542,14 +542,12 @@ void QAndroidPlatformIntegration::updateColorScheme(Qt::ColorScheme colorScheme)
                     [] () { QAndroidPlatformTheme::instance()->updateColorScheme();});
 }
 
-void QAndroidPlatformIntegration::setScreenSizeParameters(const QSize &physicalSize,
-                                                          const QSize &screenSize,
+void QAndroidPlatformIntegration::setScreenSizeParameters(const QSize &screenSize,
                                                           const QRect &availableGeometry)
 {
     if (m_primaryScreen) {
         QMetaObject::invokeMethod(m_primaryScreen, "setSizeParameters", Qt::AutoConnection,
-                                  Q_ARG(QSize, physicalSize), Q_ARG(QSize, screenSize),
-                                  Q_ARG(QRect, availableGeometry));
+                                  Q_ARG(QSize, screenSize), Q_ARG(QRect, availableGeometry));
     }
 }
 
