@@ -76,6 +76,7 @@ abstract class QtActivityDelegateBase
         m_membersInitialized = true;
         m_topLevelWindows.clear();
         m_displayManager.registerDisplayListener();
+        m_displayManager.initDisplayProperties();
         m_inputDelegate.initInputMethodManager(m_activity);
 
         try {

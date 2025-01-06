@@ -115,8 +115,6 @@ class QtEmbeddedDelegate extends QtActivityDelegateBase
                 DisplayMetrics metrics = Resources.getSystem().getDisplayMetrics();
                 QtDisplayManager.setApplicationDisplayMetrics(m_activity, metrics.widthPixels,
                                                               metrics.heightPixels);
-                QtDisplayManager.updateRefreshRate(m_activity);
-                QtDisplayManager.updateScreenDensity(m_activity);
             });
         }
     }

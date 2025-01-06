@@ -139,12 +139,8 @@ class QtActivityDelegate extends QtActivityDelegateBase
         m_activity.setContentView(m_layout,
                                   new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,
                                                              ViewGroup.LayoutParams.MATCH_PARENT));
-        QtDisplayManager.handleOrientationChange(m_activity);
 
         handleUiModeChange(m_activity.getResources().getConfiguration().uiMode & Configuration.UI_MODE_NIGHT_MASK);
-
-        QtDisplayManager.updateRefreshRate(m_activity);
-        QtDisplayManager.updateScreenDensity(m_activity);
 
         m_layout.getViewTreeObserver().addOnPreDrawListener(() -> {
             if (!m_inputDelegate.isKeyboardVisible())

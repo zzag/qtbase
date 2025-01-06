@@ -110,6 +110,13 @@ class QtDisplayManager {
         return Configuration.ORIENTATION_PORTRAIT;
     }
 
+    void initDisplayProperties()
+    {
+        QtDisplayManager.handleOrientationChange(m_activity);
+        QtDisplayManager.updateRefreshRate(m_activity);
+        QtDisplayManager.updateScreenDensity(m_activity);
+    }
+
     void registerDisplayListener()
     {
         DisplayManager displayManager =
