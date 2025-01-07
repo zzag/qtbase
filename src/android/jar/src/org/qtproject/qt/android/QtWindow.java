@@ -124,12 +124,7 @@ class QtWindow extends QtLayout implements QtSurfaceInterface {
 
     @UsedFromNativeCode
     void setVisible(boolean visible) {
-        QtNative.runAction(() -> {
-            if (visible)
-                setVisibility(View.VISIBLE);
-            else
-                setVisibility(View.INVISIBLE);
-        });
+        QtNative.runAction(() -> setVisibility(visible ? View.VISIBLE : View.INVISIBLE));
     }
 
     @Override
