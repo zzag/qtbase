@@ -83,39 +83,43 @@ class QtWindow extends QtLayout implements QtSurfaceInterface {
                     int types = WindowInsets.Type.displayCutout() | WindowInsets.Type.systemBars();
                     safeInsets = insets.getInsets(types);
                 } else {
-                    int left = 0;
-                    int top = 0;
-                    int right = 0;
-                    int bottom = 0;
-
-                    int visibility = view.getSystemUiVisibility();
-                    if ((visibility & View.SYSTEM_UI_FLAG_FULLSCREEN) == 0) {
-                        left = insets.getSystemWindowInsetLeft();
-                        top = insets.getSystemWindowInsetTop();
-                        right = insets.getSystemWindowInsetRight();
-                        bottom = insets.getSystemWindowInsetBottom();
-                    }
-
-                    // Android 9 and 10 emulators don't seem to be able
-                    // to handle this, but let's have the logic here anyway
-                    DisplayCutout cutout = insets.getDisplayCutout();
-                    if (cutout != null) {
-                        left = Math.max(left, cutout.getSafeInsetLeft());
-                        top = Math.max(top, cutout.getSafeInsetTop());
-                        right = Math.max(right, cutout.getSafeInsetRight());
-                        bottom = Math.max(bottom, cutout.getSafeInsetBottom());
-                    }
-
-                    safeInsets = Insets.of(left, top, right, bottom);
+                    safeInsets = getSafeInsetsPreAndroidR(view, insets);
                 }
-
                 QtNative.runAction(() -> safeAreaMarginsChanged(safeInsets, getId()));
-
                 return insets;
             });
 
             QtNative.runAction(() -> requestApplyInsets());
         }
+    }
+
+    @SuppressWarnings("deprecation")
+    Insets getSafeInsetsPreAndroidR(View view, WindowInsets insets)
+    {
+        int left = 0;
+        int top = 0;
+        int right = 0;
+        int bottom = 0;
+
+        int visibility = view.getSystemUiVisibility();
+        if ((visibility & View.SYSTEM_UI_FLAG_FULLSCREEN) == 0) {
+            left = insets.getSystemWindowInsetLeft();
+            top = insets.getSystemWindowInsetTop();
+            right = insets.getSystemWindowInsetRight();
+            bottom = insets.getSystemWindowInsetBottom();
+        }
+
+        // Android 9 and 10 emulators don't seem to be able
+        // to handle this, but let's have the logic here anyway
+        DisplayCutout cutout = insets.getDisplayCutout();
+        if (cutout != null) {
+            left = Math.max(left, cutout.getSafeInsetLeft());
+            top = Math.max(top, cutout.getSafeInsetTop());
+            right = Math.max(right, cutout.getSafeInsetRight());
+            bottom = Math.max(bottom, cutout.getSafeInsetBottom());
+        }
+
+        return Insets.of(left, top, right, bottom);
     }
 
     @UsedFromNativeCode
