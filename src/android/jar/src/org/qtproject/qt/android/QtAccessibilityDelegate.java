@@ -4,7 +4,6 @@
 
 package org.qtproject.qt.android;
 
-import android.content.Context;
 import android.graphics.Rect;
 import android.os.Build;
 import android.os.Bundle;

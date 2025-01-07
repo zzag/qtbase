@@ -18,7 +18,6 @@ import android.view.View;
 import android.view.WindowInsets;
 import android.view.WindowManager;
 import android.view.WindowManager.LayoutParams;
-import android.view.WindowMetrics;
 import android.view.WindowInsetsController;
 import android.view.Window;
 

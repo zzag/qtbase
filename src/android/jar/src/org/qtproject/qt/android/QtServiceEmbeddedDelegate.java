@@ -7,8 +7,6 @@ import static org.qtproject.qt.android.QtNative.ApplicationState.ApplicationSusp
 
 import android.app.Service;
 import android.content.res.Resources;
-import android.hardware.display.DisplayManager;
-import android.view.Display;
 import android.util.DisplayMetrics;
 
 import java.util.HashSet;
