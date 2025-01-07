@@ -384,6 +384,7 @@ struct QCoreApplicationData
 #if QT_CONFIG(library)
     std::unique_ptr<QStringList> app_libpaths;
     std::unique_ptr<QStringList> manual_libpaths;
+    QRecursiveMutex libraryPathMutex;   // protects this block
 #endif
 
 };
@@ -2921,9 +2922,6 @@ void QCoreApplication::requestPermission(const QPermission &requestedPermission,
 #endif // QT_CONFIG(permissions)
 
 #if QT_CONFIG(library)
-
-Q_GLOBAL_STATIC(QRecursiveMutex, libraryPathMutex)
-
 /*!
     Returns a list of paths that the application will search when
     dynamically loading libraries.
@@ -2955,7 +2953,7 @@ Q_GLOBAL_STATIC(QRecursiveMutex, libraryPathMutex)
 */
 QStringList QCoreApplication::libraryPaths()
 {
-    QMutexLocker locker(libraryPathMutex());
+    QMutexLocker locker(&coreappdata->libraryPathMutex);
     return libraryPathsLocked();
 }
 
@@ -3035,7 +3033,8 @@ QStringList QCoreApplication::libraryPathsLocked()
  */
 void QCoreApplication::setLibraryPaths(const QStringList &paths)
 {
-    QMutexLocker locker(libraryPathMutex());
+    QCoreApplicationData *d = coreappdata;
+    QMutexLocker locker(&d->libraryPathMutex);
 
     // setLibraryPaths() is considered a "remove everything and then add some new ones" operation.
     // When the application is constructed it should still amend the paths. So we keep the originals
@@ -3077,7 +3076,8 @@ void QCoreApplication::addLibraryPath(const QString &path)
     if (canonicalPath.isEmpty())
         return;
 
-    QMutexLocker locker(libraryPathMutex());
+    QCoreApplicationData *d = coreappdata;
+    QMutexLocker locker(&d->libraryPathMutex);
 
     QStringList *libpaths = coreappdata()->manual_libpaths.get();
     if (libpaths) {
@@ -3116,7 +3116,8 @@ void QCoreApplication::removeLibraryPath(const QString &path)
     if (canonicalPath.isEmpty())
         return;
 
-    QMutexLocker locker(libraryPathMutex());
+    QCoreApplicationData *d = coreappdata;
+    QMutexLocker locker(&d->libraryPathMutex);
 
     QStringList *libpaths = coreappdata()->manual_libpaths.get();
     if (libpaths) {
