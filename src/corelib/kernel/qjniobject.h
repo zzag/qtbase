@@ -132,7 +132,7 @@ public:
     jclass objectClass() const;
     QByteArray className() const;
 
-    template <typename Ret, typename ...Args
+    template <typename Ret = void, typename ...Args
 #ifndef Q_QDOC
         , QtJniTypes::IfValidFieldType<Ret> = true
 #endif
@@ -164,7 +164,7 @@ public:
         }
     }
 
-    template <typename Ret, typename ...Args
+    template <typename Ret = void, typename ...Args
 #ifndef Q_QDOC
         , QtJniTypes::IfValidSignatureTypes<Ret, Args...> = true
 #endif
@@ -191,7 +191,7 @@ public:
 
     QJniObject callObjectMethod(const char *methodName, const char *signature, ...) const;
 
-    template <typename Ret, typename ...Args>
+    template <typename Ret = void, typename ...Args>
     static auto callStaticMethod(const char *className, const char *methodName, const char *signature, Args &&...args)
     {
         JNIEnv *env = QJniEnvironment::getJniEnv();
@@ -199,7 +199,7 @@ public:
         return callStaticMethod<Ret>(clazz, methodName, signature, std::forward<Args>(args)...);
     }
 
-    template <typename Ret, typename ...Args>
+    template <typename Ret = void, typename ...Args>
     static auto callStaticMethod(jclass clazz, const char *methodName, const char *signature, Args &&...args)
     {
         JNIEnv *env = QJniEnvironment::getJniEnv();
@@ -208,7 +208,7 @@ public:
         return callStaticMethod<Ret>(clazz, id, std::forward<Args>(args)...);
     }
 
-    template <typename Ret, typename ...Args
+    template <typename Ret = void, typename ...Args
 #ifndef Q_QDOC
         , QtJniTypes::IfValidFieldType<Ret> = true
 #endif
@@ -239,7 +239,7 @@ public:
         }
     }
 
-    template <typename Ret, typename ...Args
+    template <typename Ret = void, typename ...Args
 #ifndef Q_QDOC
         , QtJniTypes::IfValidSignatureTypes<Ret, Args...> = true
 #endif
@@ -254,7 +254,7 @@ public:
         return callStaticMethod<Ret>(clazz, id, std::forward<Args>(args)...);
     }
 
-    template <typename Ret, typename ...Args
+    template <typename Ret = void, typename ...Args
 #ifndef Q_QDOC
         , QtJniTypes::IfValidSignatureTypes<Ret, Args...> = true
 #endif
@@ -264,7 +264,7 @@ public:
         constexpr auto signature = QtJniTypes::methodSignature<Ret, Args...>();
         return callStaticMethod<Ret>(clazz, methodName, signature.data(), std::forward<Args>(args)...);
     }
-    template <typename Klass, typename Ret, typename ...Args
+    template <typename Klass, typename Ret = void, typename ...Args
 #ifndef Q_QDOC
         , QtJniTypes::IfValidSignatureTypes<Ret, Args...> = true
 #endif
@@ -761,7 +761,7 @@ public:
     }
 
     // public API forwarding to QJniObject, with the implicit Class template parameter
-    template <typename Ret, typename ...Args
+    template <typename Ret = void, typename ...Args
 #ifndef Q_QDOC
         , QtJniTypes::IfValidSignatureTypes<Ret, Args...> = true
 #endif
@@ -791,7 +791,7 @@ public:
     }
 
     // keep only these overloads, the rest is made private
-    template <typename Ret, typename ...Args
+    template <typename Ret = void, typename ...Args
 #ifndef Q_QDOC
         , QtJniTypes::IfValidSignatureTypes<Ret, Args...> = true
 #endif
