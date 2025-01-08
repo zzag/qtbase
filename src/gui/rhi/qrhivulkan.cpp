@@ -475,6 +475,14 @@ static inline QRhiDriverInfo::DeviceType toRhiDeviceType(VkPhysicalDeviceType ty
     }
 }
 
+static inline void fillDriverInfo(QRhiDriverInfo *info, const VkPhysicalDeviceProperties &physDevProperties)
+{
+    info->deviceName = QByteArray(physDevProperties.deviceName);
+    info->deviceId = physDevProperties.deviceID;
+    info->vendorId = physDevProperties.vendorID;
+    info->deviceType = toRhiDeviceType(physDevProperties.deviceType);
+}
+
 template<typename T>
 static inline void addToChain(T *head, void *entry)
 {
@@ -538,6 +546,16 @@ bool QRhiVulkan::create(QRhi::Flags flags)
         int requestedPhysDevIndex = -1;
         if (qEnvironmentVariableIsSet("QT_VK_PHYSICAL_DEVICE_INDEX"))
             requestedPhysDevIndex = qEnvironmentVariableIntValue("QT_VK_PHYSICAL_DEVICE_INDEX");
+
+        if (requestedPhysDevIndex < 0 && requestedRhiAdapter) {
+            VkPhysicalDevice requestedPhysDev = static_cast<QVulkanAdapter *>(requestedRhiAdapter)->physDev;
+            for (int i = 0; i < int(physDevCount); ++i) {
+                if (physDevs[i] == requestedPhysDev) {
+                    requestedPhysDevIndex = i;
+                    break;
+                }
+            }
+        }
 
         if (requestedPhysDevIndex < 0 && flags.testFlag(QRhi::PreferSoftwareRenderer)) {
             for (int i = 0; i < int(physDevCount); ++i) {
@@ -605,10 +623,7 @@ bool QRhiVulkan::create(QRhi::Flags flags)
         caps.apiVersion = physDevApiVersion;
     }
 
-    driverInfoStruct.deviceName = QByteArray(physDevProperties.deviceName);
-    driverInfoStruct.deviceId = physDevProperties.deviceID;
-    driverInfoStruct.vendorId = physDevProperties.vendorID;
-    driverInfoStruct.deviceType = toRhiDeviceType(physDevProperties.deviceType);
+    fillDriverInfo(&driverInfoStruct, physDevProperties);
 
     QVulkanInfoVector<QVulkanExtension> devExts;
     uint32_t devExtCount = 0;
@@ -1118,6 +1133,49 @@ void QRhiVulkan::destroy()
 
     f = nullptr;
     df = nullptr;
+
+    importedDevice = false;
+    importedAllocator = false;
+}
+
+QRhi::AdapterList QRhiVulkan::enumerateAdaptersBeforeCreate(QRhiNativeHandles *nativeHandles) const
+{
+    VkPhysicalDevice requestedPhysDev = VK_NULL_HANDLE;
+    if (nativeHandles) {
+        QRhiVulkanNativeHandles *h = static_cast<QRhiVulkanNativeHandles *>(nativeHandles);
+        requestedPhysDev = h->physDev;
+    }
+
+    QRhi::AdapterList list;
+    QVulkanFunctions *f = inst->functions();
+    uint32_t physDevCount = 0;
+    f->vkEnumeratePhysicalDevices(inst->vkInstance(), &physDevCount, nullptr);
+    if (!physDevCount)
+        return {};
+
+    QVarLengthArray<VkPhysicalDevice, 4> physDevs(physDevCount);
+    VkResult err = f->vkEnumeratePhysicalDevices(inst->vkInstance(), &physDevCount, physDevs.data());
+    if (err != VK_SUCCESS || !physDevCount)
+        return {};
+
+    VkPhysicalDeviceProperties physDevProperties = {};
+    for (uint32_t i = 0; i < physDevCount; ++i) {
+        if (requestedPhysDev && physDevs[i] != requestedPhysDev)
+            continue;
+
+        f->vkGetPhysicalDeviceProperties(physDevs[i], &physDevProperties);
+        QVulkanAdapter *a = new QVulkanAdapter;
+        a->physDev = physDevs[i];
+        fillDriverInfo(&a->adapterInfo, physDevProperties);
+        list.append(a);
+    }
+
+    return list;
+}
+
+QRhiDriverInfo QVulkanAdapter::info() const
+{
+    return adapterInfo;
 }
 
 VkResult QRhiVulkan::createDescriptorPool(VkDescriptorPool *pool)

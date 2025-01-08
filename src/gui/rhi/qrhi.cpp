@@ -8767,9 +8767,76 @@ QRhi::~QRhi()
     delete d;
 }
 
+QRhiImplementation *QRhiImplementation::newInstance(QRhi::Implementation impl, QRhiInitParams *params, QRhiNativeHandles *importDevice)
+{
+    QRhiImplementation *d = nullptr;
+
+    switch (impl) {
+    case QRhi::Null:
+        d = new QRhiNull(static_cast<QRhiNullInitParams *>(params));
+        break;
+    case QRhi::Vulkan:
+#if QT_CONFIG(vulkan)
+        d = new QRhiVulkan(static_cast<QRhiVulkanInitParams *>(params),
+                           static_cast<QRhiVulkanNativeHandles *>(importDevice));
+        break;
+#else
+        Q_UNUSED(importDevice);
+        qWarning("This build of Qt has no Vulkan support");
+        break;
+#endif
+    case QRhi::OpenGLES2:
+#ifndef QT_NO_OPENGL
+        d = new QRhiGles2(static_cast<QRhiGles2InitParams *>(params),
+                          static_cast<QRhiGles2NativeHandles *>(importDevice));
+        break;
+#else
+        qWarning("This build of Qt has no OpenGL support");
+        break;
+#endif
+    case QRhi::D3D11:
+#ifdef Q_OS_WIN
+        d = new QRhiD3D11(static_cast<QRhiD3D11InitParams *>(params),
+                          static_cast<QRhiD3D11NativeHandles *>(importDevice));
+        break;
+#else
+        qWarning("This platform has no Direct3D 11 support");
+        break;
+#endif
+    case QRhi::Metal:
+#if QT_CONFIG(metal)
+        d = new QRhiMetal(static_cast<QRhiMetalInitParams *>(params),
+                          static_cast<QRhiMetalNativeHandles *>(importDevice));
+        break;
+#else
+        qWarning("This platform has no Metal support");
+        break;
+#endif
+    case QRhi::D3D12:
+#ifdef Q_OS_WIN
+#ifdef QRHI_D3D12_AVAILABLE
+        d = new QRhiD3D12(static_cast<QRhiD3D12InitParams *>(params),
+                          static_cast<QRhiD3D12NativeHandles *>(importDevice));
+        break;
+#else
+        qWarning("Qt was built without Direct3D 12 support. "
+                 "This is likely due to having ancient SDK headers (such as d3d12.h) in the Qt build environment. "
+                 "Rebuild Qt with an SDK supporting D3D12 features introduced in Windows 10 version 1703, "
+                 "or use an MSVC build as those typically are built with more up-to-date SDKs.");
+        break;
+#endif
+#else
+        qWarning("This platform has no Direct3D 12 support");
+        break;
+#endif
+    }
+
+    return d;
+}
+
 bool QRhiImplementation::rubLogEnabled = false;
 
-void QRhiImplementation::prepareForCreate(QRhi *rhi, QRhi::Implementation impl, QRhi::Flags flags)
+void QRhiImplementation::prepareForCreate(QRhi *rhi, QRhi::Implementation impl, QRhi::Flags flags, QRhiAdapter *adapter)
 {
     q = rhi;
 
@@ -8785,6 +8852,13 @@ void QRhiImplementation::prepareForCreate(QRhi *rhi, QRhi::Implementation impl, 
 
     implType = impl;
     implThread = QThread::currentThread();
+
+    requestedRhiAdapter = adapter;
+}
+
+QRhi::AdapterList QRhiImplementation::enumerateAdaptersBeforeCreate(QRhiNativeHandles *) const
+{
+    return {};
 }
 
 /*!
@@ -8816,79 +8890,31 @@ void QRhiImplementation::prepareForCreate(QRhi *rhi, QRhi::Implementation impl, 
     QRhiMetalNativeHandles, QRhiGles2NativeHandles. The exact details and
     semantics depend on the backand and the underlying graphics API.
 
+    Specifying a QRhiAdapter in \a adapter offers a transparent, cross-API
+    alternative to passing in a \c VkPhysicalDevice via QRhiVulkanNativeHandles,
+    or an adapter LUID via QRhiD3D12NativeHandles. The ownership of \a adapter
+    is not taken. See enumerateAdapters() for more information on this approach.
+
+    \note \a importDevice and \a adapter cannot be both specified.
+
     \sa probe()
  */
-QRhi *QRhi::create(Implementation impl, QRhiInitParams *params, Flags flags, QRhiNativeHandles *importDevice)
+QRhi *QRhi::create(Implementation impl, QRhiInitParams *params, Flags flags, QRhiNativeHandles *importDevice, QRhiAdapter *adapter)
 {
+    if (adapter && importDevice)
+        qWarning("adapter and importDevice should not both be non-null in QRhi::create()");
+
+    std::unique_ptr<QRhiImplementation> rd(QRhiImplementation::newInstance(impl, params, importDevice));
+    if (!rd)
+        return nullptr;
+
     std::unique_ptr<QRhi> r(new QRhi);
+    r->d = rd.release();
+    r->d->prepareForCreate(r.get(), impl, flags, adapter);
+    if (!r->d->create(flags))
+        return nullptr;
 
-    switch (impl) {
-    case Null:
-        r->d = new QRhiNull(static_cast<QRhiNullInitParams *>(params));
-        break;
-    case Vulkan:
-#if QT_CONFIG(vulkan)
-        r->d = new QRhiVulkan(static_cast<QRhiVulkanInitParams *>(params),
-                              static_cast<QRhiVulkanNativeHandles *>(importDevice));
-        break;
-#else
-        Q_UNUSED(importDevice);
-        qWarning("This build of Qt has no Vulkan support");
-        break;
-#endif
-    case OpenGLES2:
-#ifndef QT_NO_OPENGL
-        r->d = new QRhiGles2(static_cast<QRhiGles2InitParams *>(params),
-                             static_cast<QRhiGles2NativeHandles *>(importDevice));
-        break;
-#else
-        qWarning("This build of Qt has no OpenGL support");
-        break;
-#endif
-    case D3D11:
-#ifdef Q_OS_WIN
-        r->d = new QRhiD3D11(static_cast<QRhiD3D11InitParams *>(params),
-                             static_cast<QRhiD3D11NativeHandles *>(importDevice));
-        break;
-#else
-        qWarning("This platform has no Direct3D 11 support");
-        break;
-#endif
-    case Metal:
-#if QT_CONFIG(metal)
-        r->d = new QRhiMetal(static_cast<QRhiMetalInitParams *>(params),
-                             static_cast<QRhiMetalNativeHandles *>(importDevice));
-        break;
-#else
-        qWarning("This platform has no Metal support");
-        break;
-#endif
-    case D3D12:
-#ifdef Q_OS_WIN
-#ifdef QRHI_D3D12_AVAILABLE
-        r->d = new QRhiD3D12(static_cast<QRhiD3D12InitParams *>(params),
-                             static_cast<QRhiD3D12NativeHandles *>(importDevice));
-        break;
-#else
-        qWarning("Qt was built without Direct3D 12 support. "
-                 "This is likely due to having ancient SDK headers (such as d3d12.h) in the Qt build environment. "
-                 "Rebuild Qt with an SDK supporting D3D12 features introduced in Windows 10 version 1703, "
-                 "or use an MSVC build as those typically are built with more up-to-date SDKs.");
-        break;
-#endif
-#else
-        qWarning("This platform has no Direct3D 12 support");
-        break;
-#endif
-    }
-
-    if (r->d) {
-        r->d->prepareForCreate(r.get(), impl, flags);
-        if (r->d->create(flags))
-            return r.release();
-    }
-
-    return nullptr;
+    return r.release();
 }
 
 /*!
@@ -8923,6 +8949,111 @@ bool QRhi::probe(QRhi::Implementation impl, QRhiInitParams *params)
         delete rhi;
     }
     return ok;
+}
+
+/*!
+    \typedef QRhi::AdapterList
+    \relates QRhi
+    \since 6.10
+
+    Synonym for QVector<QRhiAdapter *>.
+*/
+
+/*!
+    \return the list of adapters (physical devices) present, or an empty list
+    when such control is not available with a given graphics API.
+
+    Backends where such level of control is not available, the returned list is
+    always empty. Thus an empty list does not indicate there are no graphics
+    devices in the system, but that fine-grained control over selecting which
+    one to use is not available.
+
+    Backends for Direct 3D 11, Direct 3D 12, and Vulkan can be expected to fully
+    support enumerating adapters. Others may not. The backend is specified by \a
+    impl. A QRhiAdapter returned from this function must only be used in a
+    create() call with the same \a impl. Some underlying APIs may present
+    further limitations, with Vulkan in particular the QRhiAdapter is specified
+    to the QVulkanInstance (\c VkInstance).
+
+    The caller is expected to destroy the QRhiAdapter objects in the list. Apart
+    from querying \l{QRhiAdapter::}info(), the only purpose of these objects is
+    to be passed on to create(), or the corresponding functions in higher layers
+    such as Qt Quick.
+
+    The following snippet, written specifically for Vulkan, shows how to
+    enumerate the available physical devices and request to create a QRhi for
+    the chosen one. This in practice is equivalent to passing in a \c
+    VkPhysicalDevice via a QRhiVulkanNativeHandles to create(), but it involves
+    less API-specific code on the application side:
+
+    \code
+      QRhiVulkanInitParams initParams;
+      initParams.inst = &vulkanInstance;
+      QRhi::AdapterList adapters = QRhi::enumerateAdapters(QRhi::Vulkan, &initParams);
+      QRhiAdapter *chosenAdapter = nullptr;
+      for (QRhiAdapter *adapter : adapters) {
+          if (looksGood(adapter->info())) {
+              chosenAdapter = adapter;
+              break;
+          }
+      }
+      QRhi *rhi = QRhi::create(QRhi::Vulkan, &initParams, {}, nullptr, chosenAdapter);
+      qDeleteAll(adapters);
+    \endcode
+
+    Passing in \a params is required due to some of the underlying graphics
+    APIs' design. With Vulkan in particular, the QVulkanInstance must be
+    provided, since enumerating is not possible without it. Other fields in the
+    backend-specific \a params will not actually be used by this function.
+
+    \a nativeHandles is optional. When specified, it must be a valid
+    QRhiD3D11NativeHandles, QRhiD3D12NativeHandles, or QRhiVulkanNativeHandles,
+    similarly to create(). However, unlike create(), only the physical device
+    (in case of Vulkan) or the adapter LUID (in case of D3D) fields are used,
+    all other fields are ignored. This can be used the restrict the results to a
+    given adapter. The returned list will contain 1 or 0 elements in this case.
+
+    Note how in the previous code snippet the looksGood() function
+    implementation cannot perform any platform-specific filtering based on the
+    true adapter / physical device identity, such as the adapter LUID on Windows
+    or the VkPhysicalDevice with Vulkan. This is because QRhiDriverInfo does not
+    contain platform-specific data. Instead, use \a nativeHandles to get the
+    results filtered already inside enumerateAdapters().
+
+    The following two snippets, using Direct 3D 12 as an example, are equivalent
+    in practice:
+
+    \code
+      // enumerateAdapters-based approach from Qt 6.10 on
+      QRhiD3D12InitParams initParams;
+      QRhiD3D12NativeHandles nativeHandles;
+      nativeHandles.adapterLuidLow = luid.LowPart; // retrieved a LUID from somewhere, now pass it on to Qt
+      nativeHandles.adapterLuidHigh = luid.HighPart;
+      QRhi::AdapterList adapters = QRhi::enumerateAdapters(QRhi::D3D12, &initParams, &nativeHandles);
+      if (adapters.isEmpty()) { qWarning("Requested adapter was not found"); }
+      QRhi *rhi = QRhi::create(QRhi::D3D12, &initParams, {}, nullptr, adapters[0]);
+      qDeleteAll(adapters);
+    \endcode
+
+    \code
+      // traditional approach, more lightweight
+      QRhiD3D12InitParams initParams;
+      QRhiD3D12NativeHandles nativeHandles;
+      nativeHandles.adapterLuidLow = luid.LowPart; // retrieved a LUID from somewhere, now pass it on to Qt
+      nativeHandles.adapterLuidHigh = luid.HighPart;
+      QRhi *rhi = QRhi::create(QRhi::D3D12, &initParams, {}, &nativeHandles, nullptr);
+    \endcode
+
+    \since 6.10
+    \sa create()
+ */
+QRhi::AdapterList QRhi::enumerateAdapters(Implementation impl, QRhiInitParams *params, QRhiNativeHandles *nativeHandles)
+{
+    std::unique_ptr<QRhiImplementation> rd(QRhiImplementation::newInstance(impl, params, nullptr));
+    if (!rd)
+        return {};
+
+    return rd->enumerateAdaptersBeforeCreate(nativeHandles);
 }
 
 /*!
@@ -9116,6 +9247,45 @@ QDebug operator<<(QDebug dbg, const QRhiDriverInfo &info)
 QRhiDriverInfo QRhi::driverInfo() const
 {
     return d->driverInfo();
+}
+
+/*!
+    \class QRhiAdapter
+    \inmodule QtGuiPrivate
+    \inheaderfile rhi/qrhi.h
+    \since 6.10
+
+    \brief Represents a physical graphics device.
+
+    Some QRhi backends target graphics APIs that expose the concept of \c
+    adapters or \c{physical devices}. Call the static \l
+    {QRhi::}enumerateAdapters() function to retrieve a list of the adapters
+    present in the system. Pass one of the returned QRhiAdapter objects to \l
+    {QRhi::}create() in order to request using the adapter or physical device
+    the QRhiAdapter corresponds to. Other than exposing the QRhiDriverInfo,
+    QRhiAdapter is to be treated as an opaque handle.
+
+    \note With Vulkan, the QRhiAdapter is valid only as long as the
+    QVulkanInstance that was used for \l{QRhi::}enumerateAdapters() is valid.
+    This also means that a QRhiAdapter is tied to the Vulkan instance
+    (QVulkanInstance, \c VkInstance) and cannot be used in the context of
+    another Vulkan instance.
+
+    \note This is a RHI API with limited compatibility guarantees, see \l QRhi
+    for details.
+ */
+
+/*!
+    \fn virtual QRhiDriverInfo QRhiAdapter::info() const = 0
+
+    \return the corresponding QRhiDriverInfo.
+ */
+
+/*!
+    \internal
+ */
+QRhiAdapter::~QRhiAdapter()
+{
 }
 
 /*!

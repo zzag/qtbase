@@ -672,6 +672,15 @@ struct QVkSwapChain : public QRhiSwapChain
     friend class QRhiVulkan;
 };
 
+class QVulkanAdapter : public QRhiAdapter
+{
+public:
+    QRhiDriverInfo info() const override;
+
+    VkPhysicalDevice physDev;
+    QRhiDriverInfo adapterInfo;
+};
+
 class QRhiVulkan : public QRhiImplementation
 {
 public:
@@ -679,6 +688,7 @@ public:
 
     bool create(QRhi::Flags flags) override;
     void destroy() override;
+    QRhi::AdapterList enumerateAdaptersBeforeCreate(QRhiNativeHandles *nativeHandles) const override;
 
     QRhiGraphicsPipeline *createGraphicsPipeline() override;
     QRhiComputePipeline *createComputePipeline() override;

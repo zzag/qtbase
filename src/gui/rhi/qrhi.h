@@ -1832,6 +1832,13 @@ Q_DECLARE_TYPEINFO(QRhiStats, Q_RELOCATABLE_TYPE);
 Q_GUI_EXPORT QDebug operator<<(QDebug, const QRhiStats &);
 #endif
 
+class Q_GUI_EXPORT QRhiAdapter
+{
+public:
+    virtual ~QRhiAdapter();
+    virtual QRhiDriverInfo info() const = 0;
+};
+
 struct Q_GUI_EXPORT QRhiInitParams
 {
 };
@@ -1946,8 +1953,13 @@ public:
     static QRhi *create(Implementation impl,
                         QRhiInitParams *params,
                         Flags flags = {},
-                        QRhiNativeHandles *importDevice = nullptr);
+                        QRhiNativeHandles *importDevice = nullptr,
+                        QRhiAdapter *adapter = nullptr);
     static bool probe(Implementation impl, QRhiInitParams *params);
+    using AdapterList = QVector<QRhiAdapter *>;
+    static AdapterList enumerateAdapters(Implementation impl,
+                                         QRhiInitParams *params,
+                                         QRhiNativeHandles *nativeHandles = nullptr);
 
     Implementation backend() const;
     const char *backendName() const;

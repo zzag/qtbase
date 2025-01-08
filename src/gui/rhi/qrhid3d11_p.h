@@ -628,6 +628,15 @@ struct QD3D11SwapChain : public QRhiSwapChain
     HANDLE frameLatencyWaitableObject = nullptr;
 };
 
+class QD3D11Adapter : public QRhiAdapter
+{
+public:
+    QRhiDriverInfo info() const override;
+
+    LUID luid;
+    QRhiDriverInfo adapterInfo;
+};
+
 class QRhiD3D11 : public QRhiImplementation
 {
 public:
@@ -635,6 +644,7 @@ public:
 
     bool create(QRhi::Flags flags) override;
     void destroy() override;
+    QRhi::AdapterList enumerateAdaptersBeforeCreate(QRhiNativeHandles *nativeHandles) const override;
 
     QRhiGraphicsPipeline *createGraphicsPipeline() override;
     QRhiComputePipeline *createComputePipeline() override;

@@ -1088,6 +1088,15 @@ struct alignas(void*) QD3D12PipelineStateSubObject
     T object = {};
 };
 
+class QD3D12Adapter : public QRhiAdapter
+{
+public:
+    QRhiDriverInfo info() const override;
+
+    LUID luid;
+    QRhiDriverInfo adapterInfo;
+};
+
 class QRhiD3D12 : public QRhiImplementation
 {
 public:
@@ -1101,6 +1110,7 @@ public:
 
     bool create(QRhi::Flags flags) override;
     void destroy() override;
+    QRhi::AdapterList enumerateAdaptersBeforeCreate(QRhiNativeHandles *nativeHandles) const override;
 
     QRhiGraphicsPipeline *createGraphicsPipeline() override;
     QRhiComputePipeline *createComputePipeline() override;

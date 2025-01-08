@@ -37,6 +37,7 @@ public:
 
     virtual bool create(QRhi::Flags flags) = 0;
     virtual void destroy() = 0;
+    virtual QRhi::AdapterList enumerateAdaptersBeforeCreate(QRhiNativeHandles *nativeHandles) const;
 
     virtual QRhiGraphicsPipeline *createGraphicsPipeline() = 0;
     virtual QRhiComputePipeline *createComputePipeline() = 0;
@@ -146,7 +147,8 @@ public:
     virtual QByteArray pipelineCacheData() = 0;
     virtual void setPipelineCacheData(const QByteArray &data) = 0;
 
-    void prepareForCreate(QRhi *rhi, QRhi::Implementation impl, QRhi::Flags flags);
+    static QRhiImplementation *newInstance(QRhi::Implementation impl, QRhiInitParams *params, QRhiNativeHandles *importDevice);
+    void prepareForCreate(QRhi *rhi, QRhi::Implementation impl, QRhi::Flags flags, QRhiAdapter *adapter);
 
     bool isCompressedFormat(QRhiTexture::Format format) const;
     void compressedFormatInfo(QRhiTexture::Format format, const QSize &size,
@@ -246,6 +248,8 @@ public:
     bool debugMarkers = false;
     int currentFrameSlot = 0; // for vk, mtl, and similar. unused by gl and d3d11.
     bool inFrame = false;
+
+    QRhiAdapter *requestedRhiAdapter = nullptr;
 
 private:
     QRhi::Implementation implType;

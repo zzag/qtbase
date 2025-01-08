@@ -48,6 +48,8 @@ private slots:
     void rhiTestData();
     void create_data();
     void create();
+    void adapters_data();
+    void adapters();
     void stats_data();
     void stats();
     void nativeHandles_data();
@@ -441,6 +443,76 @@ void tst_QRhi::create()
         rhi.reset();
         QCOMPARE(cleanupOk, 1);
     }
+}
+
+void tst_QRhi::adapters_data()
+{
+    rhiTestData();
+}
+
+void tst_QRhi::adapters()
+{
+    QFETCH(QRhi::Implementation, impl);
+    QFETCH(QRhiInitParams *, initParams);
+
+    QRhi::AdapterList adapters = QRhi::enumerateAdapters(impl, initParams);
+    for (QRhiAdapter *adapter : adapters)
+        qDebug() << adapter->info();
+
+    if (!adapters.isEmpty()) {
+        QRhi *rhi = QRhi::create(impl, initParams, QRhi::Flags(), nullptr, adapters[0]);
+        if (rhi) {
+            QCOMPARE(rhi->driverInfo().deviceName, adapters[0]->info().deviceName);
+            QCOMPARE(rhi->driverInfo().deviceId, adapters[0]->info().deviceId);
+            QCOMPARE(rhi->driverInfo().vendorId, adapters[0]->info().vendorId);
+            QCOMPARE(rhi->driverInfo().deviceType, adapters[0]->info().deviceType);
+        }
+        delete rhi;
+
+        // test filtering based on luid/physdev
+        if (impl == QRhi::D3D11) {
+#ifdef TST_D3D11
+            QRhi *rhi = QRhi::create(impl, initParams);
+            if (rhi) {
+                QRhiD3D11NativeHandles h = *static_cast<const QRhiD3D11NativeHandles *>(rhi->nativeHandles());
+                delete rhi;
+                if (h.adapterLuidLow || h.adapterLuidHigh) {
+                    QRhi::AdapterList filteredList = QRhi::enumerateAdapters(impl, initParams, &h);
+                    QCOMPARE(filteredList.count(), 1);
+                    qDeleteAll(filteredList);
+                }
+            }
+#endif
+        } else if (impl == QRhi::D3D12) {
+#ifdef TST_D3D12
+            QRhi *rhi = QRhi::create(impl, initParams);
+            if (rhi) {
+                QRhiD3D12NativeHandles h = *static_cast<const QRhiD3D12NativeHandles *>(rhi->nativeHandles());
+                delete rhi;
+                if (h.adapterLuidLow || h.adapterLuidHigh) {
+                    QRhi::AdapterList filteredList = QRhi::enumerateAdapters(impl, initParams, &h);
+                    QCOMPARE(filteredList.count(), 1);
+                    qDeleteAll(filteredList);
+                }
+            }
+#endif
+        } else if (impl == QRhi::Vulkan) {
+#ifdef TST_VK
+            QRhi *rhi = QRhi::create(impl, initParams);
+            if (rhi) {
+                QRhiVulkanNativeHandles h = *static_cast<const QRhiVulkanNativeHandles *>(rhi->nativeHandles());
+                delete rhi;
+                QVERIFY(h.physDev);
+                QRhi::AdapterList filteredList = QRhi::enumerateAdapters(impl, initParams, &h);
+                QCOMPARE(filteredList.count(), 1);
+                qDeleteAll(filteredList);
+            }
+#endif
+        }
+    }
+
+    qDeleteAll(adapters);
+    adapters.clear();
 }
 
 void tst_QRhi::stats_data()
