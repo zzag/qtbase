@@ -322,7 +322,7 @@ QDebug operator<<(QDebug debug, const QCFString &string)
 }
 #endif // !QT_NO_DEBUG_STREAM
 
-#ifdef Q_OS_MACOS
+#if defined(Q_OS_MACOS) && !defined(QT_BOOTSTRAPPED)
 bool qt_mac_applicationIsInDarkMode()
 {
     auto appearance = [NSApp.effectiveAppearance bestMatchFromAppearancesWithNames:
@@ -563,6 +563,7 @@ QMacRootLevelAutoReleasePool::~QMacRootLevelAutoReleasePool()
 
 // -------------------------------------------------------------------------
 
+#ifndef QT_BOOTSTRAPPED
 void qt_apple_check_os_version()
 {
 #if defined(__WATCH_OS_VERSION_MIN_REQUIRED)
@@ -610,6 +611,7 @@ void qt_apple_check_os_version()
     }
 }
 Q_CONSTRUCTOR_FUNCTION(qt_apple_check_os_version);
+#endif // QT_BOOTSTRAPPED
 
 // -------------------------------------------------------------------------
 
@@ -656,6 +658,7 @@ QT_BEGIN_NAMESPACE
 
 // -------------------------------------------------------------------------
 
+#ifndef QT_BOOTSTRAPPED
 QOperatingSystemVersion QMacVersion::buildSDK(VersionTarget target)
 {
     switch (target) {
@@ -775,6 +778,7 @@ QMacVersion::VersionTuple QMacVersion::libraryVersion()
     }();
     return version;
 }
+#endif // QT_BOOTSTRAPPED
 
 // -------------------------------------------------------------------------
 
