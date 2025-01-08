@@ -283,7 +283,6 @@ public:
     QVariant(const QJsonValue &jsonValue) noexcept(Private::FitsInInternalSize<sizeof(CborValueStandIn)>);
     QVariant(const QModelIndex &modelIndex) noexcept(Private::FitsInInternalSize<8 + 2 * sizeof(quintptr)>);
     QVariant(QUuid uuid) noexcept(Private::FitsInInternalSize<16>);
-#ifndef QT_NO_GEOM_VARIANT
     QVariant(QSize size) noexcept;
     QVariant(QSizeF size) noexcept(Private::FitsInInternalSize<sizeof(qreal) * 2>);
     QVariant(QPoint pt) noexcept;
@@ -292,7 +291,6 @@ public:
     QVariant(QLineF line) noexcept(Private::FitsInInternalSize<sizeof(qreal) * 4>);
     QVariant(QRect rect) noexcept(Private::FitsInInternalSize<sizeof(int) * 4>);
     QVariant(QRectF rect) noexcept(Private::FitsInInternalSize<sizeof(qreal) * 4>);
-#endif
 
     // not noexcept
     QVariant(const QEasingCurve &easing) noexcept(false);
@@ -384,7 +382,6 @@ public:
     QMap<QString, QVariant> toMap() const;
     QHash<QString, QVariant> toHash() const;
 
-#ifndef QT_NO_GEOM_VARIANT
     QPoint toPoint() const;
     QPointF toPointF() const;
     QRect toRect() const;
@@ -393,7 +390,6 @@ public:
     QLine toLine() const;
     QLineF toLineF() const;
     QRectF toRectF() const;
-#endif
     QLocale toLocale() const;
 #if QT_CONFIG(regularexpression)
     QRegularExpression toRegularExpression() const;

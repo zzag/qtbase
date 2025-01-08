@@ -54,7 +54,6 @@
 #define QT_FEATURE_datetimeparser -1
 #define QT_FEATURE_easingcurve -1
 #define QT_FEATURE_etw -1
-#define QT_NO_GEOM_VARIANT
 #define QT_FEATURE_futimens -1
 #undef QT_FEATURE_future
 #define QT_FEATURE_future -1

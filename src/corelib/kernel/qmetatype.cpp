@@ -27,33 +27,30 @@
 #ifndef QT_BOOTSTRAPPED
 #  include "qdatastream.h"
 
+#  include "qassociativeiterable.h"
 #  include "qbitarray.h"
+#  include "qbytearraylist.h"
+#  include "qcborarray.h"
+#  include "qcbormap.h"
+#  include "qcborvalue.h"
+#  include "qjsonarray.h"
+#  include "qjsondocument.h"
+#  include "qjsonobject.h"
+#  include "qjsonvalue.h"
+#  include "qline.h"
+#  include "qmetaobject.h"
+#  include "qobject.h"
+#  include "qpoint.h"
+#  include "qrect.h"
+#  include "qsequentialiterable.h"
+#  include "qsize.h"
 #  include "qurl.h"
 #  include "quuid.h"
 #  include "qvariant.h"
-#  include "qjsonvalue.h"
-#  include "qjsonobject.h"
-#  include "qjsonarray.h"
-#  include "qjsondocument.h"
-#  include "qcborvalue.h"
-#  include "qcborarray.h"
-#  include "qcbormap.h"
-#  include "qbytearraylist.h"
-#  include "qmetaobject.h"
-#  include "qsequentialiterable.h"
-#  include "qassociativeiterable.h"
-#  include "qobject.h"
 #endif
 
 #if QT_CONFIG(itemmodel)
 #  include "qabstractitemmodel.h"
-#endif
-
-#ifndef QT_NO_GEOM_VARIANT
-# include "qsize.h"
-# include "qpoint.h"
-# include "qrect.h"
-# include "qline.h"
 #endif
 
 #include <new>
@@ -1258,7 +1255,6 @@ static constexpr struct : QMetaTypeModuleHelper
         QMETATYPE_CONVERTER(QByteArray, QUuid, result = source.toByteArray(); return true;);
         QMETATYPE_CONVERTER(QUuid, QByteArray, result = QUuid(source); return true;);
 
-#ifndef QT_NO_GEOM_VARIANT
         QMETATYPE_CONVERTER(QSize, QSizeF, result = source.toSize(); return true;);
         QMETATYPE_CONVERTER_ASSIGN(QSizeF, QSize);
         QMETATYPE_CONVERTER(QLine, QLineF, result = source.toLine(); return true;);
@@ -1267,7 +1263,6 @@ static constexpr struct : QMetaTypeModuleHelper
         QMETATYPE_CONVERTER_ASSIGN(QRectF, QRect);
         QMETATYPE_CONVERTER(QPoint, QPointF, result = source.toPoint(); return true;);
         QMETATYPE_CONVERTER_ASSIGN(QPointF, QPoint);
-#endif
 
         QMETATYPE_CONVERTER(QStringList, QString, result = QStringList() << source; return true;);
 

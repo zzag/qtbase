@@ -28,23 +28,20 @@
 #include "qjsondocument.h"
 #include "qjsonobject.h"
 #include "qjsonvalue.h"
+#include "qline.h"
 #include "qlist.h"
 #include "qlocale.h"
 #include "qmap.h"
+#include "qpoint.h"
+#include "qrect.h"
 #if QT_CONFIG(regularexpression)
 #include "qregularexpression.h"
 #endif
+#include "qsize.h"
 #include "qstring.h"
 #include "qstringlist.h"
 #include "qurl.h"
 #include "quuid.h"
-
-#ifndef QT_NO_GEOM_VARIANT
-#include "qsize.h"
-#include "qpoint.h"
-#include "qrect.h"
-#include "qline.h"
-#endif
 
 #include <memory>
 #include <cmath>
@@ -952,7 +949,6 @@ QVariant::QVariant(QLatin1StringView val) : QVariant(QString(val)) {}
 #if QT_CONFIG(easingcurve)
 QVariant::QVariant(const QEasingCurve &val) : d(std::piecewise_construct_t{}, val) {}
 #endif
-#ifndef QT_NO_GEOM_VARIANT
 QVariant::QVariant(QPoint pt) noexcept
     : d(std::piecewise_construct_t{}, pt) {}
 QVariant::QVariant(QPointF pt) noexcept(Private::FitsInInternalSize<sizeof(qreal) * 2>)
@@ -969,7 +965,6 @@ QVariant::QVariant(QSize s) noexcept
     : d(std::piecewise_construct_t{}, s) {}
 QVariant::QVariant(QSizeF s) noexcept(Private::FitsInInternalSize<sizeof(qreal) * 2>)
     : d(std::piecewise_construct_t{}, s) {}
-#endif
 QVariant::QVariant(const QUrl &u) noexcept : d(std::piecewise_construct_t{}, u) {}
 QVariant::QVariant(const QLocale &l) noexcept : d(std::piecewise_construct_t{}, l) {}
 #if QT_CONFIG(regularexpression)
@@ -1565,7 +1560,6 @@ QByteArray QVariant::toByteArray() const
     return qvariant_cast<QByteArray>(*this);
 }
 
-#ifndef QT_NO_GEOM_VARIANT
 /*!
     \fn QPoint QVariant::toPoint() const
 
@@ -1672,8 +1666,6 @@ QPointF QVariant::toPointF() const
 {
     return qvariant_cast<QPointF>(*this);
 }
-
-#endif // QT_NO_GEOM_VARIANT
 
 /*!
     \fn QUrl QVariant::toUrl() const
