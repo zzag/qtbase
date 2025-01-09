@@ -583,6 +583,13 @@ static bool do_write_jpeg_image(struct jpeg_compress_struct &cinfo,
 
         int quality = sourceQuality >= 0 ? qMin(int(sourceQuality),100) : 75;
         jpeg_set_quality(&cinfo, quality, TRUE /* limit to baseline-JPEG values */);
+
+        // If the quality exceeds a certain threshold (such as 90), disable chroma subsampling
+        if (quality > 90) {
+            cinfo.comp_info[0].v_samp_factor = 1;
+            cinfo.comp_info[0].h_samp_factor = 1;
+        }
+
         jpeg_start_compress(&cinfo, TRUE);
 
         set_text(image, &cinfo, description);
