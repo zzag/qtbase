@@ -163,10 +163,11 @@ void QAndroidPlatformWindow::setVisible(bool visible)
 {
     if (isEmbeddingContainer())
         return;
-    m_nativeQtWindow.callMethod<void>("setVisible", visible);
 
-    if (visible) {
-        if (window()->isTopLevel()) {
+    if (window()->isTopLevel()) {
+        if (!visible && window() == qGuiApp->focusWindow()) {
+            platformScreen()->topVisibleWindowChanged();
+        } else {
             updateSystemUiVisibility();
             if ((m_windowState & Qt::WindowFullScreen)
                 || (window()->flags() & Qt::ExpandedClientAreaHint)) {
@@ -176,13 +177,14 @@ void QAndroidPlatformWindow::setVisible(bool visible)
             }
             requestActivateWindow();
         }
-    } else if (window()->isTopLevel() && window() == qGuiApp->focusWindow()) {
-        platformScreen()->topVisibleWindowChanged();
     }
 
-    QRect availableGeometry = screen()->availableGeometry();
-    if (geometry().width() > 0 && geometry().height() > 0 && availableGeometry.width() > 0 && availableGeometry.height() > 0)
-        QPlatformWindow::setVisible(visible);
+    m_nativeQtWindow.callMethod<void>("setVisible", visible);
+
+    if (geometry().isEmpty() || screen()->availableGeometry().isEmpty())
+        return;
+
+    QPlatformWindow::setVisible(visible);
 }
 
 void QAndroidPlatformWindow::setWindowState(Qt::WindowStates state)
