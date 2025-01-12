@@ -74,8 +74,6 @@ static sem_t m_exitSemaphore, m_terminateSemaphore;
 
 static QAndroidPlatformIntegration *m_androidPlatformIntegration = nullptr;
 
-static int m_availableWidthPixels  = 0;
-static int m_availableHeightPixels = 0;
 static double m_density = 1.0;
 
 static AndroidAssetsFileEngineHandler *m_androidAssetsFileEngineHandler = nullptr;
@@ -141,16 +139,6 @@ namespace QtAndroid
                 return w;
         }
         return nullptr;
-    }
-
-    int availableWidthPixels()
-    {
-        return m_availableWidthPixels;
-    }
-
-    int availableHeightPixels()
-    {
-        return m_availableHeightPixels;
     }
 
     double pixelDensity()
@@ -568,11 +556,11 @@ static void terminateQt(JNIEnv *env, jclass /*clazz*/)
 static void handleLayoutSizeChanged(JNIEnv * /*env*/, jclass /*clazz*/,
                                     jint availableWidth, jint availableHeight)
 {
-    if (m_availableWidthPixels == availableWidth && m_availableHeightPixels == availableHeight)
-        return;
-
-    m_availableWidthPixels = availableWidth;
-    m_availableHeightPixels = availableHeight;
+    if (m_androidPlatformIntegration) {
+        QSize currentSize = m_androidPlatformIntegration->screen()->availableGeometry().size();
+        if (currentSize.width() == availableWidth && currentSize.height() == availableHeight)
+            return;
+    }
 
     QMutexLocker lock(&m_platformMutex);
     // available geometry always starts from top left
