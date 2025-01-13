@@ -215,7 +215,7 @@ bool QLocalServerPrivate::listen(const QString &name)
     // Use only one event for all listeners of one socket.
     // The idea is that listener events are rare, so polling all listeners once in a while is
     // cheap compared to waiting for N additional events in each iteration of the main loop.
-    eventHandle = CreateEvent(NULL, TRUE, FALSE, NULL);
+    eventHandle = CreateEvent(NULL, TRUE, FALSE, NULL); // If the function fails, the return value is NULL
     connectionEventNotifier = new QWinEventNotifier(eventHandle , q);
     q->connect(connectionEventNotifier, SIGNAL(activated(HANDLE)), q, SLOT(_q_onNewConnection()));
 
@@ -282,6 +282,7 @@ void QLocalServerPrivate::closeServer()
     connectionEventNotifier->deleteLater();
     connectionEventNotifier = 0;
     CloseHandle(eventHandle);
+    eventHandle = nullptr;
     for (size_t i = 0; i < listeners.size(); ++i)
         CloseHandle(listeners[i]->handle);
     listeners.clear();
