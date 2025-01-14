@@ -21,6 +21,7 @@
 #include "qthread.h"
 #include "private/qloggingregistry_p.h"
 #include "private/qcoreapplication_p.h"
+#include "qgettid_p.h"
 #include <qtcore_tracepoints_p.h>
 #endif
 #ifdef Q_OS_WIN
@@ -78,44 +79,6 @@ extern char *__progname;
 #  include BACKTRACE_HEADER
 #  include <cxxabi.h>
 #endif // QLOGGING_USE_EXECINFO_BACKTRACE
-
-#ifndef QT_BOOTSTRAPPED
-#if defined(Q_OS_LINUX) && (defined(__GLIBC__) || __has_include(<sys/syscall.h>))
-#  include <sys/syscall.h>
-
-# if defined(Q_OS_ANDROID) && !defined(SYS_gettid)
-#  define SYS_gettid __NR_gettid
-# endif
-
-static long qt_gettid()
-{
-    // no error handling
-    // this syscall has existed since Linux 2.4.11 and cannot fail
-    return syscall(SYS_gettid);
-}
-#elif defined(Q_OS_DARWIN)
-#  include <pthread.h>
-static int qt_gettid()
-{
-    // no error handling: this call cannot fail
-    __uint64_t tid;
-    pthread_threadid_np(NULL, &tid);
-    return tid;
-}
-#elif defined(Q_OS_FREEBSD_KERNEL) && defined(__FreeBSD_version) && __FreeBSD_version >= 900031
-#  include <pthread_np.h>
-static int qt_gettid()
-{
-    return pthread_getthreadid_np();
-}
-#else
-static QT_PREPEND_NAMESPACE(qint64) qt_gettid()
-{
-    QT_USE_NAMESPACE
-    return qintptr(QThread::currentThreadId());
-}
-#endif
-#endif // !QT_BOOTSTRAPPED
 
 #include <cstdlib>
 #include <algorithm>
