@@ -3,30 +3,26 @@
 // Copyright (C) 2022 Intel Corporation.
 // SPDX-License-Identifier: LicenseRef-Qt-Commercial OR LGPL-3.0-only OR GPL-2.0-only OR GPL-3.0-only
 
-#include "qglobal_p.h"
 #include "qlogging.h"
 #include "qlogging_p.h"
-#include "qlist.h"
+
 #include "qbytearray.h"
+#include "qlist.h"
+#include "qcoreapplication.h"
+#include "private/qcoreapplication_p.h"
+#include "qdatetime.h"
+#include "qdebug.h"
+#include "qgettid_p.h"
+#include "private/qlocking_p.h"
+#include "qloggingcategory.h"
+#include "private/qloggingregistry_p.h"
+#include "qmutex.h"
 #include "qscopeguard.h"
 #include "qstring.h"
-#include "qvarlengtharray.h"
-#include "qdebug.h"
-#include "qmutex.h"
-#include <QtCore/private/qlocking_p.h>
-#include "qloggingcategory.h"
-#ifndef QT_BOOTSTRAPPED
-#include "qdatetime.h"
-#include "qcoreapplication.h"
+#include "qtcore_tracepoints_p.h"
 #include "qthread.h"
-#include "private/qloggingregistry_p.h"
-#include "private/qcoreapplication_p.h"
-#include "qgettid_p.h"
-#include <qtcore_tracepoints_p.h>
-#endif
-#ifdef Q_OS_WIN
-#include <qt_windows.h>
-#endif
+#include "qvarlengtharray.h"
+
 #ifdef Q_CC_MSVC
 #include <intrin.h>
 #endif
@@ -87,6 +83,10 @@ extern char *__progname;
 #include <vector>
 
 #include <stdio.h>
+
+#ifdef Q_OS_WIN
+#include <qt_windows.h>
+#endif
 
 QT_BEGIN_NAMESPACE
 
