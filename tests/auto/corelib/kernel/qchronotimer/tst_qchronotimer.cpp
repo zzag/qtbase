@@ -284,6 +284,14 @@ void tst_QChronoTimer::remainingTimeInitial()
     } else {
         QCOMPARE_LE(rt, startTimeNs);
     }
+
+    if (startTimeNs > 1min) {
+        // The test will surely take less than 1 minute
+        auto startMinusOneMinute = std::chrono::nanoseconds{startTimeNs - 1min};
+        // If the remaining time is less than startMinusOneMinute, then
+        // something is terribly wrong with the internal interval calculations
+        QCOMPARE_GE(rt, startMinusOneMinute);
+    }
 }
 
 void tst_QChronoTimer::remainingTimeDuringActivation_data()

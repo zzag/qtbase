@@ -93,6 +93,8 @@ struct WinTimerInfo {                           // internal timer info
     Qt::TimerType timerType;
     UINT fastTimerId;
     bool inTimerEvent;
+    bool usesExtendedInterval;
+    bool isSecondTimeout;
 };
 
 class QZeroTimerEvent : public QTimerEvent

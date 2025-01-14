@@ -15,6 +15,8 @@
 #include "qcoreapplication_p.h"
 #include <private/qthread_p.h>
 
+#include "q26numeric.h"
+
 QT_BEGIN_NAMESPACE
 
 #ifndef TIME_KILL_SYNCHRONOUS
@@ -298,7 +300,7 @@ static HWND qt_create_internal_window(const QEventDispatcherWin32 *eventDispatch
 
 static ULONG calculateNextTimeout(WinTimerInfo *t, quint64 currentTime)
 {
-    uint interval = t->interval;
+    qint64 interval = t->interval;
     ULONG tolerance = TIMERV_DEFAULT_COALESCING;
     switch (t->timerType) {
     case Qt::PreciseTimer:
@@ -347,7 +349,13 @@ void QEventDispatcherWin32Private::registerTimer(WinTimerInfo *t)
 
     bool ok = false;
     ULONG tolerance = calculateNextTimeout(t, qt_msectime());
-    uint interval = t->interval;
+    uint interval = q26::saturate_cast<uint>(t->interval);
+    if (interval != t->interval) {
+        // Now we'll need to post the timer event at each second timeout.
+        interval = q26::saturate_cast<uint>(t->interval / 2 + 1);
+        t->usesExtendedInterval = true;
+        t->isSecondTimeout = false;
+    }
     if (interval == 0u) {
         // optimization for single-shot-zero-timer
         QCoreApplication::postEvent(q, new QZeroTimerEvent(t->timerId));
@@ -390,6 +398,12 @@ void QEventDispatcherWin32Private::sendTimerEvent(int timerId)
 {
     WinTimerInfo *t = timerDict.value(timerId);
     if (t && !t->inTimerEvent) {
+        if (t->usesExtendedInterval && !t->isSecondTimeout) {
+            // That's the case when the interval is larger than uint
+            t->isSecondTimeout = true;
+            return;
+        }
+
         // send event, but don't allow it to recurse
         t->inTimerEvent = true;
 
@@ -403,6 +417,7 @@ void QEventDispatcherWin32Private::sendTimerEvent(int timerId)
         if (t->timerId == -1) {
             delete t;
         } else {
+            t->isSecondTimeout = false;
             t->inTimerEvent = false;
         }
     }
@@ -702,6 +717,8 @@ void QEventDispatcherWin32::registerTimer(Qt::TimerId timerId, Duration interval
     t->obj  = object;
     t->inTimerEvent = false;
     t->fastTimerId = 0;
+    t->usesExtendedInterval = false;
+    t->isSecondTimeout = false;
 
     d->registerTimer(t);
 
