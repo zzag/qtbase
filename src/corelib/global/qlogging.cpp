@@ -92,9 +92,7 @@ QT_BEGIN_NAMESPACE
 
 using namespace Qt::StringLiterals;
 
-#ifndef QT_BOOTSTRAPPED
 Q_TRACE_POINT(qtcore, qt_message_print, int type, const char *category, const char *function, const char *file, int line, const QString &message);
-#endif
 
 /*!
     \headerfile <QtLogging>
@@ -883,7 +881,6 @@ QDebug QMessageLogger::fatal(QMessageLogger::CategoryFunction catFunc) const
 }
 #endif // QT_NO_DEBUG_STREAM
 
-#if !defined(QT_BOOTSTRAPPED)
 static bool isDefaultCategory(const char *category)
 {
     return !category || strcmp(category, "default") == 0;
@@ -1113,9 +1110,7 @@ struct QMessagePattern
     std::unique_ptr<std::unique_ptr<const char[]>[]> literals;
     std::unique_ptr<const char *[]> tokens;
     QList<QString> timeArgs; // timeFormats in sequence of %{time
-#ifndef QT_BOOTSTRAPPED
     std::chrono::steady_clock::time_point appStartTime = std::chrono::steady_clock::now();
-#endif
     struct BacktraceParams
     {
         QString backtraceSeparator;
@@ -1533,7 +1528,13 @@ static QString formatBacktraceForLogMessage(const QMessagePattern::BacktracePara
 
     return frames.join(backtraceSeparator);
 }
-#endif // QLOGGING_HAVE_BACKTRACE && !QT_BOOTSTRAPPED
+#else
+void QInternalMessageLogContext::populateBacktrace(int)
+{
+    // initFrom() returns 0 to our caller, so we should never get here
+    Q_UNREACHABLE();
+}
+#endif // !QLOGGING_HAVE_BACKTRACE
 
 Q_GLOBAL_STATIC(QMessagePattern, qMessagePattern)
 
@@ -1675,20 +1676,6 @@ static QString formatLogMessage(QtMsgType type, const QMessageLogContext &contex
     }
     return message;
 }
-#else // QT_BOOTSTRAPPED
-static QString formatLogMessage(QtMsgType type, const QMessageLogContext &context, const QString &str)
-{
-    Q_UNUSED(type);
-    Q_UNUSED(context);
-    return str;
-}
-#endif
-#ifndef QLOGGING_HAVE_BACKTRACE
-void QInternalMessageLogContext::populateBacktrace(int)
-{
-    Q_UNREACHABLE();
-}
-#endif
 
 static void qDefaultMessageHandler(QtMsgType type, const QMessageLogContext &context, const QString &buf);
 
@@ -1696,10 +1683,6 @@ static void qDefaultMessageHandler(QtMsgType type, const QMessageLogContext &con
 Q_CONSTINIT static QBasicAtomicPointer<void (QtMsgType, const QMessageLogContext &, const QString &)> messageHandler = Q_BASIC_ATOMIC_INITIALIZER(nullptr);
 
 // ------------------------ Alternate logging sinks -------------------------
-
-#if defined(QT_BOOTSTRAPPED)
-    // Bootstrapped tools always print to stderr, so no need for alternate sinks
-#else
 
 #if QT_CONFIG(slog2)
 #ifndef QT_LOG_CODE
@@ -1934,8 +1917,6 @@ static bool wasm_default_message_handler(QtMsgType type,
 }
 #endif
 
-#endif // Bootstrap check
-
 // --------------------------------------------------------------------------
 
 static void stderr_message_handler(QtMsgType type, const QMessageLogContext &context,
@@ -1962,9 +1943,7 @@ struct SystemMessageSink
 }
 
 static constexpr SystemMessageSink systemMessageSink = {
-#if defined(QT_BOOTSTRAPPED)
-        nullptr
-#elif defined(Q_OS_WIN)
+#if defined(Q_OS_WIN)
         win_message_handler
 #elif QT_CONFIG(slog2)
         slog2_default_handler
@@ -2013,13 +1992,6 @@ static void qDefaultMessageHandler(QtMsgType type, const QMessageLogContext &con
     preformattedMessageHandler(type, context, formatLogMessage(type, context, message));
 }
 
-#if defined(QT_BOOTSTRAPPED)
-// there's no message handler in bootstrapped mode; force everything to stderr
-static bool grabMessageHandler() { return false; }
-static void ungrabMessageHandler() { }
-
-#elif defined(Q_COMPILER_THREAD_LOCAL)
-
 Q_CONSTINIT static thread_local bool msgHandlerGrabbed = false;
 
 static bool grabMessageHandler()
@@ -2036,14 +2008,8 @@ static void ungrabMessageHandler()
     msgHandlerGrabbed = false;
 }
 
-#else
-static bool grabMessageHandler() { return true; }
-static void ungrabMessageHandler() { }
-#endif // (Q_COMPILER_THREAD_LOCAL)
-
 static void qt_message_print(QtMsgType msgType, const QMessageLogContext &context, const QString &message)
 {
-#ifndef QT_BOOTSTRAPPED
     Q_TRACE(qt_message_print, msgType, context.category, context.function, context.file, context.line, message);
 
     // qDebug, qWarning, ... macros do not check whether category is enabledgc
@@ -2053,7 +2019,6 @@ static void qt_message_print(QtMsgType msgType, const QMessageLogContext &contex
                 return;
         }
     }
-#endif
 
     // prevent recursion in case the message handler generates messages
     // itself, e.g. by using Qt API
@@ -2311,7 +2276,6 @@ QtMessageHandler qInstallMessageHandler(QtMessageHandler h)
         return qDefaultMessageHandler;
 }
 
-#ifndef QT_BOOTSTRAPPED
 void qSetMessagePattern(const QString &pattern)
 {
     const auto locker = qt_scoped_lock(QMessagePattern::mutex);
@@ -2319,7 +2283,6 @@ void qSetMessagePattern(const QString &pattern)
     if (!qMessagePattern()->fromEnvironment)
         qMessagePattern()->setPattern(pattern);
 }
-#endif
 
 static void copyInternalContext(QInternalMessageLogContext *self,
                                 const QMessageLogContext &logContext) noexcept
