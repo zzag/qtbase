@@ -1116,12 +1116,12 @@ struct QMessagePattern
 #ifndef QT_BOOTSTRAPPED
     std::chrono::steady_clock::time_point appStartTime = std::chrono::steady_clock::now();
 #endif
-#ifdef QLOGGING_HAVE_BACKTRACE
     struct BacktraceParams
     {
         QString backtraceSeparator;
         int backtraceDepth;
     };
+#ifdef QLOGGING_HAVE_BACKTRACE
     QList<BacktraceParams> backtraceArgs; // backtrace arguments in sequence of %{backtrace
     int maxBacktraceDepth = 0;
 #endif
@@ -1141,9 +1141,7 @@ struct QMessagePattern
     }
 #endif
 };
-#ifdef QLOGGING_HAVE_BACKTRACE
 Q_DECLARE_TYPEINFO(QMessagePattern::BacktraceParams, Q_RELOCATABLE_TYPE);
-#endif
 
 Q_CONSTINIT QBasicMutex QMessagePattern::mutex;
 
