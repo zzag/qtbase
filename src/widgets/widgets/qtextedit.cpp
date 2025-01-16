@@ -35,6 +35,7 @@
 #include <qapplication.h>
 #include <private/qapplication_p.h>
 #include <limits.h>
+#include <qtextobject.h>
 #include <qtexttable.h>
 #include <qvariant.h>
 
@@ -1616,7 +1617,10 @@ void QTextEditPrivate::paint(QPainter *p, QPaintEvent *e)
         const QColor col = control->palette().placeholderText().color();
         p->setPen(col);
         const int margin = int(doc->documentMargin());
-        p->drawText(viewport->rect().adjusted(margin, margin, -margin, -margin), Qt::AlignTop | Qt::TextWordWrap, placeholderText);
+        QRectF boundingRect = layout ? layout->frameBoundingRect(doc->rootFrame()) : viewport->rect();
+        p->drawText(boundingRect.adjusted(margin, margin, -margin, -margin),
+                    Qt::AlignTop | Qt::TextWordWrap,
+                    placeholderText);
     }
 }
 
