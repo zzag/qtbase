@@ -502,19 +502,24 @@ int QThread::idealThreadCount() noexcept
         cores = (int)psd.psd_proc_cnt;
     }
 #elif (defined(Q_OS_LINUX) && !defined(Q_OS_ANDROID)) || defined(Q_OS_FREEBSD)
+    QT_WARNING_PUSH
+#  if defined(Q_CC_CLANG) && Q_CC_CLANG >= 1800
+    QT_WARNING_DISABLE_CLANG("-Wvla-cxx-extension")
+#  endif
+
     // get the number of threads we're assigned, not the total in the system
-    QVarLengthArray<cpu_set_t, 1> cpuset(1);
-    int size = 1;
-    if (Q_UNLIKELY(sched_getaffinity(0, sizeof(cpu_set_t), cpuset.data()) < 0)) {
-        for (size = 2; size <= 4; size *= 2) {
-            cpuset.resize(size);
-            if (sched_getaffinity(0, sizeof(cpu_set_t) * size, cpuset.data()) == 0)
-                break;
+    constexpr qsizetype MaxCpuCount = 1024 * 1024;
+    constexpr qsizetype MaxCpuSetArraySize = MaxCpuCount / sizeof(cpu_set_t) / 8;
+    qsizetype size = 1;
+    do {
+        cpu_set_t cpuset[size];
+        if (sched_getaffinity(0, sizeof(cpu_set_t) * size, cpuset) == 0) {
+            cores = CPU_COUNT_S(sizeof(cpu_set_t) * size, cpuset);
+            break;
         }
-        if (size > 4)
-            return 1;
-    }
-    cores = CPU_COUNT_S(sizeof(cpu_set_t) * size, cpuset.data());
+        size *= 4;
+    } while (size < MaxCpuSetArraySize);
+    QT_WARNING_POP
 #elif defined(Q_OS_BSD4)
     // OpenBSD, NetBSD, BSD/OS, Darwin (macOS, iOS, etc.)
     size_t len = sizeof(cores);
