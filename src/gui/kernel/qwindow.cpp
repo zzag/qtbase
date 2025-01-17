@@ -2806,7 +2806,7 @@ void QWindowPrivate::maybeSynthesizeContextMenuEvent(QMouseEvent *event)
         qCDebug(lcPopup) << "synthesized after"
                          << (event->isAccepted() ? "ACCEPTED (legacy behavior)" : "ignored")
                          << event->type() << ":" << &e;
-        QGuiApplication::sendEvent(q_func(), &e);
+        QCoreApplication::forwardEvent(q_func(), &e, event);
     }
 #endif
 }
