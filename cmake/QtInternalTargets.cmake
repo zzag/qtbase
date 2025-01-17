@@ -318,6 +318,13 @@ if (GCC AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL "9.2")
     target_compile_options(PlatformCommonInternal INTERFACE $<$<COMPILE_LANGUAGE:CXX>:-Wsuggest-override>)
 endif()
 
+if(QT_FEATURE_stdlib_libcpp)
+    # Disable transitive C++ inclusions when using libc++, on all
+    # language versions. See
+    # https://libcxx.llvm.org/DesignDocs/HeaderRemovalPolicy.html
+    target_compile_definitions(PlatformCommonInternal INTERFACE _LIBCPP_REMOVE_TRANSITIVE_INCLUDES)
+endif()
+
 # Hardening options
 
 qt_internal_apply_intel_cet_harderning(PlatformCommonInternal)
