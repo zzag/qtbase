@@ -502,15 +502,6 @@ int QThread::idealThreadCount() noexcept
         cores = (int)psd.psd_proc_cnt;
     }
 #elif (defined(Q_OS_LINUX) && !defined(Q_OS_ANDROID)) || defined(Q_OS_FREEBSD)
-#  if defined(Q_OS_FREEBSD) && !defined(CPU_COUNT_S)
-#    define CPU_COUNT_S(setsize, cpusetp)   ((int)BIT_COUNT(setsize, cpusetp))
-    // match the Linux API for simplicity
-    using cpu_set_t = cpuset_t;
-    auto sched_getaffinity = [](pid_t, size_t cpusetsize, cpu_set_t *mask) {
-        return cpuset_getaffinity(CPU_LEVEL_WHICH, CPU_WHICH_PID, -1, cpusetsize, mask);
-    };
-#  endif
-
     // get the number of threads we're assigned, not the total in the system
     QVarLengthArray<cpu_set_t, 1> cpuset(1);
     int size = 1;
