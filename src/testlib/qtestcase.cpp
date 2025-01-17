@@ -37,7 +37,7 @@
 #if QT_CONFIG(batch_test_support)
 #include <QtTest/private/qtestregistry_p.h>
 #endif  // QT_CONFIG(batch_test_support)
-#include <QtTest/private/cycle_p.h>
+#include <QtTest/private/cycle_include_p.h>
 #include <QtTest/private/qtestblacklist_p.h>
 #include <QtTest/private/qtestcrashhandler_p.h>
 #if defined(HAVE_XCTEST)

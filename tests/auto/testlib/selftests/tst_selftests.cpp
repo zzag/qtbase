@@ -21,7 +21,7 @@ QT_REQUIRE_CONFIG(process);
 
 #include <QProcess>
 
-#include <private/cycle_p.h>
+#include <private/cycle_include_p.h>
 
 #include <QtTest/private/qemulationdetector_p.h>
 

@@ -15,6 +15,7 @@ qt_internal_add_module(Test
     EXCEPTIONS
     SOURCES
         3rdparty/cycle/cycle_p.h # Needed by tests, so visible to syncqt.
+        3rdparty/cycle/cycle_include_p.h # Also needed by tests.
         3rdparty/catch2/catch_p.h # Also needed by tests.
         removed_api.cpp     # keep first
         qabstracttestlogger.cpp qabstracttestlogger_p.h
