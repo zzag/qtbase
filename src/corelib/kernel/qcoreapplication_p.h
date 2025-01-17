@@ -130,6 +130,7 @@ public:
     std::unique_ptr<char *[]> origArgv;
 
     bool consoleAllocated = false;
+    static void *mainInstanceHandle;    // HINSTANCE without <windows.h>
 #endif
     void appendApplicationPathToLibraryPaths(void);
 
