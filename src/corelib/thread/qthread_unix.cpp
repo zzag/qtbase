@@ -489,6 +489,11 @@ Qt::HANDLE QThread::currentThreadIdImpl() noexcept
 int QThreadPrivate::idealThreadCount = 1;
 #endif
 
+#if QT_CONFIG(trivial_auto_var_init_pattern) && defined(Q_CC_GNU_ONLY)
+// Don't pre-fill the automatic-storage arrays used in this function
+// (important for the FreeBSD & Linux code using a VLA).
+__attribute__((optimize("trivial-auto-var-init=uninitialized")))
+#endif
 int QThread::idealThreadCount() noexcept
 {
     int cores = 1;
