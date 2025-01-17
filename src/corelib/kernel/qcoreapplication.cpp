@@ -130,7 +130,7 @@ Q_TRACE_POINT(qtcore, QCoreApplication_sendSpontaneousEvent, QObject *receiver, 
 Q_TRACE_POINT(qtcore, QCoreApplication_notify_entry, QObject *receiver, QEvent *event, QEvent::Type type);
 Q_TRACE_POINT(qtcore, QCoreApplication_notify_exit, bool consumed, bool filtered);
 
-#if defined(Q_OS_WIN) || defined(Q_OS_DARWIN)
+#if (defined(Q_OS_WIN) || defined(Q_OS_DARWIN)) && !defined(QT_BOOTSTRAPPED)
 extern QString qAppFileName();
 #endif
 
@@ -2404,7 +2404,8 @@ QString QCoreApplication::applicationDirPath()
     return d->cachedApplicationDirPath;
 }
 
-#if !defined(Q_OS_WIN) && !defined(Q_OS_DARWIN)     // qcoreapplication_win.cpp or qcoreapplication_mac.cpp
+#if !defined(Q_OS_WIN) && !defined(Q_OS_DARWIN)
+// qcoreapplication_win.cpp or qcoreapplication_mac.cpp for those
 static QString qAppFileName()
 {
 #  if defined(Q_OS_ANDROID)
@@ -2426,7 +2427,7 @@ static QString qAppFileName()
     return QString();
 #endif
 }
-#endif
+#endif // !Q_OS_WIN && !Q_OS_DARWIN
 
 /*!
     Returns the file path of the application executable.
