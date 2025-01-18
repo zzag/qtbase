@@ -1185,8 +1185,13 @@ namespace Qt {
         DragMoveCursor,
         DragLinkCursor,
         LastCursor = DragLinkCursor,
+#if QT_VERSION < QT_VERSION_CHECK(7, 0, 0)
         BitmapCursor = 24,
-        CustomCursor = 25
+        CustomCursor = 25,
+#else
+        BitmapCursor = 0x100,
+        CustomCursor = 0x101,
+#endif
     };
 
     enum TextFormat {
