@@ -103,7 +103,7 @@ static inline bool qRectIntersects(const QRect &r1, const QRect &r2)
 
 extern bool qt_sendSpontaneousEvent(QObject*, QEvent*); // qapplication.cpp
 
-QWidgetPrivate::QWidgetPrivate(int version)
+QWidgetPrivate::QWidgetPrivate(decltype(QObjectPrivateVersion) version)
     : QObjectPrivate(version)
       , focus_next(nullptr)
       , focus_prev(nullptr)
@@ -163,16 +163,6 @@ QWidgetPrivate::QWidgetPrivate(int version)
         qFatal("QWidget: Must construct a QApplication before a QWidget");
         return;
     }
-
-#ifdef QT_BUILD_INTERNAL
-    // Don't check the version parameter in internal builds.
-    // This allows incompatible versions to be loaded, possibly for testing.
-    Q_UNUSED(version);
-#else
-    if (Q_UNLIKELY(version != QObjectPrivateVersion))
-        qFatal("Cannot mix incompatible Qt library (version 0x%x) with this library (version 0x%x)",
-                version, QObjectPrivateVersion);
-#endif
 
     willBeWidget = true; // used in QObject's ctor
     memset(high_attributes, 0, sizeof(high_attributes));

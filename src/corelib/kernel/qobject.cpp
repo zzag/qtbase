@@ -158,11 +158,9 @@ QMetaObject *QObjectData::dynamicMetaObject() const
     return metaObject->toDynamicMetaObject(q_ptr);
 }
 
-QObjectPrivate::QObjectPrivate(int version)
+QObjectPrivate::QObjectPrivate(decltype(QObjectPrivateVersion))
     : threadData(nullptr), currentChildBeingDeleted(nullptr)
 {
-    checkForIncompatibleLibraryVersion(version);
-
     // QObjectData initialization
     q_ptr = nullptr;
     parent = nullptr;                           // no parent yet. It is set by setParent()

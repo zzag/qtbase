@@ -207,7 +207,7 @@ public:
     Q_ENUM(Direction)
 
     // Functions.
-    explicit QWidgetPrivate(int version = QObjectPrivateVersion);
+    explicit QWidgetPrivate(decltype(QObjectPrivateVersion) = QObjectPrivateVersion);
     ~QWidgetPrivate();
 
     static QWidgetPrivate *get(QWidget *w) { return w->d_func(); }
