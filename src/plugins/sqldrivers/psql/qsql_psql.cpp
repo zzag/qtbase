@@ -266,7 +266,7 @@ public:
     void deallocatePreparedStmt();
 
     std::queue<PGresult*> nextResultSets;
-    QString preparedStmtId;
+    QByteArray preparedStmtId;
     PGresult *result = nullptr;
     StatementId stmtId = InvalidStatementId;
     int currentSize = -1;
@@ -389,10 +389,10 @@ void QPSQLResultPrivate::deallocatePreparedStmt()
 {
     if (drv_d_func() && !preparedStmtId.isEmpty()) {
 #if defined(LIBPQ_HAS_CLOSE_PREPARED)
-        PGresult *result = PQclosePrepared(drv_d_func()->connection, preparedStmtId.toUtf8());
+        PGresult *result = PQclosePrepared(drv_d_func()->connection, preparedStmtId.constData());
 #else
-        const QString stmt = QStringLiteral("DEALLOCATE ") + preparedStmtId;
-        PGresult *result = drv_d_func()->exec(stmt);
+        const QByteArray stmt = QByteArrayView("DEALLOCATE ") + preparedStmtId;
+        PGresult *result = drv_d_func()->exec(stmt.constData());
 #endif
 
         if (PQresultStatus(result) != PGRES_COMMAND_OK) {
@@ -846,11 +846,10 @@ static auto qCreateParam(QSqlField &f, const QVariant &boundValue, const QPSQLDr
     return param;
 }
 
-QString qMakePreparedStmtId()
+static inline QByteArray qMakePreparedStmtId()
 {
     Q_CONSTINIT static QBasicAtomicInt qPreparedStmtCount = Q_BASIC_ATOMIC_INITIALIZER(0);
-    QString id = QStringLiteral("qpsqlpstmt_") + QString::number(qPreparedStmtCount.fetchAndAddRelaxed(1) + 1, 16);
-    return id;
+    return QByteArrayView("qpsqlpstmt_") + QByteArray::number(qPreparedStmtCount.fetchAndAddRelaxed(1) + 1, 16);
 }
 
 bool QPSQLResult::prepare(const QString &query)
@@ -863,8 +862,8 @@ bool QPSQLResult::prepare(const QString &query)
 
     d->deallocatePreparedStmt();
 
-    const QString stmtId = qMakePreparedStmtId();
-    PGresult *result = PQprepare(d->drv_d_func()->connection, stmtId.toUtf8(),
+    const QByteArray stmtId = qMakePreparedStmtId();
+    PGresult *result = PQprepare(d->drv_d_func()->connection, stmtId.constData(),
                                  d->positionalToNamedBinding(query).toUtf8(), 0, nullptr);
 
     if (PQresultStatus(result) != PGRES_COMMAND_OK) {
@@ -905,7 +904,7 @@ bool QPSQLResult::exec()
         }
     }
 
-    d->result = PQexecPrepared(d->drv_d_func()->connection, d->preparedStmtId.toUtf8(), pgParams.size(),
+    d->result = PQexecPrepared(d->drv_d_func()->connection, d->preparedStmtId.constData(), pgParams.size(),
                                pgParams.data(), pgParamLengths.data(), pgParamFormats.data(), 0);
 
     const auto status = PQresultStatus(d->result);
