@@ -819,7 +819,7 @@ QFile::copy(const QString &newName)
                 const auto fileTemplate = "%1/qt_temp.XXXXXX"_L1;
 #if !QT_CONFIG(temporaryfile)
                 QFile out(fileTemplate.arg(QFileInfo(newName).path()));
-                if (!out.open(QIODevice::ReadWrite))
+                if (!out.open(QIODevice::ReadWrite | QIODevice::Truncate))
                     error = true;
 #else
                 QTemporaryFile out(fileTemplate.arg(QFileInfo(newName).path()));

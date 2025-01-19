@@ -1084,6 +1084,12 @@ bool QFileSystemEngine::cloneFile(int srcfd, int dstfd, const QFileSystemMetaDat
         return false;
     }
 
+    [[maybe_unused]] auto destinationIsEmpty = [dstfd]() {
+        QT_STATBUF statBuffer;
+        return QT_FSTAT(dstfd, &statBuffer) == 0 && statBuffer.st_size == 0;
+    };
+    Q_ASSERT(destinationIsEmpty());
+
 #if defined(Q_OS_LINUX)
     // first, try FICLONE (only works on regular files and only on certain fs)
     if (::ioctl(dstfd, FICLONE, srcfd) == 0)
