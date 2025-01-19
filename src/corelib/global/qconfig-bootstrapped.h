@@ -47,6 +47,7 @@
 #define QT_FEATURE_cborstreamwriter 1
 #define QT_FEATURE_commandlineparser 1
 #define QT_NO_COMPRESS
+#define QT_FEATURE_copy_file_range -1
 #define QT_FEATURE_cxx17_filesystem -1
 #define QT_NO_DATASTREAM
 #define QT_FEATURE_datestring 1

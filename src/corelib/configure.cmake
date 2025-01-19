@@ -143,6 +143,19 @@ int pipes[2];
 }
 ")
 
+# copy_file_range
+qt_config_compile_test(copy_file_range
+    LABEL "copy_file_range()"
+    CODE
+"#include <unistd.h>
+
+int main()
+{
+    off_t off_in = 0, off_out = 1024;
+    return copy_file_range(0, &off_in, 1, &off_out, 2147483647, 0) != 0;
+}
+")
+
 # Check if __cxa_thread_atexit{,_impl} are present in the C library (hence why
 # PROJECT_PATH instead of CODE for C++). Either one suffices to disable
 # FEATURE_broken_threadlocal_dtors. See details in qthread_unix.cpp.
@@ -614,6 +627,11 @@ qt_feature("close_range" PRIVATE
     LABEL "close_range()"
     CONDITION QT_FEATURE_process AND TEST_close_range
     AUTODETECT UNIX
+)
+qt_feature("copy_file_range" PRIVATE
+    LABEL "copy_file_range()"
+    CONDITION QT_FEATURE_process AND TEST_copy_file_range
+    AUTODETECT UNIX AND NOT DARWIN
 )
 qt_feature("doubleconversion" PRIVATE
     LABEL "DoubleConversion"

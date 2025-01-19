@@ -1096,8 +1096,41 @@ auto QFileSystemEngine::cloneFile(int srcfd, int dstfd, const QFileSystemMetaDat
     // first, try FICLONE (only works on regular files and only on certain fs)
     if (::ioctl(dstfd, FICLONE, srcfd) == 0)
         return TriStateResult::Success;
+#elif defined(Q_OS_DARWIN)
+    // try fcopyfile
+    if (fcopyfile(srcfd, dstfd, nullptr, COPYFILE_DATA | COPYFILE_STAT) == 0)
+        return TriStateResult::Success;
+    switch (errno) {
+    case ENOTSUP:
+    case ENOMEM:
+        return TriStateResult::NotSupported;    // let QFile try
+    }
+    return TriStateResult::Failed;
+#endif
 
-    // Second, try sendfile (it can send to some special types too).
+#if QT_CONFIG(copy_file_range)
+    // Second, try copy_file_range. Tested on Linux & FreeBSD: FreeBSD can copy
+    // across mountpoints, Linux currently (6.12) can only if the source and
+    // destination mountpoints are the same filesystem type.
+    QT_OFF_T srcoffset = 0;
+    QT_OFF_T dstoffset = 0;
+    ssize_t copied;
+    do {
+        copied = ::copy_file_range(srcfd, &srcoffset, dstfd, &dstoffset, SSIZE_MAX, 0);
+    } while (copied > 0 || (copied < 0 && errno == EINTR));
+    if (copied == 0)
+        return TriStateResult::Success;         // EOF -> success
+    if (srcoffset) {
+        // some bytes were copied, so this is a real error (like ENOSPC).
+        copied = ftruncate(dstfd, 0);
+        return TriStateResult::Failed;
+    }
+    if (errno != EXDEV)
+        return TriStateResult::Failed;
+#endif
+
+#if defined(Q_OS_LINUX)
+    // For Linux, try sendfile (it can send to some special types too).
     // sendfile(2) is limited in the kernel to 2G - 4k
     const size_t SendfileSize = 0x7ffff000;
 
@@ -1125,16 +1158,6 @@ auto QFileSystemEngine::cloneFile(int srcfd, int dstfd, const QFileSystemMetaDat
     }
 
     return TriStateResult::Success;
-#elif defined(Q_OS_DARWIN)
-    // try fcopyfile
-    if (fcopyfile(srcfd, dstfd, nullptr, COPYFILE_DATA | COPYFILE_STAT) == 0)
-        return TriStateResult::Success;
-    switch (errno) {
-    case ENOTSUP:
-    case ENOMEM:
-        return TriStateResult::NotSupported;    // let QFile try
-    }
-    return TriStateResult::Failed;
 #else
     Q_UNUSED(dstfd);
     return TriStateResult::NotSupported;
