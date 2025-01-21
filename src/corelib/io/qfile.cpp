@@ -834,7 +834,12 @@ QFile::copy(const QString &newName)
                     out.close();
                     close();
                 } else {
-                    if (!d->engine()->cloneTo(out.d_func()->engine())) {
+                    QAbstractFileEngine::TriStateResult r = d->engine()->cloneTo(out.d_func()->engine());
+                    if (r == QAbstractFileEngine::TriStateResult::Failed) {
+                        d->setError(QFile::CopyError, tr("Could not copy to %1: %2")
+                                    .arg(newName, d->engine()->errorString()));
+                        error = true;
+                    } else if (r == QAbstractFileEngine::TriStateResult::NotSupported) {
                         char block[4096];
                         qint64 totalRead = 0;
                         out.setOpenMode(ReadWrite | Unbuffered);

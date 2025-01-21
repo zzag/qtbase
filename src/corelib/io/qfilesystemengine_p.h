@@ -60,6 +60,8 @@ Q_CORE_EXPORT bool qt_isCaseSensitive(const QFileSystemEntry &entry, QFileSystem
 class Q_AUTOTEST_EXPORT QFileSystemEngine
 {
 public:
+    using TriStateResult = QAbstractFileEngine::TriStateResult;
+
     static bool isCaseSensitive(const QFileSystemEntry &entry, QFileSystemMetaData &data);
 
     static QFileSystemEntry getLinkTarget(const QFileSystemEntry &link, QFileSystemMetaData &data);
@@ -86,7 +88,7 @@ public:
     static bool fillMetaData(const QFileSystemEntry &entry, QFileSystemMetaData &data,
                              QFileSystemMetaData::MetaDataFlags what);
 #if defined(Q_OS_UNIX)
-    static bool cloneFile(int srcfd, int dstfd, const QFileSystemMetaData &knownData);
+    static TriStateResult cloneFile(int srcfd, int dstfd, const QFileSystemMetaData &knownData);
     static bool fillMetaData(int fd, QFileSystemMetaData &data); // what = PosixStatFlags
     static QByteArray id(int fd);
     static bool setFileTime(int fd, const QDateTime &newDate,

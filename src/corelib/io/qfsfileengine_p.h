@@ -93,7 +93,7 @@ public:
     qint64 read(char *data, qint64 maxlen) override;
     qint64 readLine(char *data, qint64 maxlen) override;
     qint64 write(const char *data, qint64 len) override;
-    bool cloneTo(QAbstractFileEngine *target) override;
+    TriStateResult cloneTo(QAbstractFileEngine *target) override;
 
     virtual bool isUnnamedFile() const
     { return false; }

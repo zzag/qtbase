@@ -1068,7 +1068,7 @@ bool QFileSystemEngine::fillMetaData(const QFileSystemEntry &entry, QFileSystemM
 }
 
 // static
-bool QFileSystemEngine::cloneFile(int srcfd, int dstfd, const QFileSystemMetaData &knownData)
+auto QFileSystemEngine::cloneFile(int srcfd, int dstfd, const QFileSystemMetaData &knownData) -> TriStateResult
 {
     QT_STATBUF statBuffer;
     if (knownData.hasFlags(QFileSystemMetaData::PosixStatFlags) &&
@@ -1076,12 +1076,14 @@ bool QFileSystemEngine::cloneFile(int srcfd, int dstfd, const QFileSystemMetaDat
         statBuffer.st_mode = S_IFREG;
     } else if (knownData.hasFlags(QFileSystemMetaData::PosixStatFlags) &&
                knownData.isDirectory()) {
-        return false;   // fcopyfile(3) returns success on directories
+        errno = EISDIR;
+        return TriStateResult::Failed;   // fcopyfile(3) returns success on directories
     } else if (QT_FSTAT(srcfd, &statBuffer) == -1) {
-        return false;
+        // errno was set
+        return TriStateResult::Failed;
     } else if (!S_ISREG((statBuffer.st_mode))) {
         // not a regular file, let QFile do the copy
-        return false;
+        return TriStateResult::NotSupported;
     }
 
     [[maybe_unused]] auto destinationIsEmpty = [dstfd]() {
@@ -1093,7 +1095,7 @@ bool QFileSystemEngine::cloneFile(int srcfd, int dstfd, const QFileSystemMetaDat
 #if defined(Q_OS_LINUX)
     // first, try FICLONE (only works on regular files and only on certain fs)
     if (::ioctl(dstfd, FICLONE, srcfd) == 0)
-        return true;
+        return TriStateResult::Success;
 
     // Second, try sendfile (it can send to some special types too).
     // sendfile(2) is limited in the kernel to 2G - 4k
@@ -1102,30 +1104,34 @@ bool QFileSystemEngine::cloneFile(int srcfd, int dstfd, const QFileSystemMetaDat
     ssize_t n = ::sendfile(dstfd, srcfd, nullptr, SendfileSize);
     if (n == -1) {
         // if we got an error here, give up and try at an upper layer
-        return false;
+        return TriStateResult::NotSupported;
     }
 
     while (n) {
         n = ::sendfile(dstfd, srcfd, nullptr, SendfileSize);
         if (n == -1) {
-            // uh oh, this is probably a real error (like ENOSPC), but we have
-            // no way to notify QFile of partial success, so just erase any work
-            // done (hopefully we won't get any errors, because there's nothing
-            // we can do about them)
+            // uh oh, this is probably a real error (like ENOSPC)
             n = ftruncate(dstfd, 0);
             n = lseek(srcfd, 0, SEEK_SET);
             n = lseek(dstfd, 0, SEEK_SET);
-            return false;
+            return TriStateResult::Failed;
         }
     }
 
-    return true;
+    return TriStateResult::Success;
 #elif defined(Q_OS_DARWIN)
     // try fcopyfile
-    return fcopyfile(srcfd, dstfd, nullptr, COPYFILE_DATA | COPYFILE_STAT) == 0;
+    if (fcopyfile(srcfd, dstfd, nullptr, COPYFILE_DATA | COPYFILE_STAT) == 0)
+        return TriStateResult::Success;
+    switch (errno) {
+    case ENOTSUP:
+    case ENOMEM:
+        return TriStateResult::NotSupported;    // let QFile try
+    }
+    return TriStateResult::Failed;
 #else
     Q_UNUSED(dstfd);
-    return false;
+    return TriStateResult::NotSupported;
 #endif
 }
 
