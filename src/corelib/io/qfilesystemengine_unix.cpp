@@ -1103,6 +1103,12 @@ auto QFileSystemEngine::cloneFile(int srcfd, int dstfd, const QFileSystemMetaDat
 
     ssize_t n = ::sendfile(dstfd, srcfd, nullptr, SendfileSize);
     if (n == -1) {
+        switch (errno) {
+        case ENOSPC:
+        case EIO:
+            return TriStateResult::Failed;
+        }
+
         // if we got an error here, give up and try at an upper layer
         return TriStateResult::NotSupported;
     }
