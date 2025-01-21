@@ -1931,8 +1931,8 @@ void QRhiMetal::setBlendConstants(QRhiCommandBuffer *cb, const QColor &c)
     QMetalCommandBuffer *cbD = QRHI_RES(QMetalCommandBuffer, cb);
     Q_ASSERT(cbD->recordingPass == QMetalCommandBuffer::RenderPass);
 
-    [cbD->d->currentRenderPassEncoder setBlendColorRed: float(c.redF())
-      green: float(c.greenF()) blue: float(c.blueF()) alpha: float(c.alphaF())];
+    [cbD->d->currentRenderPassEncoder setBlendColorRed: c.redF()
+      green: c.greenF() blue: c.blueF() alpha: c.alphaF()];
 }
 
 void QRhiMetal::setStencilRef(QRhiCommandBuffer *cb, quint32 refValue)

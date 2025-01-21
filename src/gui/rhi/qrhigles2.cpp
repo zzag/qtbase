@@ -2061,10 +2061,10 @@ void QRhiGles2::setBlendConstants(QRhiCommandBuffer *cb, const QColor &c)
 
     QGles2CommandBuffer::Command &cmd(cbD->commands.get());
     cmd.cmd = QGles2CommandBuffer::Command::BlendConstants;
-    cmd.args.blendConstants.r = float(c.redF());
-    cmd.args.blendConstants.g = float(c.greenF());
-    cmd.args.blendConstants.b = float(c.blueF());
-    cmd.args.blendConstants.a = float(c.alphaF());
+    cmd.args.blendConstants.r = c.redF();
+    cmd.args.blendConstants.g = c.greenF();
+    cmd.args.blendConstants.b = c.blueF();
+    cmd.args.blendConstants.a = c.alphaF();
 }
 
 void QRhiGles2::setStencilRef(QRhiCommandBuffer *cb, quint32 refValue)
@@ -4646,10 +4646,10 @@ void QRhiGles2::beginPass(QRhiCommandBuffer *cb,
         clearCmd.args.clear.mask |= GL_COLOR_BUFFER_BIT;
     if (rtD->dsAttCount && wantsDsClear)
         clearCmd.args.clear.mask |= GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT;
-    clearCmd.args.clear.c[0] = float(colorClearValue.redF());
-    clearCmd.args.clear.c[1] = float(colorClearValue.greenF());
-    clearCmd.args.clear.c[2] = float(colorClearValue.blueF());
-    clearCmd.args.clear.c[3] = float(colorClearValue.alphaF());
+    clearCmd.args.clear.c[0] = colorClearValue.redF();
+    clearCmd.args.clear.c[1] = colorClearValue.greenF();
+    clearCmd.args.clear.c[2] = colorClearValue.blueF();
+    clearCmd.args.clear.c[3] = colorClearValue.alphaF();
     clearCmd.args.clear.d = depthStencilClearValue.depthClearValue();
     clearCmd.args.clear.s = depthStencilClearValue.stencilClearValue();
 

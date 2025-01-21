@@ -6009,10 +6009,10 @@ void QRhiVulkan::setBlendConstants(QRhiCommandBuffer *cb, const QColor &c)
     } else {
         QVkCommandBuffer::Command &cmd(cbD->commands.get());
         cmd.cmd = QVkCommandBuffer::Command::SetBlendConstants;
-        cmd.args.setBlendConstants.c[0] = float(c.redF());
-        cmd.args.setBlendConstants.c[1] = float(c.greenF());
-        cmd.args.setBlendConstants.c[2] = float(c.blueF());
-        cmd.args.setBlendConstants.c[3] = float(c.alphaF());
+        cmd.args.setBlendConstants.c[0] = c.redF();
+        cmd.args.setBlendConstants.c[1] = c.greenF();
+        cmd.args.setBlendConstants.c[2] = c.blueF();
+        cmd.args.setBlendConstants.c[3] = c.alphaF();
     }
 }
 
