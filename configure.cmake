@@ -1095,12 +1095,13 @@ qt_feature("network" PRIVATE
 )
 qt_feature("printsupport" PRIVATE
     LABEL "Qt PrintSupport"
-    CONDITION QT_FEATURE_widgets
+    CONDITION QT_FEATURE_widgets AND NOT WASM
     SECTION "Module"
     PURPOSE "Provides the Qt PrintSupport module."
 )
 qt_feature("sql" PRIVATE
     LABEL "Qt Sql"
+    CONDITION NOT WASM
     SECTION "Module"
     PURPOSE "Provides the Sql module."
 )
