@@ -3168,7 +3168,7 @@ void QSortFilterProxyModel::invalidateRowsFilter()
     Q_D(QSortFilterProxyModel);
     d->filter_changed(Direction::Rows);
 }
-#endif // QT_DEPRECATED_SINCE(6, 10)
+#endif // QT_DEPRECATED_SINCE(6, 13)
 
 /*!
     \enum QSortFilterProxyModel::Direction
