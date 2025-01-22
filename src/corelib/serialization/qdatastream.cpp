@@ -1031,6 +1031,21 @@ QDataStream &QDataStream::operator>>(char32_t &c)
     return *this;
 }
 
+/*!
+    \relates QChar
+
+    Reads a char from the stream \a in into char \a chr.
+
+    \sa {Serializing Qt Data Types}
+*/
+QDataStream &operator>>(QDataStream &in, QChar &chr)
+{
+    quint16 u;
+    in >> u;
+    chr.unicode() = char16_t(u);
+    return in;
+}
+
 #if QT_DEPRECATED_SINCE(6, 11)
 
 /*!
@@ -1381,6 +1396,19 @@ QDataStream &QDataStream::operator<<(char16_t c)
 QDataStream &QDataStream::operator<<(char32_t c)
 {
     return *this << qint32(c);
+}
+
+/*!
+    \relates QChar
+
+    Writes the char \a chr to the stream \a out.
+
+    \sa {Serializing Qt Data Types}
+*/
+QDataStream &operator<<(QDataStream &out, QChar chr)
+{
+    out << quint16(chr.unicode());
+    return out;
 }
 
 /*!

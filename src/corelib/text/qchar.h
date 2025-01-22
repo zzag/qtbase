@@ -11,7 +11,6 @@
 
 QT_BEGIN_NAMESPACE
 
-class QDataStream;
 class QString;
 
 struct QLatin1Char
@@ -679,11 +678,6 @@ private:
 #undef QT_CHAR_FASTCALL
 
 Q_DECLARE_TYPEINFO(QChar, Q_PRIMITIVE_TYPE);
-
-#ifndef QT_NO_DATASTREAM
-Q_CORE_EXPORT QDataStream &operator<<(QDataStream &, QChar);
-Q_CORE_EXPORT QDataStream &operator>>(QDataStream &, QChar &);
-#endif
 
 namespace Qt {
 inline namespace Literals {

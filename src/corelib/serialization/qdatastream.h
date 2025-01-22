@@ -4,10 +4,11 @@
 #ifndef QDATASTREAM_H
 #define QDATASTREAM_H
 
-#include <QtCore/qscopedpointer.h>
-#include <QtCore/qiodevicebase.h>
+#include <QtCore/qchar.h>
 #include <QtCore/qcontainerfwd.h>
+#include <QtCore/qiodevicebase.h>
 #include <QtCore/qnamespace.h>
+#include <QtCore/qscopedpointer.h>
 #include <QtCore/qttypetraits.h>
 
 #include <iterator>         // std::distance(), std::next()
@@ -547,6 +548,9 @@ operator>>(QDataStream &s, T &t)
     t = T(i);
     return s;
 }
+
+Q_CORE_EXPORT QDataStream &operator<<(QDataStream &out, QChar chr);
+Q_CORE_EXPORT QDataStream &operator>>(QDataStream &in, QChar &chr);
 
 #ifndef Q_QDOC
 

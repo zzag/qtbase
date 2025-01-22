@@ -3,8 +3,6 @@
 
 #include "qchar.h"
 
-#include "qdatastream.h"
-
 #include "qunicodetables_p.h"
 #include "qunicodetables.cpp"
 
@@ -1740,36 +1738,6 @@ char32_t QChar::toCaseFolded(char32_t ucs4) noexcept
 
     \sa toLatin1(), unicode()
 */
-
-#ifndef QT_NO_DATASTREAM
-/*!
-    \relates QChar
-
-    Writes the char \a chr to the stream \a out.
-
-    \sa {Serializing Qt Data Types}
-*/
-QDataStream &operator<<(QDataStream &out, QChar chr)
-{
-    out << quint16(chr.unicode());
-    return out;
-}
-
-/*!
-    \relates QChar
-
-    Reads a char from the stream \a in into char \a chr.
-
-    \sa {Serializing Qt Data Types}
-*/
-QDataStream &operator>>(QDataStream &in, QChar &chr)
-{
-    quint16 u;
-    in >> u;
-    chr.unicode() = char16_t(u);
-    return in;
-}
-#endif // QT_NO_DATASTREAM
 
 /*!
     \fn QChar::unicode()
