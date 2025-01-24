@@ -134,17 +134,6 @@ calculateBlockSize(qsizetype capacity, qsizetype objectSize, qsizetype headerSiz
     }
 }
 
-static QArrayData *allocateData(qsizetype allocSize)
-{
-    QArrayData *header = static_cast<QArrayData *>(::malloc(size_t(allocSize)));
-    if (header) {
-        header->ref_.storeRelaxed(1);
-        header->flags = {};
-        header->alloc = 0;
-    }
-    return header;
-}
-
 namespace {
 struct AllocationResult {
     void *data;
@@ -178,12 +167,14 @@ allocateHelper(qsizetype objectSize, qsizetype alignment, qsizetype capacity,
     if (Q_UNLIKELY(allocSize < 0))      // handle overflow. cannot allocate reliably
         return {};
 
-    QArrayData *header = allocateData(allocSize);
     void *data = nullptr;
-    if (header) {
+    QArrayData *header = static_cast<QArrayData *>(::malloc(size_t(allocSize)));
+    if (Q_LIKELY(header)) {
+        header->ref_.storeRelaxed(1);
+        header->flags = {};
         // find where offset should point to so that data() is aligned to alignment bytes
         data = QTypedArrayData<void>::dataStart(header, alignment);
-        header->alloc = qsizetype(capacity);
+        header->alloc = capacity;
     }
 
     return { data, header };
