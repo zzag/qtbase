@@ -30,4 +30,6 @@ add_subdirectory(qstringtokenizer)
 add_subdirectory(qstringview)
 add_subdirectory(qtextboundaryfinder)
 add_subdirectory(qunicodetools)
+if (NOT WASM) # QTBUG-133219
 add_subdirectory(qlocale)
+endif()
