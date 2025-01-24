@@ -778,6 +778,7 @@ QFile::link(const QString &fileName, const QString &linkName)
     return QFile(fileName).link(linkName);
 }
 
+#ifndef QT_BOOTSTRAPPED // dangerous without QTemporaryFile
 /*!
     Copies the file named fileName() to \a newName.
 
@@ -913,6 +914,7 @@ QFile::copy(const QString &fileName, const QString &newName)
 {
     return QFile(fileName).copy(newName);
 }
+#endif // QT_BOOTSTRAPPED
 
 /*!
     Opens the file using \a mode flags, returning \c true if successful;
