@@ -2094,6 +2094,7 @@ void tst_Moc::notifyError()
     QByteArray mocOut = proc.readAllStandardOutput();
     QVERIFY(!mocOut.isEmpty());
 
+    proc.setEnvironment({"LC_ALL=C.UTF-8"});
     QStringList args;
     args << "-c" << "-x" << "c++" << "-I" << "."
          << "-I" << qtIncludePath << "-o" << "/dev/null" << "-fPIC" << "-std=c++1z" << "-";
