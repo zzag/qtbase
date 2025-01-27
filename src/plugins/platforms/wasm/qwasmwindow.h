@@ -42,7 +42,7 @@ class QWasmWindow final : public QPlatformWindow,
 {
 public:
     QWasmWindow(QWindow *w, QWasmDeadKeySupport *deadKeySupport, QWasmCompositor *compositor,
-                QWasmBackingStore *backingStore);
+                QWasmBackingStore *backingStore, WId nativeHandle);
     ~QWasmWindow() final;
 
     static QWasmWindow *fromWindow(QWindow *window);

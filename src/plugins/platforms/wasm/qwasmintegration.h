@@ -43,6 +43,7 @@ public:
 
     bool hasCapability(QPlatformIntegration::Capability cap) const override;
     QPlatformWindow *createPlatformWindow(QWindow *window) const override;
+    QPlatformWindow *createForeignWindow(QWindow *window, WId nativeHandle) const override;
     QPlatformBackingStore *createPlatformBackingStore(QWindow *window) const override;
 #ifndef QT_NO_OPENGL
     QPlatformOpenGLContext *createPlatformOpenGLContext(QOpenGLContext *context) const override;
@@ -84,6 +85,8 @@ public:
     int touchPoints;
 
 private:
+    QWasmWindow *createWindow(QWindow *, WId nativeHandle) const;
+
     struct ScreenMapping {
         emscripten::val emscriptenVal;
         QWasmScreen *wasmScreen;

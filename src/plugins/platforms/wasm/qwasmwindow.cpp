@@ -48,7 +48,7 @@ QWasmWindowStack::PositionPreference positionPreferenceFromWindowFlags(Qt::Windo
 Q_GUI_EXPORT int qt_defaultDpiX();
 
 QWasmWindow::QWasmWindow(QWindow *w, QWasmDeadKeySupport *deadKeySupport,
-                         QWasmCompositor *compositor, QWasmBackingStore *backingStore)
+                         QWasmCompositor *compositor, QWasmBackingStore *backingStore, WId nativeHandle)
     : QPlatformWindow(w),
       m_compositor(compositor),
       m_backingStore(backingStore),
@@ -64,6 +64,22 @@ QWasmWindow::QWasmWindow(QWindow *w, QWasmDeadKeySupport *deadKeySupport,
 
     m_nonClientArea = std::make_unique<NonClientArea>(this, m_decoratedWindow);
     m_nonClientArea->titleBar()->setTitle(window()->title());
+
+    // If we are wrapping a foregin window, a.k.a. a native html element then that element becomes
+    // the m_window element. In this case setting up event handlers and accessibility etc is not
+    // needed since that is (presumably) handled by the native html element.
+    //
+    // The WId is an emscripten::val *, owned by QWindow user code. We dereference and make
+    // a copy of the val here and don't strictly need it to be kept alive, but that's an
+    // implementation detail. The pointer will be dereferenced again if the window is destroyed
+    // and recreated.
+    if (nativeHandle) {
+        m_window = *(emscripten::val *)(nativeHandle);
+        m_winId = nativeHandle;
+        m_decoratedWindow.set("id", "qt-window-" + std::to_string(m_winId));
+        m_decoratedWindow.call<void>("appendChild", m_window);
+        return;
+    }
 
     m_window.set("className", "qt-window");
     m_decoratedWindow.call<void>("appendChild", m_window);
@@ -91,8 +107,8 @@ QWasmWindow::QWasmWindow(QWindow *w, QWasmDeadKeySupport *deadKeySupport,
     const bool rendersTo2dContext = w->surfaceType() != QSurface::OpenGLSurface;
     if (rendersTo2dContext)
         m_context2d = m_canvas.call<emscripten::val>("getContext", emscripten::val("2d"));
-    static int serialNo = 0;
-    m_winId = ++serialNo;
+
+    m_winId = WId(&m_window);
     m_decoratedWindow.set("id", "qt-window-" + std::to_string(m_winId));
     emscripten::val::module_property("specialHTMLTargets").set(canvasSelector(), m_canvas);
 
@@ -540,9 +556,10 @@ void QWasmWindow::commitParent(QWasmWindowTreeNode *parent)
 void QWasmWindow::handleKeyEvent(const KeyEvent &event)
 {
     qCDebug(qLcQpaWasmInputContext) << "processKey as KeyEvent";
-    if (processKey(event))
+    if (processKey(event)) {
         event.webEvent.call<void>("preventDefault");
-    event.webEvent.call<void>("stopPropagation");
+        event.webEvent.call<void>("stopPropagation");
+    }
 }
 
 bool QWasmWindow::processKey(const KeyEvent &event)
@@ -667,14 +684,17 @@ void QWasmWindow::processPointer(const PointerEvent &event)
 {
     switch (event.type) {
     case EventType::PointerDown:
-        m_window.call<void>("setPointerCapture", event.pointerId);
+        if (event.isTargetedForQtElement())
+            m_window.call<void>("setPointerCapture", event.pointerId);
+
         if ((window()->flags() & Qt::WindowDoesNotAcceptFocus)
                     != Qt::WindowDoesNotAcceptFocus
             && window()->isTopLevel())
                 window()->requestActivate();
         break;
     case EventType::PointerUp:
-        m_window.call<void>("releasePointerCapture", event.pointerId);
+        if (event.isTargetedForQtElement())
+            m_window.call<void>("releasePointerCapture", event.pointerId);
         break;
     default:
         break;
@@ -683,8 +703,11 @@ void QWasmWindow::processPointer(const PointerEvent &event)
     const bool eventAccepted = deliverPointerEvent(event);
     if (!eventAccepted && event.type == EventType::PointerDown)
         QGuiApplicationPrivate::instance()->closeAllPopups();
-    event.webEvent.call<void>("preventDefault");
-    event.webEvent.call<void>("stopPropagation");
+
+    if (eventAccepted) {
+        event.webEvent.call<void>("preventDefault");
+        event.webEvent.call<void>("stopPropagation");
+    }
 }
 
 bool QWasmWindow::deliverPointerEvent(const PointerEvent &event)

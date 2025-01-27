@@ -56,6 +56,8 @@ struct Event
 {
     Event(EventType type, emscripten::val webEvent);
 
+    bool isTargetedForQtElement() const;
+
     emscripten::val webEvent;
     EventType type;
     emscripten::val target() const { return webEvent["target"]; }

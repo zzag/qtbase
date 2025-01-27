@@ -178,17 +178,28 @@ bool QWasmIntegration::hasCapability(QPlatformIntegration::Capability cap) const
     case RasterGLSurface: return false; // to enable this you need to fix qopenglwidget and quickwidget for wasm
     case MultipleWindows: return true;
     case WindowManagement: return true;
+    case ForeignWindows: return true;
     case OpenGLOnRasterSurface: return true;
     default: return QPlatformIntegration::hasCapability(cap);
     }
 }
 
-QPlatformWindow *QWasmIntegration::createPlatformWindow(QWindow *window) const
+QWasmWindow *QWasmIntegration::createWindow(QWindow *window, WId nativeHandle) const
 {
     auto *wasmScreen = QWasmScreen::get(window->screen());
     QWasmCompositor *compositor = wasmScreen->compositor();
     return new QWasmWindow(window, wasmScreen->deadKeySupport(), compositor,
-                           m_backingStores.value(window));
+                           m_backingStores.value(window), nativeHandle);
+}
+
+QPlatformWindow *QWasmIntegration::createPlatformWindow(QWindow *window) const
+{
+    return createWindow(window, 0);
+}
+
+QPlatformWindow *QWasmIntegration::createForeignWindow(QWindow *window, WId nativeHandle) const
+{
+    return createWindow(window, nativeHandle);
 }
 
 QPlatformBackingStore *QWasmIntegration::createPlatformBackingStore(QWindow *window) const
