@@ -5,6 +5,7 @@ macro(qt_internal_get_internal_add_module_keywords option_args single_args multi
     set(${option_args}
         STATIC
         EXCEPTIONS
+        FIND_PRIVATE_MODULE
         INTERNAL_MODULE
         HEADER_MODULE
         DISABLE_TOOLS_EXPORT
@@ -131,6 +132,9 @@ endfunction()
 #     ignored by syncqt. The specifying this directory allows to skip the parsing of the whole
 #     CMAKE_CURRENT_SOURCE_DIR for the header files that needs to be synced and only parse the
 #     single subdirectory, that meanwhile can be outside the CMAKE_CURRENT_SOURCE_DIR tree.
+#
+#   FIND_PRIVATE_MODULE
+#     A call to find_package(Qt6Foo) will imply a call to find_package(Qt6FooPrivate).
 function(qt_internal_add_module target)
     qt_internal_get_internal_add_module_keywords(
         module_option_args
@@ -796,8 +800,16 @@ set(QT_ALLOW_MISSING_TOOLS_PACKAGES TRUE)")
     else()
         set(write_basic_module_package_args "")
     endif()
+
+    if(arg_FIND_PRIVATE_MODULE)
+        set(write_basic_public_module_package_args FIND_PRIVATE_MODULE)
+    else()
+        set(write_basic_public_module_package_args "")
+    endif()
+
     qt_internal_write_basic_module_package("${target}" "${target_private}"
         ${write_basic_module_package_args}
+        ${write_basic_public_module_package_args}
         CONFIG_BUILD_DIR ${config_build_dir}
         CONFIG_INSTALL_DIR ${config_install_dir}
     )
@@ -991,6 +1003,7 @@ endfunction()
 # Otherwise write its public counterpart.
 function(qt_internal_write_basic_module_package target target_private)
     set(no_value_options
+        FIND_PRIVATE_MODULE
         IS_STATIC_LIB
         PRIVATE
     )
@@ -1003,12 +1016,16 @@ function(qt_internal_write_basic_module_package target target_private)
         "${no_value_options}" "${single_value_options}" "${multi_value_options}"
     )
 
+    set(always_load_private_module OFF)
     if(arg_PRIVATE)
         set(package_name "${INSTALL_CMAKE_NAMESPACE}${target_private}")
         set(module_config_input_file "QtModuleConfigPrivate.cmake.in")
     else()
         set(package_name "${INSTALL_CMAKE_NAMESPACE}${target}")
         set(module_config_input_file "QtModuleConfig.cmake.in")
+        if(arg_FIND_PRIVATE_MODULE)
+            set(always_load_private_module ON)
+        endif()
     endif()
 
     if(arg_IS_STATIC_LIB AND NOT arg_PRIVATE AND CMAKE_VERSION VERSION_LESS "3.26")
