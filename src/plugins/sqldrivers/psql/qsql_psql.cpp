@@ -1462,7 +1462,10 @@ QSqlRecord QPSQLDriver::record(const QString &tablename) const
 template <bool forPreparedStatement>
 inline QString autoQuoteResult(QAnyStringView str)
 {
-    return forPreparedStatement ? str.toString() : (u'\'' + str.toString() + u'\'');
+    if constexpr (forPreparedStatement)
+        return str.toString();
+    else
+        return u'\'' + str.toString() + u'\'';
 }
 
 template <bool forPreparedStatement, class FloatType>
@@ -1512,8 +1515,8 @@ QString QPSQLDriver::formatValue(const QSqlField &field, bool trimStrings) const
             break;
         }
         case QMetaType::QString:
-            if (forPreparedStatement) {
-                r = field.value().toString();
+            if constexpr (forPreparedStatement) {
+                r = field.value().toString(); // there is no code path where trimStrings can be true here
             } else {
                 r = QSqlDriver::formatValue(field, trimStrings);
                 if (d->hasBackslashEscape)
