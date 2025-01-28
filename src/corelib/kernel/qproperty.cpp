@@ -2189,8 +2189,7 @@ struct QBindingStoragePrivate
     {
         Q_ASSERT(!d || newSize > d->size);
         size_t allocSize = sizeof(QBindingStorageData) + newSize*sizeof(Pair);
-        void *nd = malloc(allocSize);
-        memset(nd, 0, allocSize);
+        void *nd = calloc(1, allocSize);
         QBindingStorageData *newData = new (nd) QBindingStorageData;
         newData->size = newSize;
         if (!d) {
