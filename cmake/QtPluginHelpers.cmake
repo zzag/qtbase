@@ -348,6 +348,7 @@ function(qt_internal_add_plugin target)
         list(APPEND qt_register_target_dependencies_args PUBLIC ${arg_PUBLIC_LIBRARIES})
     endif()
     if(qt_libs_private)
+        qt_internal_wrap_private_modules(qt_libs_private ${qt_libs_private})
         list(APPEND qt_register_target_dependencies_args PRIVATE ${qt_libs_private})
     endif()
     qt_internal_register_target_dependencies("${target}"
