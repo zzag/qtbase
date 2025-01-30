@@ -478,6 +478,9 @@ void QXcbWindow::create()
     connection()->drag()->dndEnable(this, true);
 #endif
 
+    if (window()->isOpaque())
+        setNetWmOpaqueRegion(QRegion(0, 0, rect.width(), rect.height()));
+
     const qreal opacity = qt_window_private(window())->opacity;
     if (!qFuzzyCompare(opacity, qreal(1.0)))
         setOpacity(opacity);
@@ -588,6 +591,9 @@ void QXcbWindow::setGeometry(const QRect &rect)
 
     if (newScreen != currentScreen)
         QWindowSystemInterface::handleWindowScreenChanged(window(), newScreen->QPlatformScreen::screen());
+
+    if (window()->isOpaque())
+        setNetWmOpaqueRegion(QRegion(0, 0, rect.width(), rect.height()));
 
     if (qt_window_private(window())->positionAutomatic) {
         const quint32 mask = XCB_CONFIG_WINDOW_WIDTH | XCB_CONFIG_WINDOW_HEIGHT;
@@ -1225,6 +1231,34 @@ void QXcbWindow::setWindowState(Qt::WindowStates state)
     m_windowState = state;
 }
 
+void QXcbWindow::setNetWmOpaqueRegion(const QRegion &region)
+{
+    if (!m_window)
+        return;
+
+    if (region.isEmpty()) {
+        xcb_delete_property(xcb_connection(), m_window, atom(QXcbAtom::Atom_NET_WM_OPAQUE_REGION));
+    } else {
+        QList<qint32> values;
+        values.reserve(region.rectCount() * 4);
+        for (const QRect &rect : region) {
+            values.append(rect.x());
+            values.append(rect.y());
+            values.append(rect.x() + rect.width());
+            values.append(rect.y() + rect.height());
+        }
+
+        xcb_change_property(xcb_connection(),
+                            XCB_PROP_MODE_REPLACE,
+                            m_window,
+                            atom(QXcbAtom::Atom_NET_WM_OPAQUE_REGION),
+                            XCB_ATOM_CARDINAL,
+                            32,
+                            values.size(),
+                            values.data());
+    }
+}
+
 void QXcbWindow::updateNetWmUserTime(xcb_timestamp_t timestamp)
 {
     xcb_window_t wid = m_window;
@@ -1836,6 +1870,9 @@ void QXcbWindow::handleConfigureNotifyEvent(const xcb_configure_notify_event_t *
     // with the newScreen. Just send the WindowScreenChanged event and QGuiApplication
     // will make the comparison later.
     QWindowSystemInterface::handleWindowScreenChanged(window(), newScreen->screen());
+
+    if (window()->isOpaque())
+        setNetWmOpaqueRegion(QRegion(0, 0, actualGeometry.width(), actualGeometry.height()));
 
     if (!qFuzzyCompare(QHighDpiScaling::factor(newScreen), m_sizeHintsScaleFactor))
         propagateSizeHints();
@@ -2598,6 +2635,14 @@ void QXcbWindow::setOpacity(qreal level)
                         (uchar *)&value);
 }
 
+void QXcbWindow::setOpaque(bool opaque)
+{
+    if (opaque)
+        setNetWmOpaqueRegion(QHighDpi::toNativeLocalRegion(QRegion(0, 0, window()->width(), window()->height()), window()));
+    else
+        setNetWmOpaqueRegion(QRegion());
+}
+
 QList<xcb_rectangle_t> qRegionToXcbRectangleList(const QRegion &region)
 {
     QList<xcb_rectangle_t> rects;
@@ -2701,4 +2746,3 @@ QString QXcbWindow::windowTitle(const QXcbConnection *conn, xcb_window_t window)
 }
 
 QT_END_NAMESPACE
-

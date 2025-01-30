@@ -115,6 +115,8 @@ static const char *xcb_atomnames = {
     "_KDE_NET_WM_FRAME_STRUT\0"
     "_NET_FRAME_EXTENTS\0"
 
+    "_NET_WM_OPAQUE_REGION\0"
+
     "_NET_STARTUP_INFO\0"
     "_NET_STARTUP_INFO_BEGIN\0"
     "_NET_STARTUP_ID\0"

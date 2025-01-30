@@ -87,6 +87,7 @@ public:
     bool startSystemMove() override;
 
     void setOpacity(qreal level) override;
+    void setOpaque(bool opaque) override;
     void setMask(const QRegion &region) override;
 
     void setAlertState(bool enabled) override;
@@ -177,6 +178,7 @@ protected:
     void setNetWmState(Qt::WindowStates state);
     void setNetWmStateOnUnmappedWindow();
     NetWmStates netWmStates();
+    void setNetWmOpaqueRegion(const QRegion &region);
 
     void setMotifWmHints(Qt::WindowFlags flags);
 

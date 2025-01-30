@@ -116,6 +116,8 @@ public:
         Atom_KDE_NET_WM_FRAME_STRUT,
         Atom_NET_FRAME_EXTENTS,
 
+        Atom_NET_WM_OPAQUE_REGION,
+
         Atom_NET_STARTUP_INFO,
         Atom_NET_STARTUP_INFO_BEGIN,
         Atom_NET_STARTUP_ID,
