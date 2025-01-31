@@ -798,7 +798,7 @@ void QColorLuminancePicker::setVal(int v)
         return;
     val = qMax(0, qMin(v,255));
     delete pix; pix=nullptr;
-    repaint();
+    update();
     emit newHsv(hue, sat, val);
 }
 
@@ -846,7 +846,7 @@ void QColorLuminancePicker::setCol(int h, int s , int v)
     hue = h;
     sat = s;
     delete pix; pix=nullptr;
-    repaint();
+    update();
 }
 
 QPoint QColorPicker::colPt()
@@ -912,7 +912,7 @@ void QColorPicker::setCol(int h, int s)
     r = r.united(QRect(colPt(), QSize(20,20)));
     r.translate(contentsRect().x()-9, contentsRect().y()-9);
     //    update(r);
-    repaint(r);
+    update(r);
 }
 
 void QColorPicker::mouseMoveEvent(QMouseEvent *m)
@@ -1147,7 +1147,7 @@ void QColorShowLabel::dropEvent(QDropEvent *e)
     QColor color = qvariant_cast<QColor>(e->mimeData()->colorData());
     if (color.isValid()) {
         col = color;
-        repaint();
+        update();
         emit colorDropped(col.rgb());
         e->accept();
     } else {
@@ -1347,7 +1347,7 @@ QColor QColorDialogPrivate::currentQColor() const
 void QColorShower::showCurrentColor()
 {
     lab->setColor(currentColor());
-    lab->repaint();
+    lab->update();
 }
 
 void QColorShower::rgbEd()
