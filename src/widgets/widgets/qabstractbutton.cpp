@@ -367,7 +367,7 @@ void QAbstractButtonPrivate::click()
     }
     blockRefresh = false;
     refresh();
-    q->repaint();
+    q->update();
     if (guard)
         emitReleased();
     if (guard)
@@ -805,7 +805,7 @@ void QAbstractButton::animateClick()
     if (d->checkable && focusPolicy() & Qt::ClickFocus)
         setFocus();
     setDown(true);
-    repaint();
+    update();
     if (!d->animateTimer.isActive())
         d->emitPressed();
     d->animateTimer.start(100, this);
@@ -944,7 +944,7 @@ void QAbstractButton::mousePressEvent(QMouseEvent *e)
     if (hitButton(e->position().toPoint())) {
         setDown(true);
         d->pressed = true;
-        repaint();
+        update();
         d->emitPressed();
         e->accept();
     } else {
@@ -992,7 +992,7 @@ void QAbstractButton::mouseMoveEvent(QMouseEvent *e)
 
     if (hitButton(e->position().toPoint()) != d->down) {
         setDown(!d->down);
-        repaint();
+        update();
         if (d->down)
             d->emitPressed();
         else
@@ -1015,7 +1015,7 @@ void QAbstractButton::keyPressEvent(QKeyEvent *e)
                                          .value<QList<Qt::Key>>();
     if (buttonPressKeys.contains(key) && !e->isAutoRepeat()) {
         setDown(true);
-        repaint();
+        update();
         d->emitPressed();
         return;
     }
@@ -1068,7 +1068,7 @@ void QAbstractButton::keyPressEvent(QKeyEvent *e)
 #ifndef QT_NO_SHORTCUT
         if (e->matches(QKeySequence::Cancel) && d->down) {
             setDown(false);
-            repaint();
+            update();
             d->emitReleased();
             return;
         }
