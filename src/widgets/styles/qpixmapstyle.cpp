@@ -535,11 +535,11 @@ bool QPixmapStyle::eventFilter(QObject *watched, QEvent *event)
         case QEvent::MouseButtonPress:
             event->ignore();
             comboBox->setProperty("_pixmapstyle_combobox_pressed", true);
-            comboBox->repaint();
+            comboBox->update();
             return true;
         case QEvent::MouseButtonRelease:
             comboBox->setProperty("_pixmapstyle_combobox_pressed", false);
-            comboBox->repaint();
+            comboBox->update();
             if ( comboBox->view() ) {
                 if ( comboBox->view()->isVisible() || (!comboBox->isEnabled()))
                     comboBox->hidePopup();
