@@ -375,9 +375,7 @@ bool QWidgetWindow::event(QEvent *event)
         break;
 
     case QEvent::UpdateRequest:
-        // This is not the same as an UpdateRequest for a QWidget. That just
-        // syncs the backing store while here we also must mark as dirty.
-        m_widget->repaint();
+        QWidgetPrivate::get(m_widget)->syncBackingStore();
         return true;
 
     case QEvent::DevicePixelRatioChange:
