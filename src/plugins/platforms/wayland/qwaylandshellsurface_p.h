@@ -56,7 +56,7 @@ public:
     virtual void raise() {}
     virtual void lower() {}
     virtual void setContentOrientationMask(Qt::ScreenOrientations orientation) { Q_UNUSED(orientation); }
-    virtual void setContentGeometry(const QRect &rect) { Q_UNUSED(rect); }
+    virtual void setContentGeometry(const QRectF &rect) { Q_UNUSED(rect); }
 
     virtual void sendProperty(const QString &name, const QVariant &value);
 
@@ -67,9 +67,9 @@ public:
 
     virtual void propagateSizeHints() {}
 
-    virtual void setWindowGeometry(const QRect &rect);
-    virtual void setWindowPosition(const QPoint &position) { Q_UNUSED(position); }
-    virtual void setWindowSize(const QSize &size) { Q_UNUSED(size); }
+    virtual void setWindowGeometry(const QRectF &rect);
+    virtual void setWindowPosition(const QPointF &position) { Q_UNUSED(position); }
+    virtual void setWindowSize(const QSizeF &size) { Q_UNUSED(size); }
 
     virtual bool requestActivate() { return false; }
     virtual bool requestActivateOnShow() { return false; }
@@ -94,10 +94,13 @@ public:
 
     virtual bool commitSurfaceRole() const;
 
+    qreal compositorToClientScale() const;
+    qreal clientToCompositorScale() const;
+
 protected:
-    void resizeFromApplyConfigure(const QSize &sizeWithMargins, const QPoint &offset = {0, 0});
-    void repositionFromApplyConfigure(const QPoint &position);
-    void setGeometryFromApplyConfigure(const QPoint &globalPosition, const QSize &sizeWithMargins);
+    void resizeFromApplyConfigure(const QSizeF &sizeWithMargins, const QPointF &offset = {0, 0});
+    void repositionFromApplyConfigure(const QPointF &position);
+    void setGeometryFromApplyConfigure(const QPointF &globalPosition, const QSizeF &sizeWithMargins);
     void applyConfigureWhenPossible();
     void handleActivationChanged(bool activated);
 

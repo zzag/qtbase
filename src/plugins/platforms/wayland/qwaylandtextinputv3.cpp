@@ -4,6 +4,7 @@
 
 #include "qwaylandtextinputv3_p.h"
 
+#include "qwaylandhighdpi_p.h"
 #include "qwaylandwindow_p.h"
 #include "qwaylandinputmethodeventbuilder_p.h"
 
@@ -276,9 +277,11 @@ void QWaylandTextInputv3::updateState(Qt::InputMethodQueries queries, uint32_t f
         const QMargins margins = window->clientSideMargins();
         const QRect &surfaceRect = nativeRect.translated(margins.left(), margins.top());
         if (surfaceRect != m_cursorRect) {
-            set_cursor_rectangle(surfaceRect.x(), surfaceRect.y(), surfaceRect.width(), surfaceRect.height());
             m_cursorRect = surfaceRect;
             needsCommit = true;
+
+            const QRect protocolRect = scaledAndRoundedRect(surfaceRect, window->clientToCompositorScale());
+            set_cursor_rectangle(protocolRect.x(), protocolRect.y(), protocolRect.width(), protocolRect.height());
         }
     }
 

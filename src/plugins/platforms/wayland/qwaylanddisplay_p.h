@@ -57,6 +57,7 @@ namespace QtWayland {
     class wp_cursor_shape_manager_v1;
     class wp_fractional_scale_manager_v1;
     class wp_viewporter;
+    class xx_fractional_scale_manager_v2;
     class xx_session_manager_v1;
     class xdg_system_bell_v1;
     class xdg_toplevel_drag_manager_v1;
@@ -204,6 +205,10 @@ public:
     QtWayland::wp_fractional_scale_manager_v1 *fractionalScaleManager() const
     {
         return mGlobals.fractionalScaleManager.get();
+    }
+    QtWayland::xx_fractional_scale_manager_v2 *fractionalScaleManagerV2() const
+    {
+        return mGlobals.fractionalScaleManagerV2.get();
     }
     QtWayland::wp_viewporter *viewporter() const
     {
@@ -366,6 +371,7 @@ private:
         std::unique_ptr<QWaylandXdgOutputManagerV1> xdgOutputManager;
         std::unique_ptr<QtWayland::wp_viewporter> viewporter;
         std::unique_ptr<QtWayland::wp_fractional_scale_manager_v1> fractionalScaleManager;
+        std::unique_ptr<QtWayland::xx_fractional_scale_manager_v2> fractionalScaleManagerV2;
         std::unique_ptr<QtWayland::wp_cursor_shape_manager_v1> cursorShapeManager;
         std::unique_ptr<QtWayland::xx_session_manager_v1> xxSessionManager;
         std::unique_ptr<QtWayland::xdg_system_bell_v1> systemBell;

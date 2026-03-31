@@ -149,6 +149,9 @@ public:
     virtual void setExtendedWindowType(WindowType windowType) = 0;
     virtual void setParentControlGeometry(const QRect &parentAnchor) = 0;
 
+    virtual qreal clientToCompositorScale() const = 0;
+    virtual qreal compositorToClientScale() const = 0;
+
 Q_SIGNALS:
     void surfaceCreated();
     void surfaceDestroyed();

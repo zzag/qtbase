@@ -14,5 +14,21 @@
         "License": "MIT License",
         "LicenseFile": "../MIT_LICENSE.txt",
         "Copyright": "Copyright © 2022 Kenny Levinsen"
-     }
+    },
+    {
+        "Id": "xx-fractional-scale-v2",
+        "Name": "Wayland Fractional Scale Protocol V2",
+        "QDocModule": "qtwaylandcompositor",
+        "QtUsage": "Used in the Qt Wayland platform plugin",
+        "Files": "xx-fractional-scale-v2.xml",
+
+        "Description": "This protocol allows compositors and clients to communicate the coordinate space their surfaces act in",
+        "Homepage": "https://wayland.freedesktop.org",
+        "Version": "1",
+        "DownloadLocation": "https://gitlab.freedesktop.org/wayland/wayland-protocols/-/raw/main/experimental/xx-fractional-scale/xx-fractional-scale-v2.xml",
+        "LicenseId": "MIT",
+        "License": "MIT License",
+        "LicenseFile": "../MIT_LICENSE.txt",
+        "Copyright": "Copyright © 2022 Xaver Hugl"
+    }
 ]

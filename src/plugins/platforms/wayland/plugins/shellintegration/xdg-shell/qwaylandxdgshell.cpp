@@ -6,6 +6,7 @@
 
 #include "qwaylandxdgshell_p.h"
 
+#include "qwaylandhighdpi_p.h"
 #include "qwaylandxdgexporterv2_p.h"
 #include "qwaylandxdgdialogv1_p.h"
 #include "qwaylandxdgtopleveliconv1_p.h"
@@ -92,7 +93,7 @@ void QWaylandXdgSurface::Toplevel::applyConfigure()
         m_normalSize = m_xdgSurface->m_window->windowContentGeometry().size();
 
     // If the width or height is zero, the client should decide the size on its own.
-    QSize surfaceSize;
+    QSizeF surfaceSize;
 
     if (m_pending.size.width() > 0) {
         surfaceSize.setWidth(m_pending.size.width());
@@ -100,7 +101,7 @@ void QWaylandXdgSurface::Toplevel::applyConfigure()
         if (Q_UNLIKELY(m_pending.states & (Qt::WindowMaximized | Qt::WindowFullScreen))) {
             qCWarning(lcQpaWayland) << "Configure event with maximized or fullscreen state contains invalid width:" << m_pending.size.width();
         } else {
-            int width = m_normalSize.width();
+            qreal width = m_normalSize.width();
             if (!m_pending.bounds.isEmpty())
                 width = std::min(width, m_pending.bounds.width());
             surfaceSize.setWidth(width);
@@ -113,7 +114,7 @@ void QWaylandXdgSurface::Toplevel::applyConfigure()
         if (Q_UNLIKELY(m_pending.states & (Qt::WindowMaximized | Qt::WindowFullScreen))) {
             qCWarning(lcQpaWayland) << "Configure event with maximized or fullscreen state contains invalid height:" << m_pending.size.height();
         } else {
-            int height = m_normalSize.height();
+            qreal height = m_normalSize.height();
             if (!m_pending.bounds.isEmpty())
                 height = std::min(height, m_pending.bounds.height());
             surfaceSize.setHeight(height);
@@ -141,12 +142,12 @@ bool QWaylandXdgSurface::Toplevel::wantsDecorations()
 
 void QWaylandXdgSurface::Toplevel::xdg_toplevel_configure_bounds(int32_t width, int32_t height)
 {
-    m_pending.bounds = QSize(width, height);
+    m_pending.bounds = QSizeF(width, height) / m_xdgSurface->compositorToClientScale();
 }
 
 void QWaylandXdgSurface::Toplevel::xdg_toplevel_configure(int32_t width, int32_t height, wl_array *states)
 {
-    m_pending.size = QSize(width, height);
+    m_pending.size = QSizeF(width, height) / m_xdgSurface->compositorToClientScale();
 
     auto *xdgStates = static_cast<uint32_t *>(states->data);
     size_t numStates = states->size / sizeof(uint32_t);
@@ -292,9 +293,9 @@ QWaylandXdgSurface::Popup::~Popup()
 void QWaylandXdgSurface::Popup::applyConfigure()
 {
     if (m_pendingGeometry.isValid()) {
-        QRect geometryWithMargins = m_pendingGeometry.marginsAdded(m_xdgSurface->m_window->windowContentMargins());
+        QRectF geometryWithMargins = m_pendingGeometry.marginsAdded(m_xdgSurface->m_window->windowContentMargins());
         QMargins parentMargins = m_parent->windowContentMargins() - m_parent->clientSideMargins();
-        QRect globalGeometry = geometryWithMargins.translated(m_parent->geometry().topLeft() + QPoint(parentMargins.left(), parentMargins.top()));
+        QRectF globalGeometry = geometryWithMargins.translated(m_parent->geometry().topLeft() + QPoint(parentMargins.left(), parentMargins.top()));
         m_xdgSurface->setGeometryFromApplyConfigure(globalGeometry.topLeft(), globalGeometry.size());
     }
     resetConfiguration();
@@ -302,7 +303,7 @@ void QWaylandXdgSurface::Popup::applyConfigure()
 
 void QWaylandXdgSurface::Popup::resetConfiguration()
 {
-    m_pendingGeometry = QRect();
+    m_pendingGeometry = QRectF();
 }
 
 void QWaylandXdgSurface::Popup::grab(QWaylandInputDevice *seat, uint serial)
@@ -325,7 +326,10 @@ void QWaylandXdgSurface::Popup::reposition()
 
 void QWaylandXdgSurface::Popup::xdg_popup_configure(int32_t x, int32_t y, int32_t width, int32_t height)
 {
-    m_pendingGeometry = QRect(x, y, width, height);
+    m_pendingGeometry = QRectF(x / m_xdgSurface->compositorToClientScale(),
+                               y / m_xdgSurface->compositorToClientScale(),
+                               width / m_xdgSurface->compositorToClientScale(),
+                               height / m_xdgSurface->compositorToClientScale());
 }
 
 void QWaylandXdgSurface::Popup::xdg_popup_popup_done()
@@ -394,7 +398,7 @@ bool QWaylandXdgSurface::move(QWaylandInputDevice *inputDevice)
 bool QWaylandXdgSurface::showWindowMenu(QWaylandInputDevice *seat)
 {
     if (m_toplevel && m_toplevel->isInitialized()) {
-        QPoint position = seat->pointerSurfacePosition().toPoint();
+        const QPoint position = (seat->pointerSurfacePosition() * clientToCompositorScale()).toPoint();
         m_toplevel->show_window_menu(seat->wl_seat(), seat->serial(), position.x(), position.y());
         return true;
     }
@@ -465,12 +469,13 @@ void QWaylandXdgSurface::propagateSizeHints()
     setSizeHints();
 }
 
-void QWaylandXdgSurface::setContentGeometry(const QRect &rect)
+void QWaylandXdgSurface::setContentGeometry(const QRectF &rect)
 {
     if (!isExposed() || m_lastGeometry == rect)
         return;
 
-    set_window_geometry(rect.x(), rect.y(), rect.width(), rect.height());
+    const QRect nativeRect = scaledAndRoundedRect(rect, clientToCompositorScale());
+    set_window_geometry(nativeRect.x(), nativeRect.y(), nativeRect.width(), nativeRect.height());
     m_lastGeometry = rect;
 }
 
@@ -698,7 +703,7 @@ QString QWaylandXdgSurface::externWindowHandle()
     return m_toplevel->m_exported->handle();
 }
 
-void QWaylandXdgSurface::setWindowPosition(const QPoint &position)
+void QWaylandXdgSurface::setWindowPosition(const QPointF &position)
 {
     Q_UNUSED(position);
 
@@ -706,7 +711,7 @@ void QWaylandXdgSurface::setWindowPosition(const QPoint &position)
         m_popup->reposition();
 }
 
-void QWaylandXdgSurface::setWindowSize(const QSize &size)
+void QWaylandXdgSurface::setWindowSize(const QSizeF &size)
 {
     Q_UNUSED(size);
 
@@ -714,7 +719,7 @@ void QWaylandXdgSurface::setWindowSize(const QSize &size)
         m_popup->reposition();
 }
 
-void QWaylandXdgSurface::setWindowGeometry(const QRect &rect)
+void QWaylandXdgSurface::setWindowGeometry(const QRectF &rect)
 {
     Q_UNUSED(rect);
 
@@ -843,13 +848,15 @@ std::unique_ptr<QWaylandXdgSurface::Positioner> QWaylandXdgSurface::createPositi
     QMargins parentMargins = parent->windowContentMargins() - parent->clientSideMargins();
     placementAnchor.translate(-parentMargins.left(), -parentMargins.top());
 
-    positioner->set_anchor_rect(placementAnchor.x(),
-                                placementAnchor.y(),
-                                placementAnchor.width(),
-                                placementAnchor.height());
+    const QRect nativeAnchorRect = scaledAndRoundedRect(placementAnchor, parent->clientToCompositorScale());
+    const QSize nativeSize = windowGeometry.size() * clientToCompositorScale();
+    positioner->set_anchor_rect(nativeAnchorRect.x(),
+                                nativeAnchorRect.y(),
+                                nativeAnchorRect.width(),
+                                nativeAnchorRect.height());
     positioner->set_anchor(anchorFromEdge(anchor));
     positioner->set_gravity(gravityFromEdge(gravity));
-    positioner->set_size(windowGeometry.width(), windowGeometry.height());
+    positioner->set_size(nativeSize.width(), nativeSize.height());
     positioner->set_constraint_adjustment(constraintAdjustment);
     return positioner;
 }

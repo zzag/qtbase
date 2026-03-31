@@ -60,6 +60,7 @@ qt_internal_add_module(WaylandClient
         qwaylanddecorationplugin.cpp qwaylanddecorationplugin_p.h
         qwaylanddisplay.cpp qwaylanddisplay_p.h
         qwaylandfractionalscale.cpp qwaylandfractionalscale_p.h
+        qwaylandfractionalscalev2.cpp qwaylandfractionalscalev2_p.h
         qwaylandinputcontext.cpp qwaylandinputcontext_p.h
         qwaylandtextinputv1.cpp qwaylandtextinputv1_p.h
         qwaylandtextinputv2.cpp qwaylandtextinputv2_p.h
@@ -149,6 +150,7 @@ qt6_generate_wayland_protocol_client_sources(WaylandClient
         ${CMAKE_CURRENT_SOURCE_DIR}/../../../3rdparty/wayland/protocols/wp-primary-selection/wp-primary-selection-unstable-v1.xml
         ${CMAKE_CURRENT_SOURCE_DIR}/../../../3rdparty/wayland/protocols/xdg-output/xdg-output-unstable-v1.xml
         ${CMAKE_CURRENT_SOURCE_DIR}/../../../3rdparty/wayland/protocols/fractional-scale/fractional-scale-v1.xml
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../../3rdparty/wayland/protocols/fractional-scale/xx-fractional-scale-v2.xml
         ${CMAKE_CURRENT_SOURCE_DIR}/../../../3rdparty/wayland/protocols/viewporter/viewporter.xml
         ${CMAKE_CURRENT_SOURCE_DIR}/../../../3rdparty/wayland/protocols/wlr-data-control/wlr-data-control-unstable-v1.xml
         ${CMAKE_CURRENT_SOURCE_DIR}/../../../3rdparty/wayland/protocols/xdg-shell/xdg-shell.xml

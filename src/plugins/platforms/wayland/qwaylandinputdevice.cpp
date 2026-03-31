@@ -702,7 +702,7 @@ void QWaylandInputDevice::Pointer::pointer_enter(uint32_t serial, struct wl_surf
     mFocus = window->waylandSurface();
     connect(mFocus.data(), &QObject::destroyed, this, &Pointer::handleFocusDestroyed);
 
-    mSurfacePos = QPointF(wl_fixed_to_double(sx), wl_fixed_to_double(sy));
+    mSurfacePos = QPointF(wl_fixed_to_double(sx), wl_fixed_to_double(sy)) / window->compositorToClientScale();
     mGlobalPos = window->mapToGlobalF(mSurfacePos);
 
     mParent->mSerial = serial;
@@ -771,7 +771,7 @@ void QWaylandInputDevice::Pointer::pointer_motion(uint32_t time, wl_fixed_t surf
         return;
     }
 
-    QPointF pos(wl_fixed_to_double(surface_x), wl_fixed_to_double(surface_y));
+    QPointF pos = QPointF(wl_fixed_to_double(surface_x), wl_fixed_to_double(surface_y)) / window->compositorToClientScale();
     QPointF global = window->mapToGlobalF(pos);
 
     mSurfacePos = pos;
@@ -1485,7 +1485,7 @@ void QWaylandInputDevice::Touch::touch_down(uint32_t serial,
     mParent->mSerial = serial;
     mFocus = window;
     mParent->mQDisplay->setLastInputDevice(mParent, serial, mFocus);
-    QPointF position(wl_fixed_to_double(x), wl_fixed_to_double(y));
+    const QPointF position = QPointF(wl_fixed_to_double(x), wl_fixed_to_double(y)) / window->compositorToClientScale();
     mParent->handleTouchPoint(id, QEventPoint::Pressed, position);
 }
 
@@ -1511,7 +1511,10 @@ void QWaylandInputDevice::Touch::touch_up(uint32_t serial, uint32_t time, int32_
 
 void QWaylandInputDevice::Touch::touch_motion(uint32_t time, int32_t id, wl_fixed_t x, wl_fixed_t y)
 {
-    QPointF position(wl_fixed_to_double(x), wl_fixed_to_double(y));
+    if (!mFocus)
+        return;
+
+    const QPointF position = QPointF(wl_fixed_to_double(x), wl_fixed_to_double(y)) / mFocus->compositorToClientScale();
     mParent->mTime = time;
     mParent->handleTouchPoint(id, QEventPoint::Updated, position);
 }

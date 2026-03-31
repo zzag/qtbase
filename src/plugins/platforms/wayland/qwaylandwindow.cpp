@@ -11,6 +11,7 @@
 #include "qwaylandsurface_p.h"
 #include "qwaylandinputdevice_p.h"
 #include "qwaylandfractionalscale_p.h"
+#include "qwaylandfractionalscalev2_p.h"
 #include "qwaylandscreen_p.h"
 #include "qwaylandshellsurface_p.h"
 #include "qwaylandsubsurface_p.h"
@@ -22,6 +23,7 @@
 #include "qwaylandshellintegration_p.h"
 #include "qwaylandviewport_p.h"
 #include "qwaylandcolormanagement_p.h"
+#include "qwaylandhighdpi_p.h"
 
 #include <QtCore/QFileInfo>
 #include <QtCore/QPointer>
@@ -37,6 +39,7 @@
 #include <QtCore/QThread>
 
 #include <QtWaylandClient/private/qwayland-fractional-scale-v1.h>
+#include <QtWaylandClient/private/qwayland-xx-fractional-scale-v2.h>
 
 QT_BEGIN_NAMESPACE
 
@@ -236,16 +239,27 @@ void QWaylandWindow::initializeWlSurface(bool colorSpace)
     }
     emit wlSurfaceCreated();
 
-    if (mDisplay->fractionalScaleManager() && qApp->highDpiScaleFactorRoundingPolicy() == Qt::HighDpiScaleFactorRoundingPolicy::PassThrough) {
-        mFractionalScale.reset(new QWaylandFractionalScale(mDisplay->fractionalScaleManager()->get_fractional_scale(mSurface->object())));
+    if (qApp->highDpiScaleFactorRoundingPolicy() == Qt::HighDpiScaleFactorRoundingPolicy::PassThrough) {
+        if (auto fractionalScaleManager = mDisplay->fractionalScaleManager()) {
+            mFractionalScale.reset(new QWaylandFractionalScale(fractionalScaleManager->get_fractional_scale(mSurface->object())));
 
-        connect(mFractionalScale.data(), &QWaylandFractionalScale::preferredScaleChanged,
-                this, &QWaylandWindow::updateScale);
-    }
-    // The fractional scale manager check is needed to work around Gnome < 36 where viewports don't work
-    // Right now viewports are only necessary when a fractional scale manager is used
-    if (display()->viewporter() && display()->fractionalScaleManager()) {
-        mViewport.reset(new QWaylandViewport(display()->createViewport(this)));
+            connect(mFractionalScale.data(), &QWaylandFractionalScale::preferredScaleChanged,
+                    this, &QWaylandWindow::updateScale);
+        }
+
+        if (auto fractionalScaleManager = mDisplay->fractionalScaleManagerV2()) {
+            mFractionalScaleV2.reset(new QWaylandFractionalScaleV2(fractionalScaleManager->get_fractional_scale(mSurface->object())));
+
+            connect(mFractionalScaleV2.data(), &QWaylandFractionalScaleV2::compositorToClientScaleFactorChanged, this, [this]() {
+                mFractionalScaleV2->setClientToCompositorScale(*mFractionalScaleV2->compositorToClientScale());
+            });
+        }
+
+        // The fractional scale manager check is needed to work around Gnome < 36 where viewports don't work
+        // Right now viewports are only necessary when a fractional scale manager is used
+        if (display()->viewporter() && display()->fractionalScaleManager()) {
+            mViewport.reset(new QWaylandViewport(display()->createViewport(this)));
+        }
     }
 
     if (colorSpace) {
@@ -332,6 +346,7 @@ void QWaylandWindow::reset()
             mSurface.reset();
             mViewport.reset();
             mFractionalScale.reset();
+            mFractionalScaleV2.reset();
             mColorManagementSurface.reset();
             mPendingImageDescription.reset();
         }
@@ -473,7 +488,8 @@ void QWaylandWindow::setGeometry_helper(const QRect &rect)
 
     if (mSubSurfaceWindow) {
         QMargins m = static_cast<QWaylandWindow *>(QPlatformWindow::parent())->clientSideMargins();
-        mSubSurfaceWindow->set_position(rect.x() + m.left(), rect.y() + m.top());
+        mSubSurfaceWindow->set_position(std::round((rect.x() + m.left()) * clientToCompositorScale()),
+                                        std::round((rect.y() + m.top()) * clientToCompositorScale()));
 
         QWaylandWindow *parentWindow = mSubSurfaceWindow->parent();
         if (parentWindow && parentWindow->isExposed()) {
@@ -553,7 +569,7 @@ void QWaylandWindow::updateInputRegion()
     if (mInputRegion.isEmpty() && !mTransparentInputRegion) {
         mSurface->set_input_region(nullptr);
     } else {
-        struct ::wl_region *region = mDisplay->createRegion(mInputRegion);
+        struct ::wl_region *region = mDisplay->createRegion(scaledAndRoundedRegion(mInputRegion, clientToCompositorScale()));
         mSurface->set_input_region(region);
         wl_region_destroy(region);
     }
@@ -562,16 +578,20 @@ void QWaylandWindow::updateInputRegion()
 void QWaylandWindow::updateViewport()
 {
     if (!surfaceSize().isEmpty())
-        mViewport->setDestination(surfaceSize());
+        mViewport->setDestination(surfaceSize() * clientToCompositorScale());
 }
 
-void QWaylandWindow::setGeometryFromApplyConfigure(const QPoint &globalPosition, const QSize &sizeWithMargins)
+void QWaylandWindow::setGeometryFromApplyConfigure(const QPointF &globalPosition, const QSizeF &sizeWithMargins)
 {
+    // TODO: The fractional part is lost, which can lead to gaps between maximized windows and the panel.
+    const QPoint roundedGlobalPosition = globalPosition.toPoint();
+    const QSize roundedSizeWithMargins = sizeWithMargins.toSize();
+
     QMargins margins = clientSideMargins();
 
-    QPoint positionWithoutMargins = globalPosition + QPoint(margins.left(), margins.top());
-    int widthWithoutMargins = qMax(sizeWithMargins.width() - (margins.left() + margins.right()), 1);
-    int heightWithoutMargins = qMax(sizeWithMargins.height() - (margins.top() + margins.bottom()), 1);
+    QPoint positionWithoutMargins = roundedGlobalPosition + QPoint(margins.left(), margins.top());
+    const int widthWithoutMargins = qMax(roundedSizeWithMargins.width() - (margins.left() + margins.right()), 1);
+    const int heightWithoutMargins = qMax(roundedSizeWithMargins.height() - (margins.top() + margins.bottom()), 1);
 
     QRect geometry(positionWithoutMargins, QSize(widthWithoutMargins, heightWithoutMargins));
 
@@ -580,10 +600,13 @@ void QWaylandWindow::setGeometryFromApplyConfigure(const QPoint &globalPosition,
     mInResizeFromApplyConfigure = false;
 }
 
-void QWaylandWindow::repositionFromApplyConfigure(const QPoint &globalPosition)
+void QWaylandWindow::repositionFromApplyConfigure(const QPointF &globalPosition)
 {
+    // TODO: The fractional part is lost, which can lead to gaps between maximized windows and the panel.
+    const QPoint roundedGlobalPosition = globalPosition.toPoint();
+
     QMargins margins = clientSideMargins();
-    QPoint positionWithoutMargins = globalPosition + QPoint(margins.left(), margins.top());
+    QPoint positionWithoutMargins = roundedGlobalPosition + QPoint(margins.left(), margins.top());
 
     QRect geometry(positionWithoutMargins, windowGeometry().size());
     mInResizeFromApplyConfigure = true;
@@ -591,14 +614,18 @@ void QWaylandWindow::repositionFromApplyConfigure(const QPoint &globalPosition)
     mInResizeFromApplyConfigure = false;
 }
 
-void QWaylandWindow::resizeFromApplyConfigure(const QSize &sizeWithMargins, const QPoint &offset)
+void QWaylandWindow::resizeFromApplyConfigure(const QSizeF &sizeWithMargins, const QPointF &offset)
 {
+    // TODO: The fractional part is lost, which can lead to gaps between maximized windows and the panel.
+    const QPoint roundedOffset = offset.toPoint();
+    const QSize roundedSizeWithMargins = sizeWithMargins.toSize();
+
     QMargins margins = clientSideMargins();
-    int widthWithoutMargins = qMax(sizeWithMargins.width() - (margins.left() + margins.right()), 1);
-    int heightWithoutMargins = qMax(sizeWithMargins.height() - (margins.top() + margins.bottom()), 1);
+    const int widthWithoutMargins = qMax(roundedSizeWithMargins.width() - (margins.left() + margins.right()), 1);
+    const int heightWithoutMargins = qMax(roundedSizeWithMargins.height() - (margins.top() + margins.bottom()), 1);
     QRect geometry(windowGeometry().topLeft(), QSize(widthWithoutMargins, heightWithoutMargins));
 
-    mOffset += offset;
+    mOffset += roundedOffset;
     mInResizeFromApplyConfigure = true;
     setGeometry(geometry);
     mInResizeFromApplyConfigure = false;
@@ -751,10 +778,13 @@ void QWaylandWindow::attach(QWaylandBuffer *buffer, int x, int y)
         handleUpdate();
         buffer->setBusy(true);
         if (mSurface->version() >= WL_SURFACE_OFFSET_SINCE_VERSION) {
-            mSurface->offset(x, y);
+            mSurface->offset(std::round(x * clientToCompositorScale()),
+                             std::round(y * clientToCompositorScale()));
             mSurface->attach(buffer->buffer(), 0, 0);
         } else {
-            mSurface->attach(buffer->buffer(), x, y);
+            mSurface->attach(buffer->buffer(),
+                             std::round(x * clientToCompositorScale()),
+                             std::round(y * clientToCompositorScale()));
         }
     } else {
         mSurface->attach(nullptr, 0, 0);
@@ -781,7 +811,8 @@ void QWaylandWindow::damage(const QRect &rect)
         mSurface->damage_buffer(bufferRect.x(), bufferRect.y(), bufferRect.width(),
                                 bufferRect.height());
     } else {
-        mSurface->damage(rect.x(), rect.y(), rect.width(), rect.height());
+        const QRect nativeRect = scaledAndRoundedRect(rect, clientToCompositorScale());
+        mSurface->damage(nativeRect.x(), nativeRect.y(), nativeRect.width(), nativeRect.height());
     }
 }
 
@@ -823,8 +854,10 @@ void QWaylandWindow::commit(QWaylandBuffer *buffer, const QRegion &damage)
                                     bufferRect.height());
         }
     } else {
-        for (const QRect &rect: damage)
-            mSurface->damage(rect.x(), rect.y(), rect.width(), rect.height());
+        for (const QRect &rect : damage) {
+            const QRect nativeRect = scaledAndRoundedRect(rect, clientToCompositorScale());
+            mSurface->damage(nativeRect.x(), nativeRect.y(), nativeRect.width(), nativeRect.height());
+        }
     }
     Q_ASSERT(!buffer->committed());
     buffer->setCommitted();
@@ -1176,7 +1209,8 @@ bool QWaylandWindow::createDecoration()
         for (QWaylandSubSurface *subsurf : std::as_const(mChildren)) {
             QPoint pos = subsurf->window()->geometry().topLeft();
             QMargins m = frameMargins();
-            subsurf->set_position(pos.x() + m.left(), pos.y() + m.top());
+            subsurf->set_position(std::round((pos.x() + m.left()) * clientToCompositorScale()),
+                                  std::round((pos.y() + m.top()) * clientToCompositorScale()));
         }
         setGeometry(geometry());
 
@@ -1652,6 +1686,22 @@ qreal QWaylandWindow::devicePixelRatio() const
     return mScale.value_or(waylandScreen() ? waylandScreen()->scale() : 1);
 }
 
+qreal QWaylandWindow::compositorToClientScale() const
+{
+    if (mFractionalScaleV2)
+        return mFractionalScaleV2->compositorToClientScale().value_or(1.0);
+
+    return 1.0;
+}
+
+qreal QWaylandWindow::clientToCompositorScale() const
+{
+    if (mFractionalScaleV2)
+        return mFractionalScaleV2->clientToCompositorScale().value_or(1.0);
+
+    return 1.0;
+}
+
 bool QWaylandWindow::setMouseGrabEnabled(bool grab)
 {
     if (window()->type() != Qt::Popup) {
@@ -1867,7 +1917,7 @@ void QWaylandWindow::setOpaqueArea(const QRegion &opaqueArea)
 
     mOpaqueArea = translatedOpaqueArea;
 
-    struct ::wl_region *region = mDisplay->createRegion(translatedOpaqueArea);
+    struct ::wl_region *region = mDisplay->createRegion(scaledAndRoundedRegion(translatedOpaqueArea, clientToCompositorScale()));
     mSurface->set_opaque_region(region);
     wl_region_destroy(region);
 }

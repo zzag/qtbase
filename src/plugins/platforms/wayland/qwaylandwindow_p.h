@@ -60,6 +60,7 @@ class QWaylandPointerGestureSwipeEvent;
 class QWaylandPointerGesturePinchEvent;
 class QWaylandSurface;
 class QWaylandFractionalScale;
+class QWaylandFractionalScaleV2;
 class QWaylandViewport;
 class ColorManagementSurface;
 class ImageDescription;
@@ -106,9 +107,9 @@ public:
 
     bool allowsIndependentThreadedRendering() const override;
 
-    void resizeFromApplyConfigure(const QSize &sizeWithMargins, const QPoint &offset = {0, 0});
-    void repositionFromApplyConfigure(const QPoint &position);
-    void setGeometryFromApplyConfigure(const QPoint &globalPosition, const QSize &sizeWithMargins);
+    void resizeFromApplyConfigure(const QSizeF &sizeWithMargins, const QPointF &offset = {0, 0});
+    void repositionFromApplyConfigure(const QPointF &position);
+    void setGeometryFromApplyConfigure(const QPointF &globalPosition, const QSizeF &sizeWithMargins);
 
     void applyConfigureWhenPossible(); //rename to possible?
 
@@ -170,6 +171,9 @@ public:
 
     qreal scale() const;
     qreal devicePixelRatio() const override;
+
+    qreal clientToCompositorScale() const override final;
+    qreal compositorToClientScale() const override final;
 
     void requestActivateWindow() override;
     bool isExposed() const override;
@@ -285,6 +289,7 @@ protected:
     mutable QReadWriteLock mSurfaceLock;
     QScopedPointer<QWaylandSurface> mSurface;
     QScopedPointer<QWaylandFractionalScale> mFractionalScale;
+    QScopedPointer<QWaylandFractionalScaleV2> mFractionalScaleV2;
     QScopedPointer<QWaylandViewport> mViewport;
 
     QWaylandShellIntegration *mShellIntegration = nullptr;

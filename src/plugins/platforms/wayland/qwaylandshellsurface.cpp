@@ -36,23 +36,23 @@ wl_surface *QWaylandShellSurface::wlSurface()
     return m_window ? m_window->wlSurface() : nullptr;
 }
 
-void QWaylandShellSurface::setWindowGeometry(const QRect &rect)
+void QWaylandShellSurface::setWindowGeometry(const QRectF &rect)
 {
     setWindowPosition(rect.topLeft());
     setWindowSize(rect.size());
 }
 
-void QWaylandShellSurface::resizeFromApplyConfigure(const QSize &sizeWithMargins, const QPoint &offset)
+void QWaylandShellSurface::resizeFromApplyConfigure(const QSizeF &sizeWithMargins, const QPointF &offset)
 {
     m_window->resizeFromApplyConfigure(sizeWithMargins, offset);
 }
 
-void QWaylandShellSurface::repositionFromApplyConfigure(const QPoint &position)
+void QWaylandShellSurface::repositionFromApplyConfigure(const QPointF &position)
 {
     m_window->repositionFromApplyConfigure(position);
 }
 
-void QWaylandShellSurface::setGeometryFromApplyConfigure(const QPoint &globalPosition, const QSize &sizeWithMargins)
+void QWaylandShellSurface::setGeometryFromApplyConfigure(const QPointF &globalPosition, const QSizeF &sizeWithMargins)
 {
     m_window->setGeometryFromApplyConfigure(globalPosition, sizeWithMargins);
 }
@@ -95,6 +95,35 @@ void QWaylandShellSurface::requestXdgActivationToken(quint32 serial)
 bool QWaylandShellSurface::commitSurfaceRole() const
 {
     return true;
+}
+
+/*!
+    \internal
+
+    The scale factor that the compositor uses to scale points, sizes, rects, and
+    regions in events sent to the client. When processing an event, the client should
+    divide event arguments by this scale factor.
+
+    After dividing a value by this scale factor, the fractional part should be kept
+    as is. In other words, the final logical value should not be rounded unless it is
+    stated otherwise.
+*/
+qreal QWaylandShellSurface::compositorToClientScale() const
+{
+    return m_window->compositorToClientScale();
+}
+
+/*!
+    \internal
+
+    The scale factor that the client uses to scale points, sizes, rects, and
+    regions when sending requests to the compositor.
+
+    The client is expected to multiply a value by this scale factor and then round it.
+*/
+qreal QWaylandShellSurface::clientToCompositorScale() const
+{
+    return m_window->clientToCompositorScale();
 }
 
 }

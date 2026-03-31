@@ -461,7 +461,14 @@ void QWaylandTabletToolV2::zwp_tablet_tool_v2_up()
 
 void QWaylandTabletToolV2::zwp_tablet_tool_v2_motion(wl_fixed_t x, wl_fixed_t y)
 {
-    m_pending.surfacePosition = QPointF(wl_fixed_to_double(x), wl_fixed_to_double(y));
+    if (Q_UNLIKELY(!m_pending.proximitySurface))
+        return;
+
+    QWaylandWindow *window = m_pending.proximitySurface->waylandWindow();
+    if (Q_UNLIKELY(!window))
+        return;
+
+    m_pending.surfacePosition = QPointF(wl_fixed_to_double(x), wl_fixed_to_double(y)) / window->compositorToClientScale();
 }
 
 void QWaylandTabletToolV2::zwp_tablet_tool_v2_pressure(uint32_t pressure)

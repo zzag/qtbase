@@ -54,6 +54,7 @@
 #include <QtWaylandClient/private/qwayland-fractional-scale-v1.h>
 #include <QtWaylandClient/private/qwayland-viewporter.h>
 #include <QtWaylandClient/private/qwayland-cursor-shape-v1.h>
+#include <QtWaylandClient/private/qwayland-xx-fractional-scale-v2.h>
 #include <QtWaylandClient/private/qwayland-xx-session-management-v1.h>
 #include <QtWaylandClient/private/qwayland-xdg-system-bell-v1.h>
 #include <QtWaylandClient/private/qwayland-xdg-toplevel-drag-v1.h>
@@ -773,6 +774,11 @@ void QWaylandDisplay::registry_global(uint32_t id, const QString &interface, uin
         mGlobals.fractionalScaleManager.reset(
                 new WithDestructor<QtWayland::wp_fractional_scale_manager_v1,
                                    wp_fractional_scale_manager_v1_destroy>(registry, id, 1));
+    } else if (interface == QLatin1String(QtWayland::xx_fractional_scale_manager_v2::interface()->name)
+               && qEnvironmentVariableIntValue("QT_WAYLAND_ENABLE_XX_FRACTIONAL_SCALE_V2") > 0) {
+        mGlobals.fractionalScaleManagerV2.reset(
+                new WithDestructor<QtWayland::xx_fractional_scale_manager_v2,
+                                   xx_fractional_scale_manager_v2_destroy>(registry, id, 1));
     } else if (interface == QLatin1String("wp_viewporter")) {
         mGlobals.viewporter.reset(
                 new WithDestructor<QtWayland::wp_viewporter, wp_viewporter_destroy>(

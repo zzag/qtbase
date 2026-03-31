@@ -55,7 +55,7 @@ public:
     void applyConfigure() override;
     bool wantsDecorations() const override;
     void propagateSizeHints() override;
-    void setContentGeometry(const QRect &rect) override;
+    void setContentGeometry(const QRectF &rect) override;
     bool requestActivate() override;
     bool requestActivateOnShow() override;
     void setXdgActivationToken(const QString &token) override;
@@ -63,9 +63,9 @@ public:
     void setAlertState(bool enabled) override;
     bool isAlertState() const override { return m_alertState; }
     QString externWindowHandle() override;
-    void setWindowPosition(const QPoint &position) override;
-    void setWindowSize(const QSize &size) override;
-    void setWindowGeometry(const QRect &rect) override;
+    void setWindowPosition(const QPointF &position) override;
+    void setWindowSize(const QSizeF &size) override;
+    void setWindowGeometry(const QRectF &rect) override;
     void setIcon(const QIcon &icon) override;
 
     void setSizeHints();
@@ -98,13 +98,13 @@ private:
         static resize_edge convertToResizeEdges(Qt::Edges edges);
 
         struct {
-            QSize bounds = {0, 0};
-            QSize size = {0, 0};
+            QSizeF bounds = {0, 0};
+            QSizeF size = {0, 0};
             Qt::WindowStates states = Qt::WindowNoState;
             bool suspended = false;
         }  m_pending, m_applied;
         QWaylandWindow::ToplevelWindowTilingStates m_toplevelStates = QWaylandWindow::WindowNoState;
-        QSize m_normalSize;
+        QSizeF m_normalSize;
 
         QWaylandXdgSurface *m_xdgSurface = nullptr;
         QWaylandXdgToplevelDecorationV1 *m_decoration = nullptr;
@@ -141,7 +141,7 @@ private:
         QWaylandWindow *m_parent = nullptr;
         bool m_grabbing = false;
 
-        QRect m_pendingGeometry;
+        QRectF m_pendingGeometry;
         bool m_waitingForReposition = false;
         uint32_t m_waitingForRepositionSerial = 0;
     };
@@ -161,7 +161,7 @@ private:
     QString m_activationToken;
     QString m_appId;
     bool m_alertState = false;
-    QRect m_lastGeometry;
+    QRectF m_lastGeometry;
 
     friend class QWaylandXdgShell;
 };

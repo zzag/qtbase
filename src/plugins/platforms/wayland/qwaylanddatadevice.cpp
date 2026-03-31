@@ -328,13 +328,18 @@ void QWaylandDataDevice::dragSourceCancelled()
 QPoint QWaylandDataDevice::calculateDragPosition(int x, int y, QWindow *wnd) const
 {
     QPoint pnt(wl_fixed_to_int(x), wl_fixed_to_int(y));
-    if (wnd) {
-        QWaylandWindow *wwnd = static_cast<QWaylandWindow*>(m_dragWindow->handle());
-        if (wwnd && wwnd->decoration()) {
-            pnt -= QPoint(wwnd->decoration()->margins().left(),
-                          wwnd->decoration()->margins().top());
-        }
-    }
+    if (!wnd)
+        return pnt;
+
+    QWaylandWindow *wwnd = static_cast<QWaylandWindow *>(m_dragWindow->handle());
+    if (!wwnd)
+        return pnt;
+
+    pnt /= wwnd->compositorToClientScale();
+
+    if (wwnd->decoration())
+        pnt -= QPoint(wwnd->decoration()->margins().left(), wwnd->decoration()->margins().top());
+
     return pnt;
 }
 
