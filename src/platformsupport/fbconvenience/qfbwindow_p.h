@@ -32,7 +32,7 @@ public:
     void raise() override;
     void lower() override;
 
-    void setGeometry(const QRect &rect) override;
+    void setGeometry(const QRectF &rect) override;
     void setVisible(bool visible) override;
 
     void setWindowState(Qt::WindowStates state) override;
@@ -56,7 +56,7 @@ protected:
     friend class QFbScreen;
 
     QFbBackingStore *mBackingStore;
-    QRect mOldGeometry;
+    QRectF mOldGeometry;
     Qt::WindowFlags mWindowFlags;
     Qt::WindowStates mWindowState;
 

@@ -229,9 +229,9 @@ void QEglFSWindow::setVisible(bool visible)
         QWindowSystemInterface::flushWindowSystemEvents(QEventLoop::ExcludeUserInputEvents);
 }
 
-void QEglFSWindow::setGeometry(const QRect &r)
+void QEglFSWindow::setGeometry(const QRectF &r)
 {
-    QRect rect = r;
+    QRect rect = r.toRect();
     if (m_flags.testFlag(HasNativeWindow))
         rect = screen()->availableGeometry();
 
@@ -239,12 +239,12 @@ void QEglFSWindow::setGeometry(const QRect &r)
 
     QWindowSystemInterface::handleGeometryChange(window(), rect);
 
-    const QRect lastReportedGeometry = qt_window_private(window())->geometry;
+    const QRectF lastReportedGeometry = qt_window_private(window())->geometry;
     if (rect != lastReportedGeometry)
-        QWindowSystemInterface::handleExposeEvent(window(), QRect(QPoint(0, 0), rect.size()));
+        QWindowSystemInterface::handleExposeEvent(window(), QRect(0, 0, std::ceil(rect.width()), std::ceil(rect.height())));
 }
 
-QRect QEglFSWindow::geometry() const
+QRectF QEglFSWindow::geometry() const
 {
     // For yet-to-become-fullscreen windows report the geometry covering the entire
     // screen. This is particularly important for Quick where the root object may get

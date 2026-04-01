@@ -44,7 +44,7 @@ class QMargins;
 class QPlatformWindowPrivate
 {
 public:
-    QRect rect;
+    QRectF rect;
     QBasicTimer updateTimer;
 };
 

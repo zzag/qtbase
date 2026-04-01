@@ -70,14 +70,14 @@ void QWaylandAbstractDecoration::setWaylandWindow(QWaylandWindow *window)
 // |   |
 // -----
 // I.e. the top and bottom extends into the corners
-static QRegion marginsRegion(const QSize &size, const QMargins &margins)
+static QRegion marginsRegion(const QSizeF &size, const QMargins &margins)
 {
     QRegion r;
 
-    r += QRect(0, 0, size.width(), margins.top()); // top
-    r += QRect(0, size.height()-margins.bottom(), size.width(), margins.bottom()); //bottom
-    r += QRect(0, margins.top(), margins.left(), size.height()); //left
-    r += QRect(size.width()-margins.left(), margins.top(), margins.right(), size.height()-margins.top()); // right
+    r += QRectF(0, 0, size.width(), margins.top()).toAlignedRect(); // top
+    r += QRectF(0, size.height()-margins.bottom(), size.width(), margins.bottom()).toAlignedRect(); //bottom
+    r += QRectF(0, margins.top(), margins.left(), size.height()).toAlignedRect(); //left
+    r += QRectF(size.width()-margins.left(), margins.top(), margins.right(), size.height()-margins.top()).toAlignedRect(); // right
     return r;
 }
 
@@ -88,7 +88,7 @@ const QImage &QWaylandAbstractDecoration::contentImage()
         // Update the decoration backingstore
 
         const qreal bufferScale = waylandWindow()->scale();
-        const QSize imageSize = waylandWindow()->surfaceSize() * bufferScale;
+        const QSize imageSize = (waylandWindow()->surfaceSize() * bufferScale).toSize();
         d->m_decorationContentImage = QImage(imageSize, QImage::Format_ARGB32_Premultiplied);
         // Only scale by buffer scale, not QT_SCALE_FACTOR etc.
         d->m_decorationContentImage.setDevicePixelRatio(bufferScale);

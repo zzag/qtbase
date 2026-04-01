@@ -103,7 +103,7 @@ public:
     inline QIcon windowIcon() const;
     void setWindowIcon(const QIcon &icon) override;
 
-    void setGeometry(const QRect &rect) override;
+    void setGeometry(const QRectF &rect) override;
 
     bool allowsIndependentThreadedRendering() const override;
 
@@ -115,7 +115,7 @@ public:
 
     void attach(QWaylandBuffer *buffer, int x, int y);
     void attachOffset(QWaylandBuffer *buffer);
-    QPoint attachOffset() const;
+    QPointF attachOffset() const;
 
     void damage(const QRect &rect);
 
@@ -129,9 +129,9 @@ public:
     QMargins frameMargins() const override;
     QMargins clientSideMargins() const;
     void setCustomMargins(const QMargins &margins) override;
-    QSize surfaceSize() const;
+    QSizeF surfaceSize() const;
     QMargins windowContentMargins() const;
-    QRect windowContentGeometry() const;
+    QRectF windowContentGeometry() const;
     QPointF mapFromWlSurface(const QPointF &surfacePosition) const;
 
     QWaylandSurface *waylandSurface() const { return mSurface.data(); }
@@ -281,7 +281,7 @@ protected:
 
     // this should be called directly for buffer size changes only
     // use updateExposure for anything affecting the on/off state
-    void sendExposeEvent(const QRect &rect);
+    void sendExposeEvent(const QRectF &rect);
 
     QWaylandDisplay *mDisplay = nullptr;
 
@@ -339,7 +339,7 @@ protected:
     int mFrameCallbackTimeout = 100;
     QVariantMap m_properties;
 
-    QPoint mOffset;
+    QPointF mOffset;
     std::optional<qreal> mScale = std::nullopt;
 
     QString mWindowTitle;
@@ -375,7 +375,7 @@ protected:
 #endif
 
 private:
-    void setGeometry_helper(const QRect &rect);
+    void setGeometry_helper(const QRectF &rect);
     void synthesizeExposeOnGeometryChange();
     void initWindow();
     bool shouldCreateShellSurface() const;
@@ -401,7 +401,7 @@ private:
 
     bool mInResizeFromApplyConfigure = false;
     bool lastVisible = false;
-    QRect mLastExposeGeometry;
+    QRectF mLastExposeGeometry;
     std::unique_ptr<ImageDescription> mPendingImageDescription;
 
     static const wl_callback_listener callbackListener;
@@ -426,7 +426,7 @@ inline QIcon QWaylandWindow::windowIcon() const
     return mWindowIcon;
 }
 
-inline QPoint QWaylandWindow::attachOffset() const
+inline QPointF QWaylandWindow::attachOffset() const
 {
     return mOffset;
 }

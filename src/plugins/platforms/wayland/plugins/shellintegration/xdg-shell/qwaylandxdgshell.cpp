@@ -784,7 +784,7 @@ std::unique_ptr<QWaylandXdgSurface::Positioner> QWaylandXdgSurface::createPositi
     std::unique_ptr<Positioner> positioner(new Positioner(m_shell));
 
     // Default case, map the guessed global position to a relative position
-    QRect placementAnchor = QRect(m_window->geometry().topLeft() - parent->geometry().topLeft(), QSize(1,1));
+    QRectF placementAnchor = QRectF(m_window->geometry().topLeft() - parent->geometry().topLeft(), QSize(1,1));
     Qt::Edges anchor = Qt::TopEdge | Qt::RightEdge;
     Qt::Edges gravity = Qt::BottomEdge | Qt::RightEdge;
     uint32_t constraintAdjustment = QtWayland::xdg_positioner::constraint_adjustment_slide_x | QtWayland::xdg_positioner::constraint_adjustment_slide_y;
@@ -844,12 +844,12 @@ std::unique_ptr<QWaylandXdgSurface::Positioner> QWaylandXdgSurface::createPositi
         constraintAdjustment = constraintAdjustmentVariant.toUInt();
 
     // set_popup expects a position relative to the parent
-    QRect windowGeometry = m_window->windowContentGeometry();
+    QRectF windowGeometry = m_window->windowContentGeometry();
     QMargins parentMargins = parent->windowContentMargins() - parent->clientSideMargins();
     placementAnchor.translate(-parentMargins.left(), -parentMargins.top());
 
     const QRect nativeAnchorRect = scaledAndRoundedRect(placementAnchor, parent->clientToCompositorScale());
-    const QSize nativeSize = windowGeometry.size() * clientToCompositorScale();
+    const QSize nativeSize = (windowGeometry.size() * clientToCompositorScale()).toSize();
     positioner->set_anchor_rect(nativeAnchorRect.x(),
                                 nativeAnchorRect.y(),
                                 nativeAnchorRect.width(),

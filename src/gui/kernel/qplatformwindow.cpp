@@ -98,7 +98,7 @@ QSurfaceFormat QPlatformWindow::format() const
     as returned by frameMargins(). You can detect this in the plugin by checking
     qt_window_private(window())->positionPolicy.
 */
-void QPlatformWindow::setGeometry(const QRect &rect)
+void QPlatformWindow::setGeometry(const QRectF &rect)
 {
     Q_D(QPlatformWindow);
     d->rect = rect;
@@ -107,7 +107,7 @@ void QPlatformWindow::setGeometry(const QRect &rect)
 /*!
     Returns the current geometry of a window
 */
-QRect QPlatformWindow::geometry() const
+QRectF QPlatformWindow::geometry() const
 {
     Q_D(const QPlatformWindow);
     return d->rect;
@@ -149,7 +149,7 @@ QMargins QPlatformWindow::safeAreaMargins() const
 void QPlatformWindow::setVisible(bool visible)
 {
     Q_UNUSED(visible);
-    QRect rect(QPoint(), geometry().size());
+    const QRect rect = QRectF(QPoint(), geometry().size()).toAlignedRect();
     QWindowSystemInterface::handleExposeEvent(window(), rect);
     QWindowSystemInterface::flushWindowSystemEvents();
 }
@@ -225,7 +225,7 @@ QPoint QPlatformWindow::mapToGlobal(const QPoint &pos) const
     const QPlatformWindow *p = this;
     QPoint result = pos;
     while (p) {
-        result += p->geometry().topLeft();
+        result += p->geometry().topLeft().toPoint();
         p = p->parent();
     }
     return result;
@@ -233,16 +233,24 @@ QPoint QPlatformWindow::mapToGlobal(const QPoint &pos) const
 
 QPointF QPlatformWindow::mapToGlobalF(const QPointF &pos) const
 {
-    const QPoint posPt = pos.toPoint();
-    const QPointF delta = pos - posPt;
-    return mapToGlobal(posPt) + delta;
+    const QPlatformWindow *p = this;
+    QPointF result = pos;
+    while (p) {
+        result += p->geometry().topLeft();
+        p = p->parent();
+    }
+    return result;
 }
 
 QPointF QPlatformWindow::mapFromGlobalF(const QPointF &pos) const
 {
-    const QPoint posPt = pos.toPoint();
-    const QPointF delta = pos - posPt;
-    return mapFromGlobal(posPt) + delta;
+    const QPlatformWindow *p = this;
+    QPointF result = pos;
+    while (p) {
+        result -= p->geometry().topLeft();
+        p = p->parent();
+    }
+    return result;
 }
 
 /*!
@@ -257,7 +265,7 @@ QPoint QPlatformWindow::mapFromGlobal(const QPoint &pos) const
     const QPlatformWindow *p = this;
     QPoint result = pos;
     while (p) {
-        result -= p->geometry().topLeft();
+        result -= p->geometry().topLeft().toPoint();
         p = p->parent();
     }
     return result;

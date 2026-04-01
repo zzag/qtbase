@@ -77,7 +77,7 @@ public:
 
     void *vulkanSurfacePtr();
 
-    void setGeometry(const QRect &r) override;
+    void setGeometry(const QRectF &r) override;
 
 private:
     VkSurfaceKHR m_surface = VK_NULL_HANDLE;
@@ -108,16 +108,16 @@ void *QVkKhrDisplayWindow::vulkanSurfacePtr()
     return &m_surface;
 }
 
-void QVkKhrDisplayWindow::setGeometry(const QRect &)
+void QVkKhrDisplayWindow::setGeometry(const QRectF &)
 {
     // We only support full-screen windows
     QRect rect(screen()->availableGeometry());
     QWindowSystemInterface::handleGeometryChange(window(), rect);
     QPlatformWindow::setGeometry(rect);
 
-    const QRect lastReportedGeometry = qt_window_private(window())->geometry;
+    const QRectF lastReportedGeometry = qt_window_private(window())->geometry;
     if (rect != lastReportedGeometry)
-        QWindowSystemInterface::handleExposeEvent(window(), QRect(QPoint(0, 0), rect.size()));
+        QWindowSystemInterface::handleExposeEvent(window(), QRect(0, 0, std::ceil(rect.width()), std::ceil(rect.height())));
 }
 
 // does not actually support raster content, just paint into a QImage and that's it for now

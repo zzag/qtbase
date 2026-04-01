@@ -64,7 +64,7 @@ public:
     void scheduleUpdate();
 
 public slots:
-    virtual void setDirty(const QRect &rect);
+    virtual void setDirty(const QRectF &rect);
     void setPhysicalSize(const QSize &size);
     void setGeometry(const QRect &rect);
 

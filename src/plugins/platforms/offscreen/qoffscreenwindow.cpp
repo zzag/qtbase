@@ -38,7 +38,7 @@ QOffscreenWindow::~QOffscreenWindow()
     m_windowForWinIdHash.remove(m_winId);
 }
 
-void QOffscreenWindow::setGeometry(const QRect &rect)
+void QOffscreenWindow::setGeometry(const QRectF &rect)
 {
     if (window()->windowState() != Qt::WindowNoState)
         return;
@@ -51,9 +51,9 @@ void QOffscreenWindow::setGeometry(const QRect &rect)
     m_normalGeometry = geometry();
 }
 
-void QOffscreenWindow::setGeometryImpl(const QRect &rect)
+void QOffscreenWindow::setGeometryImpl(const QRectF &rect)
 {
-    QRect adjusted = rect;
+    QRectF adjusted = rect;
     if (adjusted.width() <= 0)
         adjusted.setWidth(1);
     if (adjusted.height() <= 0)
@@ -73,7 +73,7 @@ void QOffscreenWindow::setGeometryImpl(const QRect &rect)
 
     if (m_visible) {
         QWindowSystemInterface::handleGeometryChange(window(), adjusted);
-        QWindowSystemInterface::handleExposeEvent(window(), QRect(QPoint(), adjusted.size()));
+        QWindowSystemInterface::handleExposeEvent(window(), QRectF(QPoint(), adjusted.size()).toAlignedRect());
     } else {
         m_pendingGeometryChangeOnShow = true;
     }
@@ -96,8 +96,8 @@ void QOffscreenWindow::setVisible(bool visible)
 
     const QPoint cursorPos = QCursor::pos();
     if (visible) {
-        QRect rect(QPoint(), geometry().size());
-        QWindowSystemInterface::handleExposeEvent(window(), rect);
+        const QRectF rect(QPoint(), geometry().size());
+        QWindowSystemInterface::handleExposeEvent(window(), rect.toAlignedRect());
         if (QWindowPrivate::get(window())->isPopup() && QGuiApplicationPrivate::currentMouseWindow) {
             QWindowSystemInterface::handleLeaveEvent<QWindowSystemInterface::SynchronousDelivery>
                 (QGuiApplicationPrivate::currentMouseWindow);

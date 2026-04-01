@@ -24,7 +24,7 @@ QMinimalEglWindow::QMinimalEglWindow(QWindow *w)
     w->setSurfaceType(QSurface::OpenGLSurface);
 }
 
-void QMinimalEglWindow::setGeometry(const QRect &)
+void QMinimalEglWindow::setGeometry(const QRectF &)
 {
     // We only support full-screen windows
     QRect rect(screen()->availableGeometry());

@@ -195,14 +195,18 @@ public:
     void setSizeIncrement(const QSize &size);
 
     QRect geometry() const;
+    QRectF geometryF() const;
 
     QMargins frameMargins() const;
     QRect frameGeometry() const;
+    QRectF frameGeometryF() const;
 
+    QPointF framePositionF() const;
     QPoint framePosition() const;
     void setFramePosition(const QPoint &point);
     void setFramePosition(int x, int y)
     { setFramePosition(QPoint(x, y)); }
+    void setFramePositionF(const QPointF &point);
 
     QMargins safeAreaMargins() const;
 
@@ -212,12 +216,16 @@ public:
     inline int y() const { return geometry().y(); }
 
     QSize size() const override { return geometry().size(); }
+    QSizeF sizeF() const { return geometryF().size(); }
     inline QPoint position() const { return geometry().topLeft(); }
+    inline QPointF positionF() const { return geometryF().topLeft(); }
 
+    void setPosition(const QPointF &pt);
     void setPosition(const QPoint &pt);
     void setPosition(int posx, int posy);
 
     void resize(const QSize &newSize);
+    void resize(const QSizeF &newSize);
     void resize(int w, int h);
 
     void setFilePath(const QString &filePath);
@@ -286,6 +294,7 @@ public Q_SLOTS:
     void setHeight(int arg);
     void setGeometry(int posx, int posy, int w, int h);
     void setGeometry(const QRect &rect);
+    void setGeometryF(const QRectF &rect);
 
     void setMinimumWidth(int w);
     void setMinimumHeight(int h);

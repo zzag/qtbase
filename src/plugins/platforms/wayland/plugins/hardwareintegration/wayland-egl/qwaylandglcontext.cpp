@@ -192,9 +192,9 @@ public:
     {
         QOpenGLTextureCache *cache = QOpenGLTextureCache::cacheForContext(m_context->context());
 
-        QSize surfaceSize = window->surfaceSize();
+        const QSizeF surfaceSize = window->surfaceSize();
         qreal scale = window->scale() ;
-        glViewport(0, 0, surfaceSize.width() * scale, surfaceSize.height() * scale);
+        glViewport(0, 0, std::round(surfaceSize.width() * scale), std::round(surfaceSize.height() * scale));
 
         //Draw Decoration
         if (auto *decoration = window->decoration()) {
@@ -212,8 +212,8 @@ public:
         //Draw Content
         m_blitProgram->setAttributeBuffer(0, GL_FLOAT, m_squareVerticesOffset, 2);
         glBindTexture(GL_TEXTURE_2D, window->contentTexture());
-        QRect r = window->contentsRect();
-        glViewport(r.x() * scale, r.y() * scale, r.width() * scale, r.height() * scale);
+        const QRectF r = window->contentsRect();
+        glViewport(std::round(r.x() * scale), std::round(r.y() * scale), std::round(r.width() * scale), std::round(r.height() * scale));
 
         const bool opaqueWindow = window->window() && !window->window()->requestedFormat().hasAlpha();
         m_blitProgram->setUniformValue("forceOpaque", opaqueWindow ? 1.0f : 0.0f);

@@ -397,9 +397,9 @@ void QSimpleDrag::move(const QPoint &nativeGlobalPos, Qt::MouseButtons buttons,
         }
     }
 
-    const QPoint pos = nativeGlobalPos - window->handle()->geometry().topLeft();
+    const QPointF pos = nativeGlobalPos - window->handle()->geometry().topLeft();
     const QPlatformDragQtResponse qt_response = QWindowSystemInterface::handleDrag(
-                window, drag()->mimeData(), pos, drag()->supportedActions(),
+                window, drag()->mimeData(), pos.toPoint(), drag()->supportedActions(),
                 buttons, modifiers);
 
     setCanDrop(qt_response.isAccepted());
@@ -416,9 +416,9 @@ void QSimpleDrag::drop(const QPoint &nativeGlobalPos, Qt::MouseButtons buttons,
     if (!window)
         return;
 
-    const QPoint pos = nativeGlobalPos - window->handle()->geometry().topLeft();
+    const QPointF pos = nativeGlobalPos - window->handle()->geometry().topLeft();
     const QPlatformDropQtResponse response = QWindowSystemInterface::handleDrop(
-                window, drag()->mimeData(), pos, drag()->supportedActions(),
+                window, drag()->mimeData(), pos.toPoint(), drag()->supportedActions(),
                 buttons, modifiers);
     if (response.isAccepted()) {
         setExecutedDropAction(response.acceptedAction());

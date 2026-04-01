@@ -43,8 +43,8 @@ public:
     void create();
     void destroy();
 
-    void setGeometry(const QRect &) override;
-    QRect geometry() const override;
+    void setGeometry(const QRectF &) override;
+    QRectF geometry() const override;
     void setVisible(bool visible) override;
     void requestActivateWindow() override;
     void raise() override;

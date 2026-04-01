@@ -1851,9 +1851,14 @@ void QWindow::setGeometry(int posx, int posy, int w, int h)
 */
 void QWindow::setGeometry(const QRect &rect)
 {
+    setGeometryF(rect);
+}
+
+void QWindow::setGeometryF(const QRectF &rect)
+{
     Q_D(QWindow);
     d->positionAutomatic = false;
-    const QRect oldRect = geometry();
+    const QRectF oldRect = geometryF();
     if (rect == oldRect)
         return;
 
@@ -1874,13 +1879,13 @@ void QWindow::setGeometry(const QRect &rect)
         d->geometry = rect;
 
         if (rect.x() != oldRect.x())
-            emit xChanged(rect.x());
+            emit xChanged(std::round(rect.x()));
         if (rect.y() != oldRect.y())
-            emit yChanged(rect.y());
+            emit yChanged(std::round(rect.y()));
         if (rect.width() != oldRect.width())
-            emit widthChanged(rect.width());
+            emit widthChanged(std::ceil(rect.width()));
         if (rect.height() != oldRect.height())
-            emit heightChanged(rect.height());
+            emit heightChanged(std::ceil(rect.height()));
     }
 }
 
@@ -1890,24 +1895,31 @@ void QWindow::setGeometry(const QRect &rect)
   chicken and egg problem here: we cannot convert to native coordinates
   before we know which screen we are on.
 */
-QScreen *QWindowPrivate::screenForGeometry(const QRect &newGeometry) const
+QScreen *QWindowPrivate::screenForGeometry(const QRectF &newGeometry) const
 {
     Q_Q(const QWindow);
     QScreen *currentScreen = q->screen();
     QScreen *fallback = currentScreen;
-    QPoint center = newGeometry.center();
+    const QPoint center = newGeometry.center().toPoint();
     if (!q->parent() && currentScreen && !currentScreen->geometry().contains(center)) {
         const auto screens = currentScreen->virtualSiblings();
         for (QScreen* screen : screens) {
             if (screen->geometry().contains(center))
                 return screen;
-            if (screen->geometry().intersects(newGeometry))
+            if (screen->geometry().intersects(newGeometry.toRect()))
                 fallback = screen;
         }
     }
     return fallback;
 }
 
+static QRect snappedGeometry(const QRectF &rect)
+{
+    return QRect(std::round(rect.x()),
+                 std::round(rect.y()),
+                 std::ceil(rect.width()),
+                 std::ceil(rect.height()));
+}
 
 /*!
     Returns the geometry of the window, excluding its window frame.
@@ -1917,6 +1929,11 @@ QScreen *QWindowPrivate::screenForGeometry(const QRect &newGeometry) const
     \sa frameMargins(), frameGeometry()
 */
 QRect QWindow::geometry() const
+{
+    return snappedGeometry(geometryF());
+}
+
+QRectF QWindow::geometryF() const
 {
     Q_D(const QWindow);
     if (d->platformWindow) {
@@ -1948,6 +1965,11 @@ QMargins QWindow::frameMargins() const
 */
 QRect QWindow::frameGeometry() const
 {
+    return snappedGeometry(frameGeometryF());
+}
+
+QRectF QWindow::frameGeometryF() const
+{
     Q_D(const QWindow);
     if (d->platformWindow) {
         QMargins m = frameMargins();
@@ -1964,6 +1986,11 @@ QRect QWindow::frameGeometry() const
     \sa geometry(), frameGeometry()
 */
 QPoint QWindow::framePosition() const
+{
+    return framePositionF().toPoint();
+}
+
+QPointF QWindow::framePositionF() const
 {
     Q_D(const QWindow);
     if (d->platformWindow) {
@@ -1982,11 +2009,16 @@ QPoint QWindow::framePosition() const
 */
 void QWindow::setFramePosition(const QPoint &point)
 {
+    setFramePositionF(point);
+}
+
+void QWindow::setFramePositionF(const QPointF &point)
+{
     Q_D(QWindow);
     d->positionPolicy = QWindowPrivate::WindowFrameInclusive;
     d->positionAutomatic = false;
     if (d->platformWindow) {
-        d->platformWindow->setGeometry(QHighDpi::toNativeWindowGeometry(QRect(point, size()), this));
+        d->platformWindow->setGeometry(QHighDpi::toNativeWindowGeometry(QRectF(point, sizeF()), this));
     } else {
         d->geometry.moveTopLeft(point);
     }
@@ -2058,7 +2090,12 @@ QMargins QWindow::safeAreaMargins() const
 */
 void QWindow::setPosition(const QPoint &pt)
 {
-    setGeometry(QRect(pt, size()));
+    setPosition(QPointF(pt));
+}
+
+void QWindow::setPosition(const QPointF &pt)
+{
+    setGeometryF(QRectF(pt, sizeF()));
 }
 
 /*!
@@ -2111,22 +2148,27 @@ void QWindow::resize(int w, int h)
 */
 void QWindow::resize(const QSize &newSize)
 {
+    resize(QSizeF(newSize));
+}
+
+void QWindow::resize(const QSizeF &newSize)
+{
     Q_D(QWindow);
 
-    const QSize oldSize = size();
+    const QSizeF oldSize = sizeF();
     if (newSize == oldSize)
         return;
 
     d->positionPolicy = QWindowPrivate::WindowFrameExclusive;
     if (d->platformWindow) {
         d->platformWindow->setGeometry(
-            QHighDpi::toNativeWindowGeometry(QRect(position(), newSize), this));
+            QHighDpi::toNativeWindowGeometry(QRectF(positionF(), newSize), this));
     } else {
         d->geometry.setSize(newSize);
         if (newSize.width() != oldSize.width())
-            emit widthChanged(newSize.width());
+            emit widthChanged(std::ceil(newSize.width()));
         if (newSize.height() != oldSize.height())
-            emit heightChanged(newSize.height());
+            emit heightChanged(std::ceil(newSize.height()));
     }
 }
 

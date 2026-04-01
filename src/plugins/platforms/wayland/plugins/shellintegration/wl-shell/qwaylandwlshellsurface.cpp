@@ -151,7 +151,7 @@ void QWaylandWlShellSurface::updateTransientParent(QWindow *parent)
         return;
 
     // set_transient expects a position relative to the parent
-    QPoint transientPos = m_window->geometry().topLeft(); // this is absolute
+    QPointF transientPos = m_window->geometry().topLeft(); // this is absolute
     transientPos -= parent->geometry().topLeft();
     if (parent_wayland_window->decoration()) {
         transientPos.setX(transientPos.x() + parent_wayland_window->decoration()->margins().left());
@@ -183,7 +183,7 @@ void QWaylandWlShellSurface::setPopup(QWaylandWindow *parent, QWaylandInputDevic
     }
 
     // set_popup expects a position relative to the parent
-    QPoint transientPos = m_window->geometry().topLeft(); // this is absolute
+    QPointF transientPos = m_window->geometry().topLeft(); // this is absolute
     transientPos -= parent_wayland_window->geometry().topLeft();
     if (parent_wayland_window->decoration()) {
         transientPos.setX(transientPos.x() + parent_wayland_window->decoration()->margins().left());

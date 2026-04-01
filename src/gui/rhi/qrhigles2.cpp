@@ -7024,7 +7024,7 @@ QSize QGles2SwapChain::surfacePixelSize()
     if (QPlatformWindow *platformWindow = m_window->handle())
         // Prefer using QPlatformWindow geometry and DPR in order to avoid
         // errors due to rounded QWindow geometry.
-        return platformWindow->geometry().size() * platformWindow->devicePixelRatio();
+        return (platformWindow->geometry().size() * platformWindow->devicePixelRatio()).toSize();
     else
         return m_window->size() * m_window->devicePixelRatio();
 }

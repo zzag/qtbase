@@ -2880,9 +2880,9 @@ void QGuiApplicationPrivate::processGeometryChangeEvent(QWindowSystemInterfacePr
     if (!window)
         return;
 
-    const QRect lastReportedGeometry = window->d_func()->geometry;
-    const QRect requestedGeometry = e->requestedGeometry;
-    const QRect actualGeometry = e->newGeometry;
+    const QRectF lastReportedGeometry = window->d_func()->geometry;
+    const QRectF requestedGeometry = e->requestedGeometry;
+    const QRectF actualGeometry = e->newGeometry;
 
     // We send size and move events only if the geometry has changed from
     // what was last reported, or if the user tried to set a new geometry,
@@ -2906,9 +2906,9 @@ void QGuiApplicationPrivate::processGeometryChangeEvent(QWindowSystemInterfacePr
         window->d_func()->resizeEventPending = false;
 
         if (actualGeometry.width() != lastReportedGeometry.width())
-            emit window->widthChanged(actualGeometry.width());
+            emit window->widthChanged(e.size().width());
         if (actualGeometry.height() != lastReportedGeometry.height())
-            emit window->heightChanged(actualGeometry.height());
+            emit window->heightChanged(e.size().height());
     }
 
     if (isMove) {
@@ -2917,9 +2917,9 @@ void QGuiApplicationPrivate::processGeometryChangeEvent(QWindowSystemInterfacePr
         QGuiApplication::sendSpontaneousEvent(window, &e);
 
         if (actualGeometry.x() != lastReportedGeometry.x())
-            emit window->xChanged(actualGeometry.x());
+            emit window->xChanged(e.pos().x());
         if (actualGeometry.y() != lastReportedGeometry.y())
-            emit window->yChanged(actualGeometry.y());
+            emit window->yChanged(e.pos().y());
     }
 }
 

@@ -104,7 +104,7 @@ QMargins QWaylandBradientDecoration::margins(MarginsType marginsType) const
 void QWaylandBradientDecoration::paint(QPaintDevice *device)
 {
     bool active = window()->handle()->isActive();
-    QRect wg = QRect(QPoint(), waylandWindow()->surfaceSize()).marginsRemoved(margins(ShadowsOnly));
+    QRect wg = QRectF(QPoint(), waylandWindow()->surfaceSize()).marginsRemoved(margins(ShadowsOnly)).toRect();
     QRect cg = wg.marginsRemoved(margins(ShadowsExcluded));
     QRect clips[] =
     {
@@ -238,7 +238,7 @@ bool QWaylandBradientDecoration::handleMouse(QWaylandInputDevice *inputDevice, c
     Q_UNUSED(global);
 
     // Figure out what area mouse is in
-    QSize ss = waylandWindow()->surfaceSize();
+    QSizeF ss = waylandWindow()->surfaceSize();
     if (local.y() <= margins().top()) {
         processPointerTop(inputDevice, local, b, mods, PointerType::Mouse);
     } else if (local.y() >= ss.height() - margins().bottom()) {
@@ -262,7 +262,7 @@ bool QWaylandBradientDecoration::handleMouse(QWaylandInputDevice *inputDevice, c
 bool QWaylandBradientDecoration::handleTouch(QWaylandInputDevice *inputDevice, const QPointF &local, const QPointF &global, QEventPoint::State state, Qt::KeyboardModifiers mods)
 {
     Q_UNUSED(global);
-    QSize ss = waylandWindow()->surfaceSize();
+    QSizeF ss = waylandWindow()->surfaceSize();
 
     bool handled = state == QEventPoint::Pressed;
     if (handled) {
@@ -292,7 +292,7 @@ void QWaylandBradientDecoration::processPointerTop(QWaylandInputDevice *inputDev
     Q_UNUSED(type);
 #endif
 
-    QSize ss = waylandWindow()->surfaceSize();
+    QSizeF ss = waylandWindow()->surfaceSize();
     Q_UNUSED(mods);
     if (local.y() <= margins().bottom()) {
         if (local.x() <= margins().left()) {
@@ -352,7 +352,7 @@ void QWaylandBradientDecoration::processPointerBottom(QWaylandInputDevice *input
     Q_UNUSED(type);
 #endif
 
-    QSize ss = waylandWindow()->surfaceSize();
+    QSizeF ss = waylandWindow()->surfaceSize();
     if (local.x() <= margins().left()) {
         //bottom left bit
 #if QT_CONFIG(cursor)

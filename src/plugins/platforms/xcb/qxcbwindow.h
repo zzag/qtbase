@@ -51,7 +51,7 @@ public:
     QXcbWindow(QWindow *window);
     ~QXcbWindow();
 
-    void setGeometry(const QRect &rect) override;
+    void setGeometry(const QRectF &rect) override;
 
     QMargins frameMargins() const override;
 

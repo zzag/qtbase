@@ -75,7 +75,7 @@ public:
     void connectToScreen(QScreen *topLevelScreen);
     void disconnectFromScreen();
     void emitScreenChangedRecursion(QScreen *newScreen);
-    QScreen *screenForGeometry(const QRect &rect) const;
+    QScreen *screenForGeometry(const QRectF &rect) const;
     void setTransientParent(QWindow *parent);
 
     virtual void clearFocusObject();
@@ -124,7 +124,7 @@ public:
     QString windowTitle;
     QString windowFilePath;
     QIcon windowIcon;
-    QRect geometry;
+    QRectF geometry;
     qreal devicePixelRatio = 1.0;
     Qt::WindowStates windowState = Qt::WindowNoState;
     QWindow::Visibility visibility = QWindow::Hidden;

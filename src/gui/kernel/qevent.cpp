@@ -1747,7 +1747,15 @@ Q_IMPL_EVENT_COMMON(QPaintEvent)
     \a pos and \a oldPos respectively.
 */
 QMoveEvent::QMoveEvent(const QPoint &pos, const QPoint &oldPos)
-    : QEvent(Move), m_pos(pos), m_oldPos(oldPos)
+    : QEvent(Move), m_pos(pos), m_oldPos(oldPos), m_posF(pos), m_oldPosF(oldPos)
+{}
+
+/*!
+    Constructs a move event with the new and old widget positions,
+    \a pos and \a oldPos respectively.
+*/
+QMoveEvent::QMoveEvent(const QPointF &pos, const QPointF &oldPos)
+    : QEvent(Move), m_pos(pos.toPoint()), m_oldPos(oldPos.toPoint()), m_posF(pos), m_oldPosF(oldPos)
 {}
 
 Q_IMPL_EVENT_COMMON(QMoveEvent)
@@ -1869,7 +1877,20 @@ Q_IMPL_EVENT_COMMON(QPlatformSurfaceEvent)
     size and \a oldSize respectively.
 */
 QResizeEvent::QResizeEvent(const QSize &size, const QSize &oldSize)
-    : QEvent(Resize), m_size(size), m_oldSize(oldSize)
+    : QEvent(Resize), m_size(size), m_oldSize(oldSize), m_sizeF(size), m_oldSizeF(oldSize)
+{}
+
+static QSize ceiledSize(const QSizeF &size)
+{
+    return QSize(std::ceil(size.width()), std::ceil(size.height()));
+}
+
+/*!
+    Constructs a resize event with the new and old widget sizes, \a
+    size and \a oldSize respectively.
+*/
+QResizeEvent::QResizeEvent(const QSizeF &size, const QSizeF &oldSize)
+    : QEvent(Resize), m_size(ceiledSize(size)), m_oldSize(ceiledSize(oldSize)), m_sizeF(size), m_oldSizeF(oldSize)
 {}
 
 Q_IMPL_EVENT_COMMON(QResizeEvent)

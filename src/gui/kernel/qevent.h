@@ -505,11 +505,17 @@ class Q_GUI_EXPORT QMoveEvent : public QEvent
     Q_DECL_EVENT_COMMON(QMoveEvent)
 public:
     QMoveEvent(const QPoint &pos, const QPoint &oldPos);
+    QMoveEvent(const QPointF &pos, const QPointF &oldPos);
 
     inline const QPoint &pos() const { return m_pos; }
-    inline const QPoint &oldPos() const { return m_oldPos;}
+    inline const QPoint &oldPos() const { return m_oldPos; }
+
+    inline const QPointF &posF() const { return m_posF; }
+    inline const QPointF &oldPosF() const { return m_oldPosF; }
+
 protected:
     QPoint m_pos, m_oldPos;
+    QPointF m_posF, m_oldPosF;
     friend class QApplication;
     friend class QApplicationPrivate;
 };
@@ -552,11 +558,17 @@ class Q_GUI_EXPORT QResizeEvent : public QEvent
     Q_DECL_EVENT_COMMON(QResizeEvent)
 public:
     QResizeEvent(const QSize &size, const QSize &oldSize);
+    QResizeEvent(const QSizeF &size, const QSizeF &oldSize);
 
     inline const QSize &size() const { return m_size; }
-    inline const QSize &oldSize()const { return m_oldSize;}
+    inline const QSize &oldSize()const { return m_oldSize; }
+
+    inline const QSizeF &sizeF() const { return m_sizeF; }
+    inline const QSizeF &oldSizeF() const { return m_oldSizeF; }
+
 protected:
     QSize m_size, m_oldSize;
+    QSizeF m_sizeF, m_oldSizeF;
     friend class QApplication;
     friend class QApplicationPrivate;
 };

@@ -480,7 +480,7 @@ QRect QWaylandWindow::defaultGeometry() const
     return QRect(QPoint(), QSize(500,500));
 }
 
-void QWaylandWindow::setGeometry_helper(const QRect &rect)
+void QWaylandWindow::setGeometry_helper(const QRectF &rect)
 {
     QPlatformWindow::setGeometry(rect);
     if (mViewport)
@@ -493,13 +493,13 @@ void QWaylandWindow::setGeometry_helper(const QRect &rect)
 
         QWaylandWindow *parentWindow = mSubSurfaceWindow->parent();
         if (parentWindow && parentWindow->isExposed()) {
-            QRect parentExposeGeometry(QPoint(), parentWindow->geometry().size());
+            QRectF parentExposeGeometry(QPoint(), parentWindow->geometry().size());
             parentWindow->sendExposeEvent(parentExposeGeometry);
         }
     }
 }
 
-void QWaylandWindow::setGeometry(const QRect &r)
+void QWaylandWindow::setGeometry(const QRectF &r)
 {
     auto rect = r;
     if (fixedToplevelPositions && !QPlatformWindow::parent() && window()->type() != Qt::Popup
@@ -509,7 +509,7 @@ void QWaylandWindow::setGeometry(const QRect &r)
     setGeometry_helper(rect);
 
     if (mShellSurface && !mInResizeFromApplyConfigure) {
-        const QRect frameGeometry = r.marginsAdded(clientSideMargins()).marginsRemoved(windowContentMargins());
+        const QRectF frameGeometry = r.marginsAdded(clientSideMargins()).marginsRemoved(windowContentMargins());
         if (qt_window_private(window())->positionAutomatic || m_popupInfo.parentControlGeometry.isValid())
             mShellSurface->setWindowSize(frameGeometry.size());
 
@@ -521,7 +521,7 @@ void QWaylandWindow::setGeometry(const QRect &r)
         mShellSurface->setContentGeometry(windowContentGeometry());
 
     if (isOpaque() && mMask.isEmpty())
-        setOpaqueArea(QRect(QPoint(0, 0), rect.size()));
+        setOpaqueArea(QRectF(QPoint(0, 0), rect.size()).toAlignedRect());
 
 
     if (window()->isVisible() && rect.isValid()) {
@@ -542,7 +542,7 @@ void QWaylandWindow::synthesizeExposeOnGeometryChange()
 {
     if (!isExposed())
         return;
-    QRect exposeGeometry(QPoint(), geometry().size());
+    QRectF exposeGeometry(QPoint(), geometry().size());
     if (exposeGeometry == mLastExposeGeometry)
         return;
 
@@ -578,22 +578,17 @@ void QWaylandWindow::updateInputRegion()
 void QWaylandWindow::updateViewport()
 {
     if (!surfaceSize().isEmpty())
-        mViewport->setDestination(surfaceSize() * clientToCompositorScale());
+        mViewport->setDestination((surfaceSize() * clientToCompositorScale()).toSize());
 }
 
 void QWaylandWindow::setGeometryFromApplyConfigure(const QPointF &globalPosition, const QSizeF &sizeWithMargins)
 {
-    // TODO: The fractional part is lost, which can lead to gaps between maximized windows and the panel.
-    const QPoint roundedGlobalPosition = globalPosition.toPoint();
-    const QSize roundedSizeWithMargins = sizeWithMargins.toSize();
+    QMarginsF margins = clientSideMargins();
+    QPointF positionWithoutMargins = globalPosition + QPointF(margins.left(), margins.top());
+    const qreal widthWithoutMargins = qMax(sizeWithMargins.width() - (margins.left() + margins.right()), 1.0);
+    const qreal heightWithoutMargins = qMax(sizeWithMargins.height() - (margins.top() + margins.bottom()), 1.0);
 
-    QMargins margins = clientSideMargins();
-
-    QPoint positionWithoutMargins = roundedGlobalPosition + QPoint(margins.left(), margins.top());
-    const int widthWithoutMargins = qMax(roundedSizeWithMargins.width() - (margins.left() + margins.right()), 1);
-    const int heightWithoutMargins = qMax(roundedSizeWithMargins.height() - (margins.top() + margins.bottom()), 1);
-
-    QRect geometry(positionWithoutMargins, QSize(widthWithoutMargins, heightWithoutMargins));
+    QRectF geometry(positionWithoutMargins, QSizeF(widthWithoutMargins, heightWithoutMargins));
 
     mInResizeFromApplyConfigure = true;
     setGeometry(geometry);
@@ -602,13 +597,10 @@ void QWaylandWindow::setGeometryFromApplyConfigure(const QPointF &globalPosition
 
 void QWaylandWindow::repositionFromApplyConfigure(const QPointF &globalPosition)
 {
-    // TODO: The fractional part is lost, which can lead to gaps between maximized windows and the panel.
-    const QPoint roundedGlobalPosition = globalPosition.toPoint();
+    QMarginsF margins = clientSideMargins();
+    QPointF positionWithoutMargins = globalPosition + QPointF(margins.left(), margins.top());
 
-    QMargins margins = clientSideMargins();
-    QPoint positionWithoutMargins = roundedGlobalPosition + QPoint(margins.left(), margins.top());
-
-    QRect geometry(positionWithoutMargins, windowGeometry().size());
+    QRectF geometry(positionWithoutMargins, windowGeometry().size());
     mInResizeFromApplyConfigure = true;
     setGeometry(geometry);
     mInResizeFromApplyConfigure = false;
@@ -616,22 +608,18 @@ void QWaylandWindow::repositionFromApplyConfigure(const QPointF &globalPosition)
 
 void QWaylandWindow::resizeFromApplyConfigure(const QSizeF &sizeWithMargins, const QPointF &offset)
 {
-    // TODO: The fractional part is lost, which can lead to gaps between maximized windows and the panel.
-    const QPoint roundedOffset = offset.toPoint();
-    const QSize roundedSizeWithMargins = sizeWithMargins.toSize();
+    QMarginsF margins = clientSideMargins();
+    const qreal widthWithoutMargins = qMax(sizeWithMargins.width() - (margins.left() + margins.right()), 1.0);
+    const qreal heightWithoutMargins = qMax(sizeWithMargins.height() - (margins.top() + margins.bottom()), 1.0);
+    QRectF geometry(windowGeometry().topLeft(), QSizeF(widthWithoutMargins, heightWithoutMargins));
 
-    QMargins margins = clientSideMargins();
-    const int widthWithoutMargins = qMax(roundedSizeWithMargins.width() - (margins.left() + margins.right()), 1);
-    const int heightWithoutMargins = qMax(roundedSizeWithMargins.height() - (margins.top() + margins.bottom()), 1);
-    QRect geometry(windowGeometry().topLeft(), QSize(widthWithoutMargins, heightWithoutMargins));
-
-    mOffset += roundedOffset;
+    mOffset += offset;
     mInResizeFromApplyConfigure = true;
     setGeometry(geometry);
     mInResizeFromApplyConfigure = false;
 }
 
-void QWaylandWindow::sendExposeEvent(const QRect &rect)
+void QWaylandWindow::sendExposeEvent(const QRectF &rect)
 {
     static bool sQtTestMode = qEnvironmentVariableIsSet("QT_QTESTLIB_RUNNING");
     mLastExposeGeometry = rect;
@@ -639,7 +627,7 @@ void QWaylandWindow::sendExposeEvent(const QRect &rect)
     if (sQtTestMode) {
         mExposeEventNeedsAttachedBuffer = true;
     }
-    QWindowSystemInterface::handleExposeEvent<QWindowSystemInterface::SynchronousDelivery>(window(), rect);
+    QWindowSystemInterface::handleExposeEvent<QWindowSystemInterface::SynchronousDelivery>(window(), rect.toAlignedRect());
 
     /**
       *  If an expose is not handled by application code, explicitly attach a buffer
@@ -647,7 +635,7 @@ void QWaylandWindow::sendExposeEvent(const QRect &rect)
       *  wanting focus.
     */
     if (mExposed && mExposeEventNeedsAttachedBuffer && !rect.isNull()) {
-        QWaylandShmBuffer buffer(mDisplay, rect.size(), QImage::Format_ARGB32);
+        QWaylandShmBuffer buffer(mDisplay, rect.toAlignedRect().size(), QImage::Format_ARGB32);
         buffer.image()->fill(Qt::transparent);
         commit(&buffer, QRegion());
     }
@@ -715,7 +703,7 @@ void QWaylandWindow::setMask(const QRegion &mask)
 
     if (isOpaque()) {
         if (mMask.isEmpty())
-            setOpaqueArea(QRect(QPoint(0, 0), geometry().size()));
+            setOpaqueArea(QRectF(QPoint(0, 0), geometry().size()).toRect());
         else
             setOpaqueArea(mMask);
     }
@@ -755,13 +743,13 @@ void QWaylandWindow::applyConfigure()
     // When this completes we know that no other frames will be rendering.
     // This could be improved in future as we 're blocking for not just the frame to finish but one additional extra frame.
     if (mInFrameRender)
-        QWindowSystemInterface::handleExposeEvent<QWindowSystemInterface::SynchronousDelivery>(window(), QRect(QPoint(0, 0), geometry().size()));
+        QWindowSystemInterface::handleExposeEvent<QWindowSystemInterface::SynchronousDelivery>(window(), QRectF(QPoint(0, 0), geometry().size()).toAlignedRect());
     if (mShellSurface)
         mShellSurface->applyConfigure();
 
     mWaitingToApplyConfigure = false;
     if (mExposed)
-        sendExposeEvent(QRect(QPoint(), geometry().size()));
+        sendExposeEvent(QRectF(QPoint(), geometry().size()));
     else
         // we still need to commit the configured ack for a hidden surface
         commit();
@@ -953,7 +941,7 @@ void QWaylandWindow::setCustomMargins(const QMargins &margins) {
 /*!
  * Size, with decorations (including including eventual shadows) in wl_surface coordinates
  */
-QSize QWaylandWindow::surfaceSize() const
+QSizeF QWaylandWindow::surfaceSize() const
 {
     return geometry().marginsAdded(clientSideMargins()).size();
 }
@@ -975,10 +963,10 @@ QMargins QWaylandWindow::windowContentMargins() const
  * Window geometry as defined by the xdg-shell spec (in wl_surface coordinates)
  * topLeft is where the shadow stops and the decorations border start.
  */
-QRect QWaylandWindow::windowContentGeometry() const
+QRectF QWaylandWindow::windowContentGeometry() const
 {
     const QMargins margins = windowContentMargins();
-    return QRect(QPoint(margins.left(), margins.top()), surfaceSize().shrunkBy(margins));
+    return QRectF(QPoint(margins.left(), margins.top()), surfaceSize().shrunkBy(margins));
 }
 
 /*!
@@ -1207,7 +1195,7 @@ bool QWaylandWindow::createDecoration()
 
     if (hadDecoration != mWindowDecorationEnabled) {
         for (QWaylandSubSurface *subsurf : std::as_const(mChildren)) {
-            QPoint pos = subsurf->window()->geometry().topLeft();
+            const QPointF pos = subsurf->window()->geometry().topLeft();
             QMargins m = frameMargins();
             subsurf->set_position(std::round((pos.x() + m.left()) * clientToCompositorScale()),
                                   std::round((pos.y() + m.top()) * clientToCompositorScale()));
@@ -1588,7 +1576,7 @@ void QWaylandWindow::setScale(qreal newScale)
     if (isExposed()) {
         // redraw at the new DPR
         window()->requestUpdate();
-        sendExposeEvent(QRect(QPoint(), geometry().size()));
+        sendExposeEvent(QRectF(QPoint(), geometry().size()));
     }
 }
 
@@ -1656,9 +1644,9 @@ void QWaylandWindow::updateExposure()
     mExposed = exposed;
 
     if (!exposed)
-        sendExposeEvent(QRect());
+        sendExposeEvent(QRectF());
     else
-        sendExposeEvent(QRect(QPoint(), geometry().size()));
+        sendExposeEvent(QRectF(QPoint(), geometry().size()));
 
     for (QWaylandSubSurface *subSurface : std::as_const(mChildren)) {
         auto subWindow = subSurface->window();

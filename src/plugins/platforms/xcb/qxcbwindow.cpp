@@ -557,14 +557,15 @@ void QXcbWindow::destroy()
         m_pendingSyncRequest->invalidate();
 }
 
-void QXcbWindow::setGeometry(const QRect &rect)
+void QXcbWindow::setGeometry(const QRectF &rect)
 {
-    QPlatformWindow::setGeometry(rect);
+    const QRect effectiveRect = rect.toRect();
+    QPlatformWindow::setGeometry(effectiveRect);
 
     propagateSizeHints();
 
     QXcbScreen *currentScreen = xcbScreen();
-    QXcbScreen *newScreen = QPlatformWindow::parent() ? parentScreen() : static_cast<QXcbScreen*>(screenForGeometry(rect));
+    QXcbScreen *newScreen = QPlatformWindow::parent() ? parentScreen() : static_cast<QXcbScreen*>(screenForGeometry(effectiveRect));
 
     if (!newScreen)
         newScreen = xcbScreen();
@@ -575,17 +576,17 @@ void QXcbWindow::setGeometry(const QRect &rect)
     if (qt_window_private(window())->positionAutomatic) {
         const quint32 mask = XCB_CONFIG_WINDOW_WIDTH | XCB_CONFIG_WINDOW_HEIGHT;
         const qint32 values[] = {
-            qBound<qint32>(1,           rect.width(),  XCOORD_MAX),
-            qBound<qint32>(1,           rect.height(), XCOORD_MAX),
+            qBound<qint32>(1,           effectiveRect.width(),  XCOORD_MAX),
+            qBound<qint32>(1,           effectiveRect.height(), XCOORD_MAX),
         };
         xcb_configure_window(xcb_connection(), m_window, mask, reinterpret_cast<const quint32*>(values));
     } else {
         const quint32 mask = XCB_CONFIG_WINDOW_X | XCB_CONFIG_WINDOW_Y | XCB_CONFIG_WINDOW_WIDTH | XCB_CONFIG_WINDOW_HEIGHT;
         const qint32 values[] = {
-            qBound<qint32>(-XCOORD_MAX, rect.x(),      XCOORD_MAX),
-            qBound<qint32>(-XCOORD_MAX, rect.y(),      XCOORD_MAX),
-            qBound<qint32>(1,           rect.width(),  XCOORD_MAX),
-            qBound<qint32>(1,           rect.height(), XCOORD_MAX),
+            qBound<qint32>(-XCOORD_MAX, effectiveRect.x(),      XCOORD_MAX),
+            qBound<qint32>(-XCOORD_MAX, effectiveRect.y(),      XCOORD_MAX),
+            qBound<qint32>(1,           effectiveRect.width(),  XCOORD_MAX),
+            qBound<qint32>(1,           effectiveRect.height(), XCOORD_MAX),
         };
         xcb_configure_window(xcb_connection(), m_window, mask, reinterpret_cast<const quint32*>(values));
         if (window()->parent() && !window()->transientParent()) {
@@ -1303,7 +1304,7 @@ WId QXcbWindow::winId() const
 
 void QXcbWindow::setParent(const QPlatformWindow *parent)
 {
-    QPoint topLeft = geometry().topLeft();
+    QPoint topLeft = geometry().topLeft().toPoint();
 
     xcb_window_t xcb_parent_id;
     if (parent) {
@@ -1416,7 +1417,7 @@ void QXcbWindow::propagateSizeHints()
     xcb_size_hints_t hints;
     memset(&hints, 0, sizeof(hints));
 
-    const QRect rect = geometry();
+    const QRect rect = geometry().toRect();
     QWindowPrivate *win = qt_window_private(window());
 
     if (!win->positionAutomatic)
@@ -1896,7 +1897,7 @@ void QXcbWindow::handleMapNotifyEvent(const xcb_map_notify_event_t *event)
         if (deferredActivation)
             requestActivateWindow();
 
-        QWindowSystemInterface::handleExposeEvent(window(), QRect(QPoint(), geometry().size()));
+        QWindowSystemInterface::handleExposeEvent(window(), QRectF(QPoint(), geometry().size()).toAlignedRect());
     }
 }
 

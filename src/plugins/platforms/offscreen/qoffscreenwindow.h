@@ -17,7 +17,7 @@ public:
     QOffscreenWindow(QWindow *window, bool frameMarginsEnabled);
     ~QOffscreenWindow();
 
-    void setGeometry(const QRect &rect) override;
+    void setGeometry(const QRectF &rect) override;
     void setWindowState(Qt::WindowStates states) override;
 
     QMargins frameMargins() const override;
@@ -32,9 +32,9 @@ public:
 
 private:
     void setFrameMarginsEnabled(bool enabled);
-    void setGeometryImpl(const QRect &rect);
+    void setGeometryImpl(const QRectF &rect);
 
-    QRect m_normalGeometry;
+    QRectF m_normalGeometry;
     QMargins m_margins;
     bool m_positionIncludesFrame;
     bool m_visible;

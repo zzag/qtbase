@@ -52,8 +52,8 @@ public:
 
     virtual QSurfaceFormat format() const override;
 
-    virtual void setGeometry(const QRect &rect);
-    virtual QRect geometry() const;
+    virtual void setGeometry(const QRectF &rect);
+    virtual QRectF geometry() const;
     virtual QRect normalGeometry() const;
 
     virtual QMargins frameMargins() const;

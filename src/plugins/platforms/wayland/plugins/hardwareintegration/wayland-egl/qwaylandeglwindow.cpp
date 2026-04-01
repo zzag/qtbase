@@ -52,9 +52,7 @@ QWaylandWindow::WindowType QWaylandEglWindow::windowType() const
 void QWaylandEglWindow::ensureSize()
 {
     // this is always called on the main thread
-    QRect rect = geometry();
-    QMargins margins = clientSideMargins();
-    QSize sizeWithMargins = (rect.size() + QSize(margins.left() + margins.right(), margins.top() + margins.bottom())) * scale();
+    const QSize sizeWithMargins = (geometry().size().grownBy(clientSideMargins()) * scale()).toSize();
     {
         QWriteLocker lock(&m_bufferSizeLock);
         m_bufferSize = sizeWithMargins;
@@ -132,11 +130,9 @@ void QWaylandEglWindow::updateSurface(bool create)
     }
 }
 
-QRect QWaylandEglWindow::contentsRect() const
+QRectF QWaylandEglWindow::contentsRect() const
 {
-    QRect r = geometry();
-    QMargins m = clientSideMargins();
-    return QRect(m.left(), m.bottom(), r.width(), r.height());
+    return geometry().marginsRemoved(clientSideMargins());
 }
 
 void QWaylandEglWindow::invalidateSurface()
@@ -172,7 +168,7 @@ GLuint QWaylandEglWindow::contentFBO() const
 
     if (m_resize || !m_contentFBO) {
         QOpenGLFramebufferObject *old = m_contentFBO;
-        QSize fboSize = geometry().size() * scale();
+        const QSize fboSize = (geometry().size() * scale()).toSize();
         m_contentFBO = new QOpenGLFramebufferObject(fboSize.width(), fboSize.height(), QOpenGLFramebufferObject::CombinedDepthStencil);
 
         delete old;

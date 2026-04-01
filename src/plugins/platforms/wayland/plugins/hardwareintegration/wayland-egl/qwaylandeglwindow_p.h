@@ -26,7 +26,7 @@ public:
     void ensureSize() override;
 
     void updateSurface(bool create);
-    QRect contentsRect() const;
+    QRectF contentsRect() const;
 
     EGLSurface eglSurface() const;
     GLuint contentFBO() const;

@@ -401,13 +401,13 @@ QPixmap QLinuxFbScreen::grabWindow(WId wid, int x, int y, int width, int height)
 
     QFbWindow *window = windowForId(wid);
     if (window) {
-        const QRect geom = window->geometry();
+        const QRect geom = window->geometry().toRect();
         if (width < 0)
             width = geom.width() - x;
         if (height < 0)
             height = geom.height() - y;
         QRect rect(geom.topLeft() + QPoint(x, y), QSize(width, height));
-        rect &= window->geometry();
+        rect &= window->geometry().toRect();
         return QPixmap::fromImage(mFbScreenImage).copy(rect);
     }
 

@@ -102,10 +102,10 @@ public:
 
     class GeometryChangeEvent : public WindowSystemEvent {
     public:
-        GeometryChangeEvent(QWindow *window, QRect requestedGeometry, QRect newGeometry);
+        GeometryChangeEvent(QWindow *window, QRectF requestedGeometry, QRectF newGeometry);
         QPointer<QWindow> window;
-        QRect requestedGeometry;
-        QRect newGeometry;
+        QRectF requestedGeometry;
+        QRectF newGeometry;
     };
 
     class EnterEvent : public WindowSystemEvent {

@@ -26,17 +26,18 @@ QFbScreen *QFbWindow::platformScreen() const
     return static_cast<QFbScreen *>(window()->screen()->handle());
 }
 
-void QFbWindow::setGeometry(const QRect &rect)
+void QFbWindow::setGeometry(const QRectF &rect)
 {
     // store previous geometry for screen update
     mOldGeometry = geometry();
 
-    QWindowSystemInterface::handleGeometryChange(window(), rect);
+    const QRect effectiveRect = rect.toRect();
+    QWindowSystemInterface::handleGeometryChange(window(), effectiveRect);
 
-    QPlatformWindow::setGeometry(rect);
+    QPlatformWindow::setGeometry(effectiveRect);
 
-    if (mOldGeometry != rect)
-        QWindowSystemInterface::handleExposeEvent(window(), QRect(QPoint(0, 0), geometry().size()));
+    if (mOldGeometry != effectiveRect)
+        QWindowSystemInterface::handleExposeEvent(window(), QRectF(QPoint(0, 0), geometry().size()).toAlignedRect());
 }
 
 void QFbWindow::setVisible(bool visible)
@@ -67,7 +68,7 @@ void QFbWindow::setVisible(bool visible)
         // QWindow::isExposed() maps to QWindow::visible() by default so simply
         // generating an expose event regardless of this being a show or hide is
         // just what is needed here.
-        QWindowSystemInterface::handleExposeEvent(window(), QRect(QPoint(0, 0), geometry().size()));
+        QWindowSystemInterface::handleExposeEvent(window(), QRectF(QPoint(0, 0), geometry().size()).toAlignedRect());
     }
 }
 
@@ -90,26 +91,26 @@ Qt::WindowFlags QFbWindow::windowFlags() const
 void QFbWindow::raise()
 {
     platformScreen()->raise(this);
-    QWindowSystemInterface::handleExposeEvent(window(), QRect(QPoint(0, 0), geometry().size()));
+    QWindowSystemInterface::handleExposeEvent(window(), QRectF(QPoint(0, 0), geometry().size()).toAlignedRect());
 }
 
 void QFbWindow::lower()
 {
     platformScreen()->lower(this);
-    QWindowSystemInterface::handleExposeEvent(window(), QRect(QPoint(0, 0), geometry().size()));
+    QWindowSystemInterface::handleExposeEvent(window(), QRectF(QPoint(0, 0), geometry().size()).toAlignedRect());
 }
 
 void QFbWindow::repaint(const QRegion &region)
 {
-    const QRect currentGeometry = geometry();
-    const QRect oldGeometryLocal = mOldGeometry;
+    const QRectF currentGeometry = geometry();
+    const QRectF oldGeometryLocal = mOldGeometry;
     mOldGeometry = currentGeometry;
     // If this is a move, redraw the previous location
     if (oldGeometryLocal != currentGeometry)
-        platformScreen()->setDirty(oldGeometryLocal);
+        platformScreen()->setDirty(oldGeometryLocal.toAlignedRect());
     auto topLeft = currentGeometry.topLeft();
     for (auto rect : region)
-        platformScreen()->setDirty(rect.translated(topLeft));
+        platformScreen()->setDirty(QRectF(rect).translated(topLeft).toAlignedRect());
 }
 
 QT_END_NAMESPACE
