@@ -9024,7 +9024,7 @@ QSize QVkSwapChain::surfacePixelSize()
     VkExtent2D bufferSize = surfaceCaps.currentExtent;
     if (bufferSize.width == uint32_t(-1)) {
         Q_ASSERT(bufferSize.height == uint32_t(-1));
-        return m_window->size() * m_window->devicePixelRatio();
+        return (m_window->sizeF() * m_window->devicePixelRatio()).toSize();
     }
     return QSize(int(bufferSize.width), int(bufferSize.height));
 }
