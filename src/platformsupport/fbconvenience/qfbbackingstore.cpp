@@ -32,12 +32,13 @@ void QFbBackingStore::flush(QWindow *window, const QRegion &region, const QPoint
     (static_cast<QFbWindow *>(window->handle()))->repaint(region);
 }
 
-void QFbBackingStore::resize(const QSize &size, const QRegion &staticContents)
+void QFbBackingStore::resize(const QSizeF &size, const QRegion &staticContents)
 {
     Q_UNUSED(staticContents);
 
-    if (mImage.size() != size)
-        mImage = QImage(size, window()->screen()->handle()->format());
+    const QSize nativeSize = size.toSize();
+    if (mImage.size() != nativeSize)
+        mImage = QImage(nativeSize, window()->screen()->handle()->format());
 }
 
 const QImage QFbBackingStore::image()

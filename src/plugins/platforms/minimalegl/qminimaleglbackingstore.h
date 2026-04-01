@@ -24,7 +24,7 @@ public:
     void endPaint() override;
 
     void flush(QWindow *window, const QRegion &region, const QPoint &offset) override;
-    void resize(const QSize &size, const QRegion &staticContents) override;
+    void resize(const QSizeF &size, const QRegion &staticContents) override;
 
 private:
     QOpenGLContext *m_context;

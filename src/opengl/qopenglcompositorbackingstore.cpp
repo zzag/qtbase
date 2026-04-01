@@ -230,7 +230,7 @@ void QOpenGLCompositorBackingStore::beginPaint(const QRegion &region)
     }
 }
 
-void QOpenGLCompositorBackingStore::resize(const QSize &size, const QRegion &staticContents)
+void QOpenGLCompositorBackingStore::resize(const QSizeF &size, const QRegion &staticContents)
 {
     Q_UNUSED(staticContents);
 
@@ -242,7 +242,8 @@ void QOpenGLCompositorBackingStore::resize(const QSize &size, const QRegion &sta
     if (!dstWin)
         return;
 
-    m_image = QImage(size, QImage::Format_RGBA8888);
+    const QSize nativeSize = size.toSize();
+    m_image = QImage(nativeSize, QImage::Format_RGBA8888);
 
     m_window->create();
 

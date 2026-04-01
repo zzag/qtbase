@@ -146,13 +146,15 @@ void QOffscreenBackingStore::flush(QWindow *window, const QRegion &region, const
     m_backingStoreForWinIdHash[id] = this;
 }
 
-void QOffscreenBackingStore::resize(const QSize &size, const QRegion &)
+void QOffscreenBackingStore::resize(const QSizeF &size, const QRegion &)
 {
     QImage::Format format = window()->format().hasAlpha()
         ? QImage::Format_ARGB32_Premultiplied
         : QGuiApplication::primaryScreen()->handle()->format();
-    if (m_image.size() != size)
-        m_image = QImage(size, format);
+
+    const QSize nativeSize = size.toSize();
+    if (m_image.size() != nativeSize)
+        m_image = QImage(nativeSize, format);
     clearHash();
 }
 

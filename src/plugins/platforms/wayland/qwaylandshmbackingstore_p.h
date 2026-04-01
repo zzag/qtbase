@@ -64,7 +64,7 @@ public:
 
     QPaintDevice *paintDevice() override;
     void flush(QWindow *window, const QRegion &region, const QPoint &offset) override;
-    void resize(const QSize &size, const QRegion &staticContents) override;
+    void resize(const QSizeF &size, const QRegion &staticContents) override;
     void beginPaint(const QRegion &region) override;
     void endPaint() override;
     bool scroll(const QRegion &region, int dx, int dy) override;
@@ -98,7 +98,7 @@ private:
     QRegion mPendingRegion;
     QMutex mMutex;
 
-    QSize mRequestedSize;
+    QSizeF mRequestedSize;
     Qt::WindowFlags mCurrentWindowFlags;
     struct wl_event_queue *mEventQueue = nullptr;
 };

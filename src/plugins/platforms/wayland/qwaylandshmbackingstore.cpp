@@ -52,7 +52,7 @@ namespace QtWaylandClient {
 
 QWaylandShmBuffer::QWaylandShmBuffer(QWaylandDisplay *display,
                                      const QSize &size, QImage::Format format, qreal scale, wl_event_queue *customEventQueue)
-    : mDirtyRegion(QRect(QPoint(0, 0), size / scale))
+    : mDirtyRegion(QRect(QPoint(0, 0), QSize(std::ceil(size.width() / scale), std::ceil(size.height() / scale))))
 {
     int stride = size.width() * 4;
     int alloc = stride * size.height();
@@ -320,7 +320,7 @@ void QWaylandShmBackingStore::flush(QWindow *window, const QRegion &region, cons
     waylandWindow()->safeCommit(mFrontBuffer, region.translated(margins.left(), margins.top()));
 }
 
-void QWaylandShmBackingStore::resize(const QSize &size, const QRegion &)
+void QWaylandShmBackingStore::resize(const QSizeF &size, const QRegion &)
 {
     mRequestedSize = size;
 }
@@ -375,7 +375,7 @@ bool QWaylandShmBackingStore::recreateBackBufferIfNeeded()
     bool bufferWasRecreated = false;
     QMargins margins = windowDecorationMargins();
     qreal scale = waylandWindow()->scale();
-    const QSize sizeWithMargins = (mRequestedSize + QSize(margins.left() + margins.right(), margins.top() + margins.bottom())) * scale;
+    const QSize sizeWithMargins = (mRequestedSize.grownBy(margins) * scale).toSize();
 
     // We look for a free buffer to draw into. If the buffer is not the last buffer we used,
     // that is mBackBuffer, and the size is the same we copy the damaged content into the new

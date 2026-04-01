@@ -52,7 +52,7 @@ void QMinimalEglBackingStore::endPaint()
     delete m_device;
 }
 
-void QMinimalEglBackingStore::resize(const QSize &size, const QRegion &staticContents)
+void QMinimalEglBackingStore::resize(const QSizeF &size, const QRegion &staticContents)
 {
     Q_UNUSED(size);
     Q_UNUSED(staticContents);

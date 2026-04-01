@@ -20,10 +20,10 @@ QRasterBackingStore::~QRasterBackingStore()
 {
 }
 
-void QRasterBackingStore::resize(const QSize &size, const QRegion &staticContents)
+void QRasterBackingStore::resize(const QSizeF &size, const QRegion &staticContents)
 {
     Q_UNUSED(staticContents);
-    m_requestedSize = size;
+    m_requestedSize = size.toSize();
 }
 
 QImage::Format QRasterBackingStore::format() const

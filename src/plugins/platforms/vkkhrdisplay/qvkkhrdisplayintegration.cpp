@@ -132,11 +132,12 @@ public:
         Q_UNUSED(region);
         Q_UNUSED(offset);
     }
-    void resize(const QSize &size, const QRegion &staticContents) override {
+    void resize(const QSizeF &size, const QRegion &staticContents) override {
         Q_UNUSED(staticContents);
         QImage::Format format = QGuiApplication::primaryScreen()->handle()->format();
-        if (m_image.size() != size)
-            m_image = QImage(size, format);
+        const QSize nativeSize = size.toSize();
+        if (m_image.size() != nativeSize)
+            m_image = QImage(nativeSize, format);
     }
 
 private:

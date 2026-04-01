@@ -33,7 +33,9 @@ public:
 
     void flush(const QRegion &region, QWindow *window = nullptr, const QPoint &offset = QPoint());
 
+    void resize(const QSizeF &size);
     void resize(const QSize &size);
+    QSizeF sizeF() const;
     QSize size() const;
 
     bool scroll(const QRegion &area, int dx, int dy);

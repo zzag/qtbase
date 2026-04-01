@@ -893,9 +893,10 @@ QPlatformBackingStore::FlushResult QXcbBackingStore::rhiFlush(QWindow *window,
     return FlushSuccess;
 }
 
-void QXcbBackingStore::resize(const QSize &size, const QRegion &)
+void QXcbBackingStore::resize(const QSizeF &size, const QRegion &)
 {
-    if (m_image && size == m_image->size())
+    const QSize nativeSize = size.toSize();
+    if (m_image && nativeSize == m_image->size())
         return;
 
     QPlatformWindow *pw = window()->handle();
@@ -905,7 +906,7 @@ void QXcbBackingStore::resize(const QSize &size, const QRegion &)
     }
     QXcbWindow* win = static_cast<QXcbWindow *>(pw);
 
-    recreateImage(win, size);
+    recreateImage(win, nativeSize);
 }
 
 void QXcbBackingStore::recreateImage(QXcbWindow *win, const QSize &size)

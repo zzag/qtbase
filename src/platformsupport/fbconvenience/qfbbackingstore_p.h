@@ -34,7 +34,7 @@ public:
     QPaintDevice *paintDevice() override { return &mImage; }
     void flush(QWindow *window, const QRegion &region, const QPoint &offset) override;
 
-    void resize(const QSize &size, const QRegion &region) override;
+    void resize(const QSizeF &size, const QRegion &region) override;
 
     const QImage image();
     QImage toImage() const override;

@@ -47,11 +47,12 @@ void QMinimalBackingStore::flush(QWindow *window, const QRegion &region, const Q
     }
 }
 
-void QMinimalBackingStore::resize(const QSize &size, const QRegion &)
+void QMinimalBackingStore::resize(const QSizeF &size, const QRegion &)
 {
     QImage::Format format = QGuiApplication::primaryScreen()->handle()->format();
-    if (mImage.size() != size)
-        mImage = QImage(size, format);
+    const QSize nativeSize = size.toSize();
+    if (mImage.size() != nativeSize)
+        mImage = QImage(nativeSize, format);
 }
 
 QT_END_NAMESPACE

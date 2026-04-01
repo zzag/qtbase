@@ -50,8 +50,8 @@ public:
     QPlatformBackingStore *platformBackingStore = nullptr;
     QScopedPointer<QImage> highDpiBackingstore;
     QRegion staticContents;
-    QSize size;
-    QSize nativeSize;
+    QSizeF size;
+    QSizeF nativeSize;
     bool downscale = qEnvironmentVariableIntValue("QT_WIDGETS_HIGHDPI_DOWNSCALE") > 0;
 };
 
@@ -119,8 +119,8 @@ void QBackingStore::beginPaint(const QRegion &region)
 {
     const qreal toNativeFactor = d_ptr->deviceIndependentToNativeFactor();
 
-    if (d_ptr->nativeSize != QHighDpi::scale(size(), toNativeFactor))
-        resize(size());
+    if (d_ptr->nativeSize != QHighDpi::scale(sizeF(), toNativeFactor))
+        resize(sizeF());
 
     QPlatformBackingStore *platformBackingStore = handle();
     platformBackingStore->beginPaint(QHighDpi::scale(region, toNativeFactor));
@@ -232,6 +232,11 @@ void QBackingStore::flush(const QRegion &region, QWindow *window, const QPoint &
 */
 void QBackingStore::resize(const QSize &size)
 {
+    resize(QSizeF(size));
+}
+
+void QBackingStore::resize(const QSizeF &size)
+{
     const qreal factor = d_ptr->deviceIndependentToNativeFactor();
     d_ptr->size = size;
     d_ptr->nativeSize = QHighDpi::scale(size, factor);
@@ -242,6 +247,11 @@ void QBackingStore::resize(const QSize &size)
     Returns the current size of the window surface.
 */
 QSize QBackingStore::size() const
+{
+    return QSize(std::ceil(d_ptr->size.width()), std::ceil(d_ptr->size.height()));
+}
+
+QSizeF QBackingStore::sizeF() const
 {
     return d_ptr->size;
 }

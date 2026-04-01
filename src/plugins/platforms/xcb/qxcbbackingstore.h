@@ -34,7 +34,7 @@ public:
 
     QPlatformGraphicsBuffer *graphicsBuffer() const override;
 
-    void resize(const QSize &size, const QRegion &staticContents) override;
+    void resize(const QSizeF &size, const QRegion &staticContents) override;
     bool scroll(const QRegion &area, int dx, int dy) override;
 
     void beginPaint(const QRegion &) override;

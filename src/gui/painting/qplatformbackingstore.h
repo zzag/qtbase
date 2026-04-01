@@ -169,7 +169,7 @@ public:
 
     virtual QPlatformGraphicsBuffer *graphicsBuffer() const;
 
-    virtual void resize(const QSize &size, const QRegion &staticContents) = 0;
+    virtual void resize(const QSizeF &size, const QRegion &staticContents) = 0;
 
     virtual bool scroll(const QRegion &area, int dx, int dy);
 
