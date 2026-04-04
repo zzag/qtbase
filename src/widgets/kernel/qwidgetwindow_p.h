@@ -72,6 +72,7 @@ protected:
     void handleDropEvent(QDropEvent *);
 #endif
     void handleExposeEvent(QExposeEvent *);
+    void handlePaintEvent(QPaintEvent *);
     void handleWindowStateChangedEvent(QWindowStateChangeEvent *event);
     bool nativeEvent(const QByteArray &eventType, void *message, qintptr *result) override;
 #if QT_CONFIG(tabletevent)

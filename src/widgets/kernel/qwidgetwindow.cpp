@@ -339,6 +339,9 @@ bool QWidgetWindow::event(QEvent *event)
     case QEvent::Expose:
         handleExposeEvent(static_cast<QExposeEvent *>(event));
         return true;
+    case QEvent::Paint:
+        handlePaintEvent(static_cast<QPaintEvent *>(event));
+        return true;
 
     case QEvent::WindowStateChange:
         QWindow::event(event); // Update QWindow::Visibility and emit signals.
@@ -1120,6 +1123,25 @@ void QWidgetWindow::handleExposeEvent(QExposeEvent *event)
     } else {
         m_widget->setAttribute(Qt::WA_Mapped, false);
     }
+}
+
+void QWidgetWindow::handlePaintEvent(QPaintEvent *event)
+{
+    // At the moment, paint events are not fully supported all across Qt. On the other hand,
+    // with Wayland, we need to have a way to tell the application that it has to repaint.
+    // The QWidgetRepaintManager can skip painting and call flush() when QtWayland sends an
+    // expose event, we don't want that on Wayland, we want the app to repaint so a new buffer
+    // is used (and perhaps with a new size too).
+    const bool usePaintEvents = qGuiApp->platformName() == "wayland"_L1;
+    if (!usePaintEvents)
+        return;
+
+    event->accept();
+
+    if (m_widget->testAttribute(Qt::WA_DontShowOnScreen))
+        return;
+
+    m_widget->repaint(event->region());
 }
 
 void QWidgetWindow::handleWindowStateChangedEvent(QWindowStateChangeEvent *event)
