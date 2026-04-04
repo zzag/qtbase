@@ -622,7 +622,7 @@ void QWidgetRepaintManager::sync(QWidget *exposedWidget, const QRegion &exposedR
     }
 
     // Nothing to repaint.
-    if (!isDirty() && store->size().isValid()) {
+    if (!isDirty() && store->sizeF().isValid()) {
         QPlatformTextureList *widgetTextures = widgetTexturesFor(tlw, exposedWidget);
         flush(exposedWidget, widgetTextures ? QRegion() : exposedRegion, widgetTextures);
         return;
@@ -715,12 +715,19 @@ void QWidgetRepaintManager::paintAndFlush()
     bool repaintAllWidgets = false;
 
     const QRect tlwRect = tlw->data->crect;
-    if (!updatesDisabled && store->size() != tlwRect.size()) {
+
+    QSizeF paintedSize = tlwRect.size();
+    if (tlw->isWindow()) {
+        if (const QWindow *window = tlw->windowHandle())
+            paintedSize = window->sizeF();
+    }
+
+    if (!updatesDisabled && store->sizeF() != paintedSize) {
         QPlatformIntegration *integration = QGuiApplicationPrivate::platformIntegration();
-        if (hasStaticContents() && !store->size().isEmpty()
+        if (hasStaticContents() && !store->sizeF().isEmpty()
             && integration->hasCapability(QPlatformIntegration::BackingStoreStaticContents)) {
             // Repaint existing dirty area and newly visible area.
-            const QRect clipRect(QPoint(0, 0), store->size());
+            const QRect clipRect = QRectF(QPoint(0, 0), store->sizeF()).toAlignedRect();
             const QRegion staticRegion(staticContents(nullptr, clipRect));
             QRegion newVisible(0, 0, tlwRect.width(), tlwRect.height());
             newVisible -= staticRegion;
@@ -736,8 +743,8 @@ void QWidgetRepaintManager::paintAndFlush()
         }
     }
 
-    if (store->size() != tlwRect.size())
-        store->resize(tlwRect.size());
+    if (store->sizeF() != paintedSize)
+        store->resize(paintedSize);
 
     if (updatesDisabled)
         return;
@@ -1145,7 +1152,7 @@ bool QWidgetRepaintManager::hasStaticContents() const
 QRegion QWidgetRepaintManager::staticContents(QWidget *parent, const QRect &withinClipRect) const
 {
     if (!parent && tlw->testAttribute(Qt::WA_StaticContents)) {
-        QRect backingstoreRect(QPoint(0, 0), store->size());
+        QRect backingstoreRect = QRectF(QPoint(0, 0), store->sizeF()).toAlignedRect();
         if (!withinClipRect.isEmpty())
             backingstoreRect &= withinClipRect;
         return QRegion(backingstoreRect);
