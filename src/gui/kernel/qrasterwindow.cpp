@@ -38,15 +38,15 @@ public:
     void handleResizeEvent() override
     {
         Q_Q(QRasterWindow);
-        if (backingstore->size() != q->size())
+        if (backingstore->sizeF() != q->sizeF())
             markWindowAsDirty();
     }
 
     void beginPaint(const QRegion &region) override
     {
         Q_Q(QRasterWindow);
-        const QSize size = q->size();
-        if (backingstore->size() != size)
+        const QSizeF size = q->sizeF();
+        if (backingstore->sizeF() != size)
             backingstore->resize(size);
 
         backingstore->beginPaint(region);
