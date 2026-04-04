@@ -436,6 +436,7 @@ public:
     void _q_overrideMenuActionDestroyed();
 
     //firing of events
+    bool canActivateActionOnButtonRelease(QAction *action, QMouseEvent *event) const;
     void activateAction(QAction *, QAction::ActionEvent, bool self=true);
     void activateCausedStack(const QList<QPointer<QWidget>> &, QAction *, QAction::ActionEvent,
                              bool);
